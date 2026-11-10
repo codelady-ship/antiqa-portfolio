@@ -5,6 +5,7 @@ import { useRef, useState, type CSSProperties } from "react";
 import { Reveal } from "@/components/motion/reveal";
 import { shot } from "@/lib/shot";
 import type { Project } from "@/lib/types";
+import { isSafeFrame } from "./frame";
 import { langColor } from "./lang-colors";
 
 type Props = { project: Project; index: number; locale: "az" | "en"; onOpen: () => void };
@@ -22,11 +23,12 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
   const summary = p.summary?.[locale] || p.description;
 
   const enter = (e: React.PointerEvent) => {
-    if (e.pointerType !== "mouse" || !p.demoUrl) return;
+    if (e.pointerType !== "mouse" || !p.demoUrl || !isSafeFrame(p.demoUrl)) return;
     timer.current = window.setTimeout(() => setLive(true), 380);
   };
   const leave = () => {
     clearTimeout(timer.current);
+    setLive(false);
     const el = card.current;
     if (el) el.style.transform = "";
   };
@@ -79,6 +81,7 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
               tabIndex={-1}
               loading="lazy"
               sandbox="allow-scripts allow-same-origin"
+              referrerPolicy="no-referrer"
               className="pointer-events-none absolute top-0 left-0 h-[400%] w-[400%] origin-top-left scale-25 border-0 bg-white opacity-0 transition-opacity duration-700 group-hover:opacity-100"
             />
           )}

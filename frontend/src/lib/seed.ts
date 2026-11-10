@@ -41,19 +41,19 @@ export const SEED_PROFILE: Profile = {
   cv: { az: "/cv-az.pdf" },
 };
 
-export const SEED_REPOS: { url: string; featured?: boolean; backend?: string; title?: string }[] = [
-  { url: "https://github.com/codelady-ship/planera", featured: true, title: "Planera — Randevum" },
-  { url: "https://github.com/codelady-ship/Ecommerse-app", featured: true, title: "E-Commerce App" },
-  { url: "https://github.com/codelady-ship/my-portfolio", title: "Portfolio v1 (React + Three.js)", backend: "https://github.com/codelady-ship/backend-for-my-portfolio" },
-  { url: "https://github.com/codelady-ship/React-Routing-task4", title: "React Routing" },
-  { url: "https://github.com/codelady-ship/exam-task-react", title: "React Exam Project" },
-  { url: "https://github.com/codelady-ship/basic-task-with-Html-Css-Js", title: "Actify — Habit Tracker" },
-  { url: "https://github.com/codelady-ship/Food-Wagon-delivery-figma", title: "Food Wagon" },
-  { url: "https://github.com/codelady-ship/net-pro-group-fiqma", title: "Net Pro Group" },
-  { url: "https://github.com/codelady-ship/AFN-rent-a-car-fiqma", title: "AFN Rent a Car" },
-  { url: "https://github.com/codelady-ship/hello-fresh", title: "Hello Fresh" },
-  { url: "https://github.com/codelady-ship/fiqma6-responsivlik-task", title: "Responsive Landing" },
-  { url: "https://github.com/codelady-ship/rock-paper-scissors", title: "Rock Paper Scissors" },
+export const SEED_REPOS: { url: string; featured?: boolean; backend?: string; title?: string; demo?: string }[] = [
+  { url: "https://github.com/codelady-ship/planera", featured: true, title: "Planera — Randevum", demo: "https://randevum-seven.vercel.app" },
+  { url: "https://github.com/codelady-ship/Ecommerse-app", featured: true, title: "E-Commerce App", demo: "https://codelady-ship.github.io/Ecommerse-app/" },
+  { url: "https://github.com/codelady-ship/my-portfolio", title: "Portfolio v1 (React + Three.js)", demo: "https://my-portfolio-eta-mocha-32.vercel.app", backend: "https://github.com/codelady-ship/backend-for-my-portfolio" },
+  { url: "https://github.com/codelady-ship/React-Routing-task4", title: "React Routing", demo: "https://codelady-ship.github.io/React-Routing-task4/" },
+  { url: "https://github.com/codelady-ship/exam-task-react", title: "React Exam Project", demo: "https://codelady-ship.github.io/exam-task-react/" },
+  { url: "https://github.com/codelady-ship/basic-task-with-Html-Css-Js", title: "Actify — Habit Tracker", demo: "https://codelady-ship.github.io/basic-task-with-Html-Css-Js/" },
+  { url: "https://github.com/codelady-ship/Food-Wagon-delivery-figma", title: "Food Wagon", demo: "https://codelady-ship.github.io/Food-Wagon-delivery-figma/foodvaqon.html" },
+  { url: "https://github.com/codelady-ship/net-pro-group-fiqma", title: "Net Pro Group", demo: "https://codelady-ship.github.io/net-pro-group-fiqma/netprogroup.html" },
+  { url: "https://github.com/codelady-ship/AFN-rent-a-car-fiqma", title: "AFN Rent a Car", demo: "https://codelady-ship.github.io/AFN-rent-a-car-fiqma/rentacar.html" },
+  { url: "https://github.com/codelady-ship/hello-fresh", title: "Hello Fresh", demo: "https://codelady-ship.github.io/hello-fresh/hellofresh.html" },
+  { url: "https://github.com/codelady-ship/fiqma6-responsivlik-task", title: "Responsive Landing", demo: "https://codelady-ship.github.io/fiqma6-responsivlik-task/fiqma6.html" },
+  { url: "https://github.com/codelady-ship/rock-paper-scissors", title: "Rock Paper Scissors", demo: "https://codelady-ship.github.io/rock-paper-scissors/RockPaperScissors.html" },
   { url: "https://github.com/codelady-ship/My-Fitness-App", title: "Fitness App" },
   { url: "https://github.com/codelady-ship/task7-front-end-for-task6-", title: "Fullstack Habit Tracker", backend: "https://github.com/codelady-ship/task6.mongodb" },
 ];

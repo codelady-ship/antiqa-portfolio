@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 /** Two kinetic rows of big type; scrolling speeds them up and skews them (editorial feel). */
-export function Marquee({ items }: { items: string[] }) {
+export function Marquee({ items, label }: { items: string[]; label: string }) {
   const rows = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
@@ -52,8 +52,13 @@ export function Marquee({ items }: { items: string[] }) {
     ));
 
   return (
-    <section aria-label="Skills" className="overflow-hidden border-y border-line py-10 text-[clamp(2.6rem,8vw,7rem)]">
-      <div>
+    <section aria-label={label} className="overflow-hidden border-y border-line py-10 text-[clamp(2.6rem,8vw,7rem)]">
+      <ul className="sr-only">
+        {items.map((s) => (
+          <li key={s}>{s}</li>
+        ))}
+      </ul>
+      <div aria-hidden>
         <div ref={(el) => void (rows.current[0] = el)} className="marquee">
           {line(false)}
         </div>

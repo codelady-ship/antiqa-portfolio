@@ -11,6 +11,7 @@ import type { Project } from "@/lib/types";
 export function ProjectSphere({ projects, onOpen, hint }: { projects: Project[]; onOpen: (p: Project) => void; hint: string }) {
   const track = useRef<HTMLDivElement>(null);
   const ball = useRef<HTMLDivElement>(null);
+  const moved = useRef(0); // px dragged since pointerdown; a drag must not open a card
 
   // fill the sphere: repeat projects so there are always enough cards
   const N = 28;
@@ -62,6 +63,7 @@ export function ProjectSphere({ projects, onOpen, hint }: { projects: Project[];
     const down = (e: PointerEvent) => {
       if ((e.target as HTMLElement).closest("button") && e.pointerType !== "mouse") return;
       dragging = true;
+      moved.current = 0;
       lx = e.clientX;
       ly = e.clientY;
     };
@@ -71,6 +73,7 @@ export function ProjectSphere({ projects, onOpen, hint }: { projects: Project[];
         dy = e.clientY - ly;
       lx = e.clientX;
       ly = e.clientY;
+      moved.current += Math.abs(dx) + Math.abs(dy);
       vel = dx * 0.25;
       dragY += dx * 0.3;
       dragX = Math.max(-30, Math.min(30, dragX - dy * 0.15));
@@ -80,6 +83,7 @@ export function ProjectSphere({ projects, onOpen, hint }: { projects: Project[];
     stage.addEventListener("pointerdown", down);
     addEventListener("pointermove", move, { passive: true });
     addEventListener("pointerup", up);
+    addEventListener("pointercancel", up);
     return () => {
       running = false;
       cancelAnimationFrame(raf);
@@ -87,6 +91,7 @@ export function ProjectSphere({ projects, onOpen, hint }: { projects: Project[];
       stage.removeEventListener("pointerdown", down);
       removeEventListener("pointermove", move);
       removeEventListener("pointerup", up);
+      removeEventListener("pointercancel", up);
     };
   }, []);
 
@@ -116,7 +121,7 @@ export function ProjectSphere({ projects, onOpen, hint }: { projects: Project[];
                 tabIndex={i < projects.length ? 0 : -1}
                 aria-hidden={i >= projects.length}
                 aria-label={p.title}
-                onClick={() => onOpen(p)}
+                onClick={() => moved.current < 6 && onOpen(p)}
                 className="group absolute top-0 left-0 -mt-[clamp(38px,6vw,62px)] -ml-[clamp(60px,9.6vw,100px)] w-[clamp(120px,19.2vw,200px)] [backface-visibility:hidden]"
                 style={{ transform: `rotateY(${lon}deg) rotateX(${lat}deg) translateZ(clamp(220px, 36vw, 470px))` }}
               >

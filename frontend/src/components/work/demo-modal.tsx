@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import type { Project } from "@/lib/types";
+import { isSafeFrame } from "./frame";
 import { langColor } from "./lang-colors";
 
 type Tab = "demo" | "readme";
@@ -17,11 +18,13 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
   const [readme, setReadme] = useState<string | null>(null);
   const fmt = new Intl.DateTimeFormat(locale === "az" ? "az-AZ" : "en-GB", { day: "numeric", month: "long", year: "numeric" });
 
+  const canFrame = !!p?.demoUrl && isSafeFrame(p.demoUrl);
+
   useEffect(() => {
     const d = dlg.current;
     if (!d) return;
     if (p) {
-      setTab(p.demoUrl ? "demo" : "readme");
+      setTab(p.demoUrl && isSafeFrame(p.demoUrl) ? "demo" : "readme");
       setDevice("desktop");
       setReadme(null);
       if (!d.open) d.showModal();
@@ -29,6 +32,10 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
     } else if (d.open) {
       d.close();
     }
+    // never leave the page scroll-locked (e.g. unmount on a language switch)
+    return () => {
+      document.documentElement.style.overflow = "";
+    };
   }, [p]);
 
   useEffect(() => {
@@ -40,13 +47,6 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
         const r = await fetch(`/api/projects/${p.owner}/${p.name}/readme`);
         if (r.ok) html = ((await r.json()) as { html: string }).html;
       } catch {}
-      if (!html) {
-        // no API yet: GitHub renders (and sanitizes) the README itself
-        try {
-          const r = await fetch(`https://api.github.com/repos/${p.owner}/${p.name}/readme`, { headers: { Accept: "application/vnd.github.html+json" } });
-          if (r.ok) html = await r.text();
-        } catch {}
-      }
       if (!off) setReadme(html);
     })();
     return () => {
@@ -79,14 +79,16 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
               </h2>
             </div>
             <div className="flex items-center gap-2">
-              <div role="tablist" className="flex rounded-full border border-line p-0.5 text-sm">
+              <div role="tablist" aria-label="View" className="flex rounded-full border border-line p-0.5 text-sm">
                 {(["demo", "readme"] as const).map((k) => (
                   <button
                     key={k}
                     role="tab"
                     type="button"
+                    id={`tab-${k}`}
+                    aria-controls="demo-panel"
                     aria-selected={tab === k}
-                    disabled={k === "demo" && !p.demoUrl}
+                    disabled={k === "demo" && !canFrame}
                     onClick={() => setTab(k)}
                     className={`rounded-full px-4 py-1.5 transition-colors disabled:opacity-35 ${tab === k ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}
                   >
@@ -121,8 +123,8 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
           </header>
 
           <div className="grid min-h-0 flex-1 md:grid-cols-[1fr_300px]">
-            <div className="flex min-h-0 justify-center bg-bg-2 p-3 sm:p-5">
-              {tab === "demo" && p.demoUrl ? (
+            <div id="demo-panel" role="tabpanel" aria-labelledby={`tab-${tab}`} className="flex min-h-0 justify-center bg-bg-2 p-3 sm:p-5">
+              {tab === "demo" && p.demoUrl && canFrame ? (
                 <div
                   className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white transition-[width] duration-500 ease-out"
                   style={{ width: WIDTHS[device], maxWidth: "100%" }}
@@ -140,7 +142,8 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                     key={p.demoUrl}
                     src={p.demoUrl}
                     title={`${p.title} — demo`}
-                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                    referrerPolicy="no-referrer"
                     className="w-full flex-1 border-0 bg-white"
                   />
                 </div>
@@ -151,7 +154,12 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                   ) : readme ? (
                     <div dangerouslySetInnerHTML={{ __html: readme }} />
                   ) : (
-                    <p className="serif-it text-xl text-muted">{t("noReadme")}</p>
+                    <p className="serif-it text-xl text-muted">
+                      {t("noReadme")}{" "}
+                      <a href={`${p.repoUrl}#readme`} target="_blank" rel="noopener noreferrer" className="text-violet underline">
+                        GitHub ↗
+                      </a>
+                    </p>
                   )}
                 </article>
               )}

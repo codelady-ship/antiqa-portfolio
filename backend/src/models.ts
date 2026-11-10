@@ -81,6 +81,10 @@ export const Profile = mongoose.models.Profile || mongoose.model("Profile", Prof
 export const Project = mongoose.models.Project || mongoose.model("Project", ProjectSchema);
 export const Cv = mongoose.models.Cv || mongoose.model("Cv", CvSchema);
 
+const LoginAttemptSchema = new Schema({ _id: String, n: { type: Number, default: 0 }, expireAt: { type: Date, required: true } });
+LoginAttemptSchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 });
+export const LoginAttempt = mongoose.models.LoginAttempt || mongoose.model("LoginAttempt", LoginAttemptSchema);
+
 let connecting: Promise<typeof mongoose> | null = null;
 /** Reuses one connection across serverless invocations. */
 export function connectDb() {

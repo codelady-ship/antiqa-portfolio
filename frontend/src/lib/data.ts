@@ -25,11 +25,19 @@ export async function getProfile(): Promise<Profile> {
 
 export async function getProjects(): Promise<Project[]> {
   "use cache";
-  cacheLife("hours");
   cacheTag("projects");
   const fromApi = await api<Project[]>("/api/projects");
-  if (fromApi?.length) return fromApi;
-  return fromGithub();
+  if (fromApi?.length) {
+    cacheLife("hours");
+    return fromApi;
+  }
+  const gh = await fromGithub();
+  // partial/empty result (GitHub limit, network): keep it only for minutes and never show an empty page
+  if (gh.length === SEED_REPOS.length) cacheLife("hours");
+  else cacheLife("minutes");
+  // repos GitHub did not return (rate limit) still show, from the static seed
+  const got = new Set(gh.map((p) => p.id.toLowerCase()));
+  return [...gh, ...staticSeed().filter((p) => !got.has(p.id.toLowerCase()))];
 }
 
 /* ---------- fallback: read GitHub directly (no database yet) ---------- */
@@ -37,6 +45,17 @@ function ghHeaders() {
   const h: Record<string, string> = { Accept: "application/vnd.github+json", "User-Agent": "portfolio" };
   if (process.env.GITHUB_TOKEN) h.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
   return h;
+}
+
+function staticSeed(): Project[] {
+  return SEED_REPOS.map((s) => {
+    const [, owner = "", name = ""] = s.url.match(/github\.com\/([^/]+)\/([^/]+)/) ?? [];
+    return {
+      id: `${owner}/${name}`, owner, name, title: s.title || name, summary: { az: "", en: "" }, description: "",
+      repoUrl: s.url, backendUrl: s.backend ?? null, demoUrl: s.demo ?? null, createdAt: null, pushedAt: null,
+      stars: 0, forks: 0, topics: [], license: null, languages: [], featured: !!s.featured,
+    };
+  });
 }
 
 async function fromGithub(): Promise<Project[]> {

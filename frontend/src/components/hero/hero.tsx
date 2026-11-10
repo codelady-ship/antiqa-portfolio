@@ -142,7 +142,8 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
           </h1>
           <div className="mt-8 grid gap-6 sm:grid-cols-[1fr_auto] sm:items-end">
             <div>
-              <p className="h-8 overflow-hidden text-lg font-medium sm:text-xl" aria-live="polite">
+              <p className="sr-only">{roles.join(", ")}</p>
+              <p className="h-8 overflow-hidden text-lg font-medium sm:text-xl" aria-hidden>
                 <span key={role} className="block animate-[roleIn_.6s_cubic-bezier(.2,.8,.2,1)]">
                   {roles[role]}
                 </span>
