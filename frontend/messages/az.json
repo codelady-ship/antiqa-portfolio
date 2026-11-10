@@ -1,0 +1,79 @@
+{
+  "Meta": {
+    "title": "Antiqa Cəlilova — Full Stack Developer",
+    "description": "Antiqa Cəlilova — Bakıda yaşayan Full Stack (MERN, Next.js) developer. Layihələr, canlı demolar, CV və əlaqə.",
+    "skip": "Əsas məzmuna keç"
+  },
+  "Nav": {
+    "about": "Haqqımda",
+    "work": "Layihələr",
+    "contact": "Əlaqə",
+    "theme": "Temanı dəyiş",
+    "light": "Gündüz",
+    "dark": "Gecə",
+    "language": "Dil",
+    "menu": "Menyu"
+  },
+  "Hero": {
+    "available": "Yeni imkanlara açığam",
+    "scroll": "Aşağı sürüşdürün",
+    "cta": "Layihələrə bax",
+    "cv": "CV yüklə"
+  },
+  "About": {
+    "kicker": "01 — Haqqımda",
+    "title": "Kod yazıram ki, insanlar rahat yaşasın.",
+    "projects": "layihə",
+    "languages": "texnologiya",
+    "years": "il təcrübə",
+    "education": "Təhsil",
+    "skills": "Bacarıqlar"
+  },
+  "Work": {
+    "kicker": "02 — Seçilmiş işlər",
+    "title": "Layihələr",
+    "sphereHint": "Sürüşdürün və ya dartın — kartlar fırlanır",
+    "all": "Hamısı",
+    "sortNew": "Ən yeni",
+    "sortUpdated": "Son yenilənən",
+    "sortStars": "Ən çox ulduz",
+    "sort": "Sıralama",
+    "demo": "Demoya bax",
+    "code": "Kod",
+    "backend": "Backend",
+    "live": "Canlı",
+    "noDemo": "Demo yoxdur",
+    "created": "Yaradılıb",
+    "updated": "Son yenilənmə",
+    "stars": "Ulduz",
+    "forks": "Fork",
+    "license": "Lisenziya",
+    "languages": "Proqramlaşdırma dilləri",
+    "topics": "Mövzular",
+    "description": "Təsvir",
+    "readme": "README",
+    "openNew": "Yeni tabda aç",
+    "close": "Bağla",
+    "desktop": "Kompüter",
+    "tablet": "Planşet",
+    "phone": "Telefon",
+    "loading": "Yüklənir…",
+    "noReadme": "Bu layihədə README yoxdur.",
+    "empty": "Bu filtrdə layihə yoxdur.",
+    "frameNote": "Sayt pəncərədə açılmırsa, yeni tabda açın."
+  },
+  "Contact": {
+    "kicker": "03 — Əlaqə",
+    "title": "Gəlin birlikdə nəsə quraq.",
+    "lead": "İş təklifi, əməkdaşlıq və ya sadəcə salam — yazın, tez cavab verirəm.",
+    "copy": "Kopyala",
+    "copied": "Kopyalandı",
+    "cv": "CV",
+    "cvAz": "CV (AZ)",
+    "cvEn": "CV (EN)"
+  },
+  "Footer": {
+    "made": "Next.js, Express və MongoDB ilə hazırlanıb",
+    "top": "Yuxarı"
+  }
+}
