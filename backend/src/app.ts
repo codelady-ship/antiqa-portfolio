@@ -98,20 +98,29 @@ async function sync(p: any) {
 
 /** Failed-login counter in Mongo (shared by all serverless instances, TTL 15 min). */
 const WINDOW = 15 * 60_000;
-function clientKey(req: Request) {
-  const xff = String(req.get("x-forwarded-for") || "").split(",")[0].trim();
-  return "ip:" + (xff || req.ip || "?");
-}
+const MAX_PER_CLIENT = 5;
+const MAX_GLOBAL = 100;
+// req.ip honours "trust proxy" (the hop the platform proxy added); the leftmost XFF entry is client-controlled
+const clientKey = (req: Request) => "ip:" + (req.ip || "?");
+
+/** Blocked when this client or everyone together already has too many FAILED logins in the window. */
 async function tooMany(req: Request) {
-  const expireAt = new Date(Date.now() + WINDOW);
-  const [ip, all] = await Promise.all(
-    [clientKey(req), "global"].map((k) =>
-      LoginAttempt.findOneAndUpdate({ _id: k }, { $inc: { n: 1 }, $setOnInsert: { expireAt } }, { upsert: true, new: true }).lean(),
-    ),
-  );
-  // 5 tries per client, 50 per window overall (header can be spoofed, the global cap cannot)
-  return ((ip as any)?.n ?? 0) > 5 || ((all as any)?.n ?? 0) > 50;
+  const docs = await LoginAttempt.find({ _id: { $in: [clientKey(req), "global"] } }, { n: 1 }).lean();
+  const n = (k: string) => (docs as any[]).find((d) => d._id === k)?.n ?? 0;
+  return n(clientKey(req)) >= MAX_PER_CLIENT || n("global") >= MAX_GLOBAL;
 }
+
+async function bump(k: string) {
+  const update = { $inc: { n: 1 }, $setOnInsert: { expireAt: new Date(Date.now() + WINDOW) } };
+  try {
+    await LoginAttempt.updateOne({ _id: k }, update, { upsert: true });
+  } catch (e) {
+    // two concurrent first upserts: one loses with E11000, the document exists now
+    if ((e as { code?: number }).code !== 11000) throw e;
+    await LoginAttempt.updateOne({ _id: k }, update);
+  }
+}
+const recordFailure = (req: Request) => Promise.all([bump(clientKey(req)), bump("global")]);
 
 export function createApp() {
   const app = express();
@@ -138,7 +147,10 @@ export function createApp() {
       await connectDb();
       if (await tooMany(req)) return res.status(429).json({ error: "too many attempts" });
       const { email, password } = z.object({ email: z.string().max(200), password: z.string().max(200) }).parse(req.body);
-      if (!(await checkCredentials(email, password))) return res.status(401).json({ error: "invalid credentials" });
+      if (!(await checkCredentials(email, password))) {
+        await recordFailure(req);
+        return res.status(401).json({ error: "invalid credentials" });
+      }
       await LoginAttempt.deleteOne({ _id: clientKey(req) });
       issueSession(res);
       res.json({ ok: true });
@@ -230,14 +242,14 @@ export function createApp() {
       const ref = parseRepoUrl(ProjectCreate.parse(req.body).repoUrl);
       if (!ref) return res.status(400).json({ error: "Not a GitHub repository URL" });
       const exists = await Project.findOne(ref).collation({ locale: "en", strength: 2 });
-      if (exists) return res.status(409).json({ error: "Already added", project: present(exists) });
+      if (exists) return res.status(409).json({ error: "Already added", project: present(exists, true) });
       const p = new Project({ ...ref, repoUrl: `https://github.com/${ref.owner}/${ref.name}` });
       await sync(p);
       if (p.syncError) {
         await p.deleteOne();
         return res.status(422).json({ error: p.syncError });
       }
-      res.status(201).json(present(p));
+      res.status(201).json(present(p, true));
     }),
   );
   app.patch(
@@ -247,7 +259,7 @@ export function createApp() {
       if (!isValidObjectId(req.params.id)) return res.status(404).json({ error: "not found" });
       const p = await Project.findByIdAndUpdate(req.params.id, ProjectPatch.parse(req.body), { new: true });
       if (!p) return res.status(404).json({ error: "not found" });
-      res.json(present(p));
+      res.json(present(p, true));
     }),
   );
   app.delete(
