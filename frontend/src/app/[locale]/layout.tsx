@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, Inter_Tight } from "next/font/google";
 import { notFound } from "next/navigation";
 import { locale as rootLocale } from "next/root-params";
 import { hasLocale } from "next-intl";
@@ -10,22 +9,8 @@ import { SiteNav } from "@/components/layout/site-nav";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { routing } from "@/i18n/routing";
 import { getProfile, SITE_URL } from "@/lib/data";
+import { grotesk, serif } from "../fonts";
 import "../globals.css";
-
-const grotesk = Inter_Tight({
-  variable: "--font-grotesk",
-  subsets: ["latin", "latin-ext"],
-  weight: ["800"],
-  display: "swap",
-});
-const serif = Cormorant_Garamond({
-  variable: "--font-serif-it",
-  subsets: ["latin", "latin-ext"],
-  weight: ["500"],
-  style: ["italic"],
-  display: "swap",
-  preload: false,
-});
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -70,6 +55,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function LocaleLayout({ children }: LayoutProps<"/[locale]">) {
   const locale = await rootLocale();
+  // an unknown locale cannot use this layout: it falls through to app/global-not-found.tsx
   if (!hasLocale(routing.locales, locale)) notFound();
   const [messages, t, profile] = await Promise.all([
     getMessages({ locale }),

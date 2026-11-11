@@ -7,6 +7,8 @@ const API_URL = process.env.API_URL?.replace(/\/$/, "");
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
+  // app/global-not-found.tsx: 404 for an unknown locale (the root layout lives under [locale])
+  experimental: { globalNotFound: true },
   images: {
     remotePatterns: [{ protocol: "https", hostname: "s.wordpress.com" }],
   },

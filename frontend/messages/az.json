@@ -82,6 +82,12 @@
     "cvAz": "CV (AZ)",
     "cvEn": "CV (EN)"
   },
+  "NotFound": {
+    "kicker": "Xəta 404",
+    "title": "Səhifə tapılmadı",
+    "text": "Bu səhifə mövcud deyil və ya köçürülüb.",
+    "home": "Ana səhifəyə qayıt"
+  },
   "Footer": {
     "made": "Next.js, Express və MongoDB ilə hazırlanıb",
     "top": "Yuxarı"

@@ -82,6 +82,12 @@
     "cvAz": "CV (AZ)",
     "cvEn": "CV (EN)"
   },
+  "NotFound": {
+    "kicker": "Error 404",
+    "title": "Page not found",
+    "text": "This page does not exist or has moved.",
+    "home": "Back to home"
+  },
   "Footer": {
     "made": "Built with Next.js, Express and MongoDB",
     "top": "Back to top"
