@@ -194,7 +194,12 @@ export function createApp() {
       const lang = z.enum(["az", "en"]).parse(req.params.lang);
       const body = req.body as Buffer;
       if (!Buffer.isBuffer(body) || body.subarray(0, 5).toString() !== "%PDF-") return res.status(400).json({ error: "pdf only" });
-      const fileName = String(req.get("x-file-name") || `cv-${lang}.pdf`).slice(0, 100);
+      let fileName = `cv-${lang}.pdf`;
+      try {
+        fileName = decodeURIComponent(req.get("x-file-name") || fileName).slice(0, 100);
+      } catch {
+        /* malformed header: keep default */
+      }
       await Cv.findByIdAndUpdate(lang, { fileName, data: body, size: body.length }, { upsert: true });
       res.json({ ok: true, size: body.length });
     }),

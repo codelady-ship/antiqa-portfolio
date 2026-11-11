@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 
@@ -11,11 +11,15 @@ export function SiteNav({ initials }: { initials: string }) {
   const locale = useLocale();
   const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  // true only in the browser (theme is unknown during server render)
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const [hidden, setHidden] = useState(false);
   const bar = useRef<HTMLDivElement>(null);
 
-  useEffect(() => setMounted(true), []);
 
   // progress bar + hide on scroll down / show on scroll up
   useEffect(() => {

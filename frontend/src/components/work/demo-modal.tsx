@@ -20,13 +20,21 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
 
   const canFrame = !!p?.demoUrl && isSafeFrame(p.demoUrl);
 
+  // reset per-project view state during render when a new project opens (no effect needed)
+  const [shown, setShown] = useState<Project | null>(null);
+  if (p !== shown) {
+    setShown(p);
+    if (p) {
+      setTab(canFrame ? "demo" : "readme");
+      setDevice("desktop");
+      setReadme(null);
+    }
+  }
+
   useEffect(() => {
     const d = dlg.current;
     if (!d) return;
     if (p) {
-      setTab(p.demoUrl && isSafeFrame(p.demoUrl) ? "demo" : "readme");
-      setDevice("desktop");
-      setReadme(null);
       if (!d.open) d.showModal();
       document.documentElement.style.overflow = "hidden";
     } else if (d.open) {
