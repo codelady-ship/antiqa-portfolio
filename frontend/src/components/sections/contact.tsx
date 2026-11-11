@@ -11,7 +11,7 @@ export function Contact({ profile }: { profile: Profile }) {
   const [copied, setCopied] = useState(false);
 
   const links = [
-    c.phone && { label: c.phone, href: `tel:${c.phone.replace(/\s/g, "")}`, k: "Phone" },
+    c.phone && { label: c.phone, href: `tel:${c.phone.replace(/\s/g, "")}`, k: t("phone") },
     c.whatsapp && { label: "WhatsApp", href: `https://wa.me/${c.whatsapp}`, k: "WhatsApp" },
     c.telegram && { label: "Telegram", href: `https://t.me/${c.telegram}`, k: "Telegram" },
     c.linkedin && { label: "LinkedIn", href: c.linkedin, k: "LinkedIn" },

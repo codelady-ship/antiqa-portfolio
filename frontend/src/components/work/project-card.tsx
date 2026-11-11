@@ -50,7 +50,7 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
         onPointerEnter={enter}
         onPointerLeave={leave}
         onPointerMove={move}
-        className="group relative flex h-full flex-col overflow-hidden rounded-[1.6rem] border border-line bg-surface shadow-[var(--shadow)] backdrop-blur-xl transition-[transform,border-color] duration-300 ease-out hover:border-violet/40"
+        className="group relative flex h-full flex-col overflow-hidden rounded-[1.6rem] border border-line bg-surface shadow-[var(--shadow)] backdrop-blur-xl transition-[transform,border-color] duration-300 ease-out focus-within:border-violet/60 hover:border-violet/40"
       >
         {/* spotlight */}
         <span
@@ -148,7 +148,7 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
           <button
             type="button"
             onClick={onOpen}
-            className="relative isolate overflow-hidden rounded-full border border-line py-3 text-sm font-medium transition-colors after:absolute after:inset-0 after:-z-10 after:translate-y-full after:bg-ink after:transition-transform after:duration-500 hover:text-bg hover:after:translate-y-0"
+            className="relative isolate overflow-hidden rounded-full border border-line py-3 text-sm font-medium transition-colors after:absolute after:inset-0 after:-z-10 after:translate-y-full after:bg-ink after:transition-transform after:duration-500 hover:text-bg hover:after:translate-y-0 focus-visible:text-bg focus-visible:after:translate-y-0"
           >
             {p.demoUrl ? t("demo") : t("readme")} →<span className="sr-only">: {p.title}</span>
           </button>

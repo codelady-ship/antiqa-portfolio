@@ -12,7 +12,9 @@
     "light": "Gündüz",
     "dark": "Gecə",
     "language": "Dil",
-    "menu": "Menyu"
+    "menu": "Menyu",
+    "main": "Əsas menyu",
+    "home": "Ana səhifə"
   },
   "Hero": {
     "available": "Yeni imkanlara açığam",
@@ -33,6 +35,12 @@
     "kicker": "02 — Seçilmiş işlər",
     "title": "Layihələr",
     "sphereHint": "Sürüşdürün və ya dartın — kartlar fırlanır",
+    "sphereWord": "İşlər",
+    "filter": "Dilə görə filtr",
+    "view": "Görünüş",
+    "viewport": "Ekran eni",
+    "demoTab": "Demo",
+    "demoFrame": "{title} — canlı demo",
     "all": "Hamısı",
     "sortNew": "Ən yeni",
     "sortUpdated": "Son yenilənən",
@@ -69,6 +77,7 @@
     "lead": "İş təklifi, əməkdaşlıq və ya sadəcə salam — yazın, tez cavab verirəm.",
     "copy": "Kopyala",
     "copied": "Kopyalandı",
+    "phone": "Telefon",
     "cv": "CV",
     "cvAz": "CV (AZ)",
     "cvEn": "CV (EN)"

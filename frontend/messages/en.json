@@ -12,7 +12,9 @@
     "light": "Light",
     "dark": "Dark",
     "language": "Language",
-    "menu": "Menu"
+    "menu": "Menu",
+    "main": "Main",
+    "home": "Home"
   },
   "Hero": {
     "available": "Open to new opportunities",
@@ -33,6 +35,12 @@
     "kicker": "02 — Selected work",
     "title": "Projects",
     "sphereHint": "Scroll or drag — the cards spin",
+    "sphereWord": "Work",
+    "filter": "Filter by language",
+    "view": "View",
+    "viewport": "Screen width",
+    "demoTab": "Demo",
+    "demoFrame": "{title} — live demo",
     "all": "All",
     "sortNew": "Newest",
     "sortUpdated": "Recently updated",
@@ -69,6 +77,7 @@
     "lead": "A job offer, a collaboration or just hello — write to me, I reply fast.",
     "copy": "Copy",
     "copied": "Copied",
+    "phone": "Phone",
     "cv": "CV",
     "cvAz": "CV (AZ)",
     "cvEn": "CV (EN)"

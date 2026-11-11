@@ -74,10 +74,10 @@ export function SiteNav({ initials }: { initials: string }) {
         className={`fixed top-4 left-1/2 z-50 w-[min(calc(100%-32px),64rem)] -translate-x-1/2 transition-transform duration-500 ${hidden ? "-translate-y-[150%]" : ""}`}
       >
         <nav
-          aria-label="Main"
+          aria-label={t("main")}
           className="flex items-center justify-between gap-2 rounded-full border border-line bg-bg/70 py-2 pr-2 pl-4 backdrop-blur-xl sm:gap-3 sm:pl-5"
         >
-          <Link href="/" className="display text-lg tracking-tight" aria-label="Home">
+          <Link href="/" className="display text-lg tracking-tight" aria-label={t("home")}>
             {initials}
             <span className="text-rose">.</span>
           </Link>

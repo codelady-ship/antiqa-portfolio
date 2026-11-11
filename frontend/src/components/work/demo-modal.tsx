@@ -90,7 +90,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
               </h2>
             </div>
             <div className="flex items-center gap-2">
-              <div role="tablist" aria-label="View" className="flex rounded-full border border-line p-0.5 text-sm">
+              <div role="tablist" aria-label={t("view")}className="flex rounded-full border border-line p-0.5 text-sm">
                 {(["demo", "readme"] as const).map((k) => (
                   <button
                     key={k}
@@ -106,12 +106,12 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                     }}
                     className={`rounded-full px-3 py-1.5 transition-colors disabled:opacity-35 sm:px-4 ${tab === k ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}
                   >
-                    {k === "demo" ? "Demo" : t("readme")}
+                    {k === "demo" ? t("demoTab") : t("readme")}
                   </button>
                 ))}
               </div>
               {tab === "demo" && (
-                <div role="group" aria-label="Viewport" className="hidden rounded-full border border-line p-0.5 text-sm md:flex">
+                <div role="group" aria-label={t("viewport")}className="hidden rounded-full border border-line p-0.5 text-sm md:flex">
                   {(Object.keys(WIDTHS) as (keyof typeof WIDTHS)[]).map((k) => (
                     <button
                       key={k}
@@ -169,7 +169,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                   <iframe
                     key={p.demoUrl}
                     src={p.demoUrl}
-                    title={`${p.title} — demo`}
+                    title={t("demoFrame", { title: p.title })}
                     sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                     referrerPolicy="no-referrer"
                     className="w-full flex-1 border-0 bg-white"
