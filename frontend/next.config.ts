@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   // app/global-not-found.tsx: 404 for an unknown locale (the root layout lives under [locale])
   experimental: { globalNotFound: true },
+  // the OG image reads its font from ./assets at runtime too (revalidation on Vercel)
+  outputFileTracingIncludes: { "/[locale]/opengraph-image": ["./assets/**/*"] },
   images: {
     remotePatterns: [{ protocol: "https", hostname: "s.wordpress.com" }],
   },

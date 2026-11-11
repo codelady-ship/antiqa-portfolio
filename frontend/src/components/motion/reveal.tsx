@@ -38,7 +38,9 @@ export function Reveal({ children, index = 0, as: Tag = "div", ...rest }: Props)
 /** Splits text into words that rise one by one (use inside <Reveal> or with className="split-in"). */
 export function SplitWords({ text, className }: { text: string; className?: string }) {
   return (
-    <span className={className} aria-label={text}>
+    // aria-label is not allowed on a plain <span>: screen readers get the sentence from the sr-only copy
+    <span className={className}>
+      <span className="sr-only">{text}</span>
       {text.split(" ").map((w, i) => (
         <span key={i} className="split-word" aria-hidden="true">
           <span style={{ "--i": i } as CSSProperties}>{w}&nbsp;</span>

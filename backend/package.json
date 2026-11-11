@@ -24,6 +24,9 @@
     "sanitize-html": "^2.18.1",
     "zod": "^4.6.7"
   },
+  "overrides": {
+    "htmlparser2": "^10.1.0"
+  },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",

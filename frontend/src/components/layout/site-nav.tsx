@@ -92,9 +92,13 @@ export function SiteNav({ initials }: { initials: string }) {
       >
         <nav aria-label={t("main")}>
           <div className="flex items-center justify-between gap-2 rounded-full border border-line bg-bg/70 py-2 pr-2 pl-4 backdrop-blur-xl sm:gap-3 sm:pl-5">
-            <Link href="/" className="display text-lg tracking-tight" aria-label={t("home")}>
+            {/* accessible name must contain the visible text (WCAG 2.5.3): "AC — Home" */}
+            <Link href="/" className="display text-lg tracking-tight">
               {initials}
-              <span className="text-rose">.</span>
+              <span className="text-rose" aria-hidden>
+                .
+              </span>
+              <span className="sr-only"> — {t("home")}</span>
             </Link>
             <ul className="hidden items-center gap-7 text-sm text-muted sm:flex">
               {links.map(([hash, label]) => (

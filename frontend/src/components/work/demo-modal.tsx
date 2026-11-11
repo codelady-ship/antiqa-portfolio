@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
+import { formatDate } from "@/lib/date";
 import type { Project } from "@/lib/types";
 import { isSafeFrame } from "./frame";
 import { langColor } from "./lang-colors";
@@ -18,7 +19,6 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
   const [readme, setReadme] = useState<string | null>(null);
   // phones/tablets: the info sidebar is a toggle that replaces the preview, not a cramped strip
   const [info, setInfo] = useState(false);
-  const fmt = new Intl.DateTimeFormat(locale === "az" ? "az-AZ" : "en-GB", { day: "numeric", month: "long", year: "numeric" });
 
   const canFrame = !!p?.demoUrl && isSafeFrame(p.demoUrl);
 
@@ -83,7 +83,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
           <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-line px-4 py-3 sm:px-5 sm:py-4">
             <div className="min-w-0 flex-1">
               <p className="text-[11px] tracking-[0.18em] text-muted uppercase">
-                {t("created")}: {p.createdAt ? fmt.format(new Date(p.createdAt)) : "—"}
+                {t("created")}: {p.createdAt ? formatDate(p.createdAt, locale) : "—"}
               </p>
               <h2 id="demo-title" className="display truncate text-xl sm:text-3xl">
                 {p.title}
@@ -205,9 +205,9 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
               )}
               <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
                 <dt className="text-muted">{t("created")}</dt>
-                <dd className="text-right">{p.createdAt ? fmt.format(new Date(p.createdAt)) : "—"}</dd>
+                <dd className="text-right">{p.createdAt ? formatDate(p.createdAt, locale) : "—"}</dd>
                 <dt className="text-muted">{t("updated")}</dt>
-                <dd className="text-right">{p.pushedAt ? fmt.format(new Date(p.pushedAt)) : "—"}</dd>
+                <dd className="text-right">{p.pushedAt ? formatDate(p.pushedAt, locale) : "—"}</dd>
                 <dt className="text-muted">{t("stars")}</dt>
                 <dd className="text-right">★ {p.stars}</dd>
                 <dt className="text-muted">{t("forks")}</dt>
