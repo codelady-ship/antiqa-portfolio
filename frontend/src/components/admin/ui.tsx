@@ -62,8 +62,10 @@ export async function api<T = unknown>(path: string, init: RequestInit = {}): Pr
     headers: { ...(init.body && typeof init.body === "string" ? { "Content-Type": "application/json" } : {}), ...init.headers },
   });
   if (!r.ok) {
-    const body = (await r.json().catch(() => ({}))) as { error?: string };
-    throw Object.assign(new Error(body.error || `HTTP ${r.status}`), { status: r.status });
+    const body = (await r.json().catch(() => ({}))) as { error?: string; issues?: { path: (string | number)[]; message: string }[] };
+    // zod issues → "contacts.linkedin: https only"
+    const detail = body.issues?.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+    throw Object.assign(new Error([body.error || `HTTP ${r.status}`, detail].filter(Boolean).join(" — ")), { status: r.status });
   }
   return (r.status === 204 ? null : await r.json()) as T;
 }

@@ -142,6 +142,10 @@
     "current": "Hazırkı fayl",
     "none": "Yoxdur",
     "pdfOnly": "Yalnız PDF, 2 MB-dan kiçik.",
-    "view": "Saytda bax"
+    "view": "Saytda bax",
+    "loading": "Yüklənir…",
+    "hasDemo": "demo var",
+    "noDemo": "demo yoxdur",
+    "openPdf": "PDF-i aç"
   }
 }

@@ -23,17 +23,20 @@ export function ProfileForm({ seed }: { seed: Profile }) {
       .catch((e) => setStatus(`${t("error")}: ${(e as Error).message}`));
   }, [seed, t]);
 
-  if (!f) return <p className="text-muted">{status || "…"}</p>;
+  if (!f) return <p className="text-muted">{status || t("loading")}</p>;
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF({ ...f, [k]: v });
   const setL = (k: "tagline" | "about" | "location", lang: "az" | "en", v: string) => set(k, { ...f[k], [lang]: v });
   const setC = (k: keyof Form["contacts"], v: string) => set("contacts", { ...f.contacts, [k]: v });
-  const lines = (s: string) => s.split("\n").map((x) => x.trim()).filter(Boolean);
+  // keep raw text while typing; clean only on save
+  const clean = (xs: string[]) => xs.map((x) => x.trim()).filter(Boolean);
 
   const save = async () => {
     setStatus("saving");
     try {
-      const { name, initials, roles, tagline, about, location, openToWork, skills, education, contacts } = f;
+      const { name, initials, tagline, about, location, openToWork, education, contacts } = f;
+      const roles = { az: clean(f.roles.az), en: clean(f.roles.en) };
+      const skills = clean(f.skills);
       await api("/api/profile", {
         method: "PUT",
         body: JSON.stringify({ name, initials, roles, tagline, about, location, openToWork, skills, education, contacts }),
@@ -56,10 +59,10 @@ export function ProfileForm({ seed }: { seed: Profile }) {
             <Input value={f.initials} maxLength={4} onChange={(e) => set("initials", e.target.value)} />
           </Field>
           <Field label={t("rolesAz")}>
-            <Area rows={3} value={f.roles.az.join("\n")} onChange={(e) => set("roles", { ...f.roles, az: lines(e.target.value) })} />
+            <Area rows={3} value={f.roles.az.join("\n")} onChange={(e) => set("roles", { ...f.roles, az: e.target.value.split("\n") })} />
           </Field>
           <Field label={t("rolesEn")}>
-            <Area rows={3} value={f.roles.en.join("\n")} onChange={(e) => set("roles", { ...f.roles, en: lines(e.target.value) })} />
+            <Area rows={3} value={f.roles.en.join("\n")} onChange={(e) => set("roles", { ...f.roles, en: e.target.value.split("\n") })} />
           </Field>
           {(["tagline", "about"] as const).map((k) =>
             (["az", "en"] as const).map((l) => (
@@ -82,7 +85,7 @@ export function ProfileForm({ seed }: { seed: Profile }) {
                   e.target.value.split(",").map((s) => s.trimStart()),
                 )
               }
-              onBlur={() => set("skills", f.skills.map((s) => s.trim()).filter(Boolean))}
+              onBlur={() => set("skills", clean(f.skills))}
             />
           </Field>
           <label className="flex items-center gap-3 text-sm sm:col-span-2">
@@ -141,10 +144,10 @@ export function ProfileForm({ seed }: { seed: Profile }) {
             <Input value={f.contacts.telegram} onChange={(e) => setC("telegram", e.target.value.replace(/^@/, ""))} />
           </Field>
           <Field label={t("linkedin")}>
-            <Input type="url" placeholder="https://" value={f.contacts.linkedin} onChange={(e) => setC("linkedin", e.target.value)} />
+            <Input type="url" pattern="https://.*" placeholder="https://" value={f.contacts.linkedin} onChange={(e) => setC("linkedin", e.target.value)} />
           </Field>
           <Field label={t("github")}>
-            <Input type="url" placeholder="https://" value={f.contacts.github} onChange={(e) => setC("github", e.target.value)} />
+            <Input type="url" pattern="https://.*" placeholder="https://" value={f.contacts.github} onChange={(e) => setC("github", e.target.value)} />
           </Field>
           <Field label={t("instagram")}>
             <Input value={f.contacts.instagram} onChange={(e) => setC("instagram", e.target.value.replace(/^@/, ""))} />

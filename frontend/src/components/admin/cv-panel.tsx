@@ -19,7 +19,9 @@ export function CvPanel() {
 
   const upload = async (lang: "az" | "en", file: File | undefined) => {
     if (!file) return;
-    if (file.type !== "application/pdf" || file.size > 2 * 1024 * 1024) return setMsg(t("pdfOnly"));
+    // some Windows setups report an empty MIME type: check the extension too
+    const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+    if (!isPdf || file.size > 2 * 1024 * 1024) return setMsg(t("pdfOnly"));
     setMsg(t("saving"));
     try {
       const r = await fetch(`/api/cv/${lang}`, {
@@ -45,15 +47,18 @@ export function CvPanel() {
             {t("current")}:{" "}
             {cv[lang] ? (
               <a href={cv[lang]} target="_blank" rel="noopener noreferrer" className="text-violet underline">
-                PDF ↗
+                {t("openPdf")} ↗
               </a>
             ) : (
               t("none")
             )}
           </p>
-          <label className="inline-flex cursor-pointer rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-bg">
+          <label className="inline-flex cursor-pointer rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-bg focus-within:ring-2 focus-within:ring-rose focus-within:ring-offset-2">
             {t("upload")}
-            <input type="file" accept="application/pdf" className="sr-only" onChange={(e) => upload(lang, e.target.files?.[0])} />
+            <input type="file" accept="application/pdf" className="sr-only" onChange={(e) => {
+                upload(lang, e.target.files?.[0]);
+                e.target.value = ""; // allow choosing the same file again
+              }} />
           </label>
         </Card>
       ))}

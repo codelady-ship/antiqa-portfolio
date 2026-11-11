@@ -142,6 +142,10 @@
     "current": "Current file",
     "none": "None",
     "pdfOnly": "PDF only, under 2 MB.",
-    "view": "View site"
+    "view": "View site",
+    "loading": "Loading…",
+    "hasDemo": "has demo",
+    "noDemo": "no demo",
+    "openPdf": "Open PDF"
   }
 }

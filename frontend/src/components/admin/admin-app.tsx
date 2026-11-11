@@ -9,8 +9,9 @@ import { ProfileForm } from "./profile-form";
 import { ProjectsPanel } from "./projects-panel";
 import { api, Button, Card, Field, Input } from "./ui";
 
-type SeedRepo = { url: string; featured?: boolean; backend?: string; title?: string };
-type Tab = "projects" | "profile" | "cv";
+type SeedRepo = { url: string; featured?: boolean; backend?: string; title?: string; demo?: string };
+const TABS = ["projects", "profile", "cv"] as const;
+type Tab = (typeof TABS)[number];
 
 export function AdminApp({ seedProfile, seedRepos, hasApi }: { seedProfile: Profile; seedRepos: SeedRepo[]; hasApi: boolean }) {
   const t = useTranslations("Admin");
@@ -50,17 +51,31 @@ export function AdminApp({ seedProfile, seedRepos, hasApi }: { seedProfile: Prof
           <p className="text-rose">{t("noApi")}</p>
         </Card>
       ) : admin === null ? (
-        <p className="text-muted">…</p>
+        <p className="text-muted">{t("loading")}</p>
       ) : !admin ? (
         <Login onDone={() => setAdmin(true)} />
       ) : (
         <>
-          <div role="tablist" className="mb-6 flex w-fit rounded-full border border-line p-1 text-sm">
-            {(["projects", "profile", "cv"] as const).map((k) => (
+          <div
+            role="tablist"
+            aria-label={t("title")}
+            className="mb-6 flex w-fit rounded-full border border-line p-1 text-sm"
+            onKeyDown={(e) => {
+              if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+              const i = TABS.indexOf(tab) + (e.key === "ArrowRight" ? 1 : -1);
+              const next = TABS[(i + TABS.length) % TABS.length];
+              setTab(next);
+              document.getElementById(`admin-tab-${next}`)?.focus();
+            }}
+          >
+            {TABS.map((k) => (
               <button
                 key={k}
                 role="tab"
                 type="button"
+                id={`admin-tab-${k}`}
+                aria-controls="admin-panel"
+                tabIndex={tab === k ? 0 : -1}
                 aria-selected={tab === k}
                 onClick={() => setTab(k)}
                 className={`rounded-full px-5 py-2 transition-colors ${tab === k ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}
@@ -69,9 +84,11 @@ export function AdminApp({ seedProfile, seedRepos, hasApi }: { seedProfile: Prof
               </button>
             ))}
           </div>
-          {tab === "projects" && <ProjectsPanel seedRepos={seedRepos} />}
-          {tab === "profile" && <ProfileForm seed={seedProfile} />}
-          {tab === "cv" && <CvPanel />}
+          <div id="admin-panel" role="tabpanel" aria-labelledby={`admin-tab-${tab}`}>
+            {tab === "projects" && <ProjectsPanel seedRepos={seedRepos} />}
+            {tab === "profile" && <ProfileForm seed={seedProfile} />}
+            {tab === "cv" && <CvPanel />}
+          </div>
         </>
       )}
     </div>

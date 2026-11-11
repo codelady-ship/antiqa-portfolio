@@ -5,8 +5,8 @@ import { useCallback, useEffect, useState } from "react";
 import type { Project } from "@/lib/types";
 import { api, Area, Button, Card, Field, Input, refreshSite } from "./ui";
 
-type AdminProject = Project & { hidden: boolean; order: number; syncError?: string | null };
-type SeedRepo = { url: string; featured?: boolean; backend?: string; title?: string };
+type AdminProject = Project & { hidden: boolean; order: number; syncError?: string | null; titleRaw?: string; demoOverride?: string };
+type SeedRepo = { url: string; featured?: boolean; backend?: string; title?: string; demo?: string };
 
 export function ProjectsPanel({ seedRepos }: { seedRepos: SeedRepo[] }) {
   const t = useTranslations("Admin");
@@ -58,7 +58,12 @@ export function ProjectsPanel({ seedRepos }: { seedRepos: SeedRepo[] }) {
     for (const s of seedRepos) {
       try {
         const p = await api<AdminProject>("/api/projects", { method: "POST", body: JSON.stringify({ repoUrl: s.url }) });
-        const patch = { ...(s.title && { title: s.title }), ...(s.backend && { backendUrl: s.backend }), ...(s.featured && { featured: true }) };
+        const patch = {
+          ...(s.title && { title: s.title }),
+          ...(s.backend && { backendUrl: s.backend }),
+          ...(s.demo && { demoOverride: s.demo }),
+          ...(s.featured && { featured: true }),
+        };
         if (Object.keys(patch).length) await api(`/api/projects/${p.id}`, { method: "PATCH", body: JSON.stringify(patch) });
       } catch {
         /* already added or GitHub error: skip */
@@ -100,7 +105,7 @@ export function ProjectsPanel({ seedRepos }: { seedRepos: SeedRepo[] }) {
       </Card>
 
       {list === null ? (
-        <p className="text-muted">…</p>
+        <p className="text-muted">{t("loading")}</p>
       ) : list.length === 0 ? (
         <p className="text-muted">{t("empty")}</p>
       ) : (
@@ -119,9 +124,9 @@ function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => void }) 
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [f, setF] = useState({
-    title: p.title,
+    title: p.titleRaw ?? "",
     summary: p.summary ?? { az: "", en: "" },
-    demoOverride: "",
+    demoOverride: p.demoOverride ?? "",
     backendUrl: p.backendUrl ?? "",
     order: p.order ?? 0,
     featured: p.featured,
@@ -156,7 +161,7 @@ function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => void }) 
               {p.title}
             </span>
             <span className="block truncate text-xs text-muted">
-              {p.owner}/{p.name} · {p.languages.slice(0, 3).map((l) => l.name).join(", ")} · {p.demoUrl ? "demo ✓" : "no demo"}
+              {p.owner}/{p.name} · {p.languages.slice(0, 3).map((l) => l.name).join(", ")} · {p.demoUrl ? t("hasDemo") : t("noDemo")}
             </span>
           </span>
         </button>
@@ -174,10 +179,10 @@ function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => void }) 
       {open && (
         <div className="mt-4 grid gap-3 border-t border-line pt-4 sm:grid-cols-2">
           <Field label={t("customTitle")}>
-            <Input value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
+            <Input placeholder={p.title} value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
           </Field>
           <Field label={t("order")}>
-            <Input type="number" value={f.order} onChange={(e) => setF({ ...f, order: Number(e.target.value) || 0 })} />
+            <Input type="number" step={1} value={f.order} onChange={(e) => setF({ ...f, order: Math.trunc(Number(e.target.value)) || 0 })} />
           </Field>
           <Field label={t("summaryAz")}>
             <Area rows={3} placeholder={p.description} value={f.summary.az} onChange={(e) => setF({ ...f, summary: { ...f.summary, az: e.target.value } })} />
@@ -186,12 +191,16 @@ function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => void }) 
             <Area rows={3} placeholder={p.description} value={f.summary.en} onChange={(e) => setF({ ...f, summary: { ...f.summary, en: e.target.value } })} />
           </Field>
           <Field label={t("demoOverride")}>
-            <Input type="url" placeholder={p.demoUrl ?? "https://"} value={f.demoOverride} onChange={(e) => setF({ ...f, demoOverride: e.target.value })} />
+            <Input type="url" pattern="https://.*" placeholder={p.demoUrl ?? "https://"} value={f.demoOverride} onChange={(e) => setF({ ...f, demoOverride: e.target.value })} />
           </Field>
           <Field label={t("backendUrl")}>
-            <Input type="url" placeholder="https://github.com/…" value={f.backendUrl} onChange={(e) => setF({ ...f, backendUrl: e.target.value })} />
+            <Input type="url" pattern="https://.*" placeholder="https://github.com/…" value={f.backendUrl} onChange={(e) => setF({ ...f, backendUrl: e.target.value })} />
           </Field>
-          {err && <p className="text-sm text-rose sm:col-span-2">{err}</p>}
+          {err && (
+            <p role="alert" className="text-sm text-rose sm:col-span-2">
+              {err}
+            </p>
+          )}
           <div className="flex flex-wrap gap-2 sm:col-span-2">
             <Button
               onClick={() =>
@@ -200,7 +209,7 @@ function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => void }) 
                   summary: f.summary,
                   backendUrl: f.backendUrl,
                   order: f.order,
-                  ...(f.demoOverride && { demoOverride: f.demoOverride }),
+                  demoOverride: f.demoOverride, // "" clears it
                 })
               }
             >
