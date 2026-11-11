@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useRef, useState, type CSSProperties } from "react";
 import { Reveal } from "@/components/motion/reveal";
+import { formatDate } from "@/lib/date";
 import { shot } from "@/lib/shot";
 import type { Project } from "@/lib/types";
 import { isSafeFrame } from "./frame";
@@ -19,7 +20,6 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
   const card = useRef<HTMLElement>(null);
   const timer = useRef<number>(0);
   const [live, setLive] = useState(false);
-  const fmt = new Intl.DateTimeFormat(locale === "az" ? "az-AZ" : "en-GB", { day: "numeric", month: "short", year: "numeric" });
   const summary = p.summary?.[locale] || p.description;
 
   const enter = (e: React.PointerEvent) => {
@@ -98,7 +98,7 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
 
         <div className="relative z-20 flex flex-1 flex-col gap-3 p-5 sm:p-6">
           <div className="flex items-center justify-between text-[11px] tracking-[0.16em] text-muted uppercase">
-            <span>{p.createdAt ? new Date(p.createdAt).getFullYear() : ""}</span>
+            <span>{p.createdAt ? new Date(p.createdAt).getUTCFullYear() : ""}</span>
             <span>{p.languages[0]?.name}</span>
           </div>
           <h3 className="display text-2xl leading-none sm:text-3xl">{p.title}</h3>
@@ -131,7 +131,7 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
           )}
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-line pt-4 text-sm">
             <span className="text-muted">
-              {p.createdAt && <time dateTime={p.createdAt}>{fmt.format(new Date(p.createdAt))}</time>}
+              {p.createdAt && <time dateTime={p.createdAt}>{formatDate(p.createdAt, locale, "short")}</time>}
               {p.stars > 0 && <span className="ml-3">★ {p.stars}</span>}
             </span>
             <span className="flex items-center gap-3">

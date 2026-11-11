@@ -170,7 +170,7 @@ export function ProjectSphere({
                 type="button"
                 tabIndex={i < projects.length ? 0 : -1}
                 aria-hidden={i >= projects.length}
-                aria-label={p.title}
+                title={p.title}
                 onClick={() => moved.current < 6 && onOpen(p)}
                 data-lon={lon}
                 data-lat={lat}
@@ -182,7 +182,7 @@ export function ProjectSphere({
                     // eslint-disable-next-line @next/next/no-img-element -- remote screenshot, tiny
                     <img src={shot(p.demoUrl, 400)} alt="" loading="lazy" decoding="async" className="aspect-[16/10] w-full object-cover object-top" />
                   ) : (
-                    <span className="display grid aspect-[16/10] place-items-center text-3xl" style={{ background: "var(--grad)", color: "var(--bg)" }}>
+                    <span aria-hidden className="display grid aspect-[16/10] place-items-center text-3xl" style={{ background: "var(--grad)", color: "var(--bg)" }}>
                       {p.title.charAt(0)}
                     </span>
                   )}
