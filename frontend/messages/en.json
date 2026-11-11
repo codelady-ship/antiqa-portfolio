@@ -1,0 +1,79 @@
+{
+  "Meta": {
+    "title": "Antiqa Cəlilova — Full Stack Developer",
+    "description": "Antiqa Cəlilova — Full Stack (MERN, Next.js) developer based in Baku. Projects, live demos, CV and contact.",
+    "skip": "Skip to content"
+  },
+  "Nav": {
+    "about": "About",
+    "work": "Work",
+    "contact": "Contact",
+    "theme": "Toggle theme",
+    "light": "Light",
+    "dark": "Dark",
+    "language": "Language",
+    "menu": "Menu"
+  },
+  "Hero": {
+    "available": "Open to new opportunities",
+    "scroll": "Scroll down",
+    "cta": "See my work",
+    "cv": "Download CV"
+  },
+  "About": {
+    "kicker": "01 — About",
+    "title": "I write code so people's lives get easier.",
+    "projects": "projects",
+    "languages": "technologies",
+    "years": "years building",
+    "education": "Education",
+    "skills": "Skills"
+  },
+  "Work": {
+    "kicker": "02 — Selected work",
+    "title": "Projects",
+    "sphereHint": "Scroll or drag — the cards spin",
+    "all": "All",
+    "sortNew": "Newest",
+    "sortUpdated": "Recently updated",
+    "sortStars": "Most stars",
+    "sort": "Sort",
+    "demo": "View demo",
+    "code": "Code",
+    "backend": "Backend",
+    "live": "Live",
+    "noDemo": "No demo",
+    "created": "Created",
+    "updated": "Last update",
+    "stars": "Stars",
+    "forks": "Forks",
+    "license": "License",
+    "languages": "Languages",
+    "topics": "Topics",
+    "description": "Description",
+    "readme": "README",
+    "openNew": "Open in new tab",
+    "close": "Close",
+    "desktop": "Desktop",
+    "tablet": "Tablet",
+    "phone": "Phone",
+    "loading": "Loading…",
+    "noReadme": "This project has no README.",
+    "empty": "No projects for this filter.",
+    "frameNote": "If the site does not load here, open it in a new tab."
+  },
+  "Contact": {
+    "kicker": "03 — Contact",
+    "title": "Let's build something together.",
+    "lead": "A job offer, a collaboration or just hello — write to me, I reply fast.",
+    "copy": "Copy",
+    "copied": "Copied",
+    "cv": "CV",
+    "cvAz": "CV (AZ)",
+    "cvEn": "CV (EN)"
+  },
+  "Footer": {
+    "made": "Built with Next.js, Express and MongoDB",
+    "top": "Back to top"
+  }
+}

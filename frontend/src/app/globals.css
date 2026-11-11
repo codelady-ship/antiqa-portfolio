@@ -1,0 +1,228 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------- design tokens ---------- */
+:root {
+  --bg: #f6f1ec;
+  --bg-2: #ede5de;
+  --surface: rgb(255 255 255 / 0.62);
+  --ink: #17121a;
+  --muted: #6c6170;
+  --line: rgb(23 18 26 / 0.12);
+  --violet: #6b3fd4;
+  --rose: #c2457d;
+  --gold: #a87a22;
+  --accent: var(--violet);
+  --grad: linear-gradient(100deg, #6b3fd4, #c2457d 50%, #c99227);
+  --shadow: 0 30px 60px -30px rgb(60 30 80 / 0.35);
+  color-scheme: light;
+}
+.dark {
+  --bg: #0b0910;
+  --bg-2: #141019;
+  --surface: rgb(255 255 255 / 0.04);
+  --ink: #f4eef4;
+  --muted: #a99fae;
+  --line: rgb(255 240 255 / 0.1);
+  --violet: #a78bfa;
+  --rose: #f0a3c4;
+  --gold: #f6c86b;
+  --accent: var(--violet);
+  --grad: linear-gradient(100deg, #a78bfa, #f0a3c4 50%, #f6c86b);
+  --shadow: 0 30px 60px -30px rgb(0 0 0 / 0.8);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-2: var(--bg-2);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-violet: var(--violet);
+  --color-rose: var(--rose);
+  --color-gold: var(--gold);
+  --font-display: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-serif-it), Georgia, serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  overflow-x: clip;
+}
+::selection {
+  background: var(--violet);
+  color: #fff;
+}
+:focus-visible {
+  outline: 2px solid var(--rose);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ---------- type helpers ---------- */
+.display {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 0.88;
+  text-transform: uppercase;
+}
+.serif-it {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+.grad-text {
+  background: var(--grad);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shine 8s linear infinite;
+}
+.outline-text {
+  color: transparent;
+  -webkit-text-stroke: 1px var(--ink);
+}
+.kicker {
+  font-size: 0.75rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+@keyframes shine {
+  to {
+    background-position: 200% center;
+  }
+}
+
+/* ---------- grain + grid backdrop (editorial feel) ---------- */
+.backdrop-grid {
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 96px 96px;
+  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+}
+
+/* ---------- reveal on scroll ---------- */
+[data-reveal="hidden"] {
+  opacity: 0;
+  transform: translateY(28px);
+  filter: blur(6px);
+}
+[data-reveal="shown"] {
+  opacity: 1;
+  transform: none;
+  filter: none;
+  transition:
+    opacity 0.9s cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1),
+    filter 0.9s;
+  transition-delay: calc(var(--reveal-index, 0) * 80ms);
+}
+
+/* split words that rise one by one */
+.split-word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: 0.08em;
+}
+.split-word > span {
+  display: inline-block;
+  transform: translateY(105%);
+  transition: transform 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition-delay: calc(var(--i, 0) * 60ms + 100ms);
+}
+[data-reveal="shown"] .split-word > span,
+.split-in .split-word > span {
+  transform: none;
+}
+
+/* ---------- marquee ---------- */
+.marquee {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+
+/* ---------- theme switch: circular reveal (View Transitions) ---------- */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-new(root) {
+  clip-path: circle(0 at var(--vt-x, 50%) var(--vt-y, 0%));
+  animation: vt-reveal 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes vt-reveal {
+  to {
+    clip-path: circle(150vmax at var(--vt-x, 50%) var(--vt-y, 0%));
+  }
+}
+
+/* ---------- scrollbar ---------- */
+html {
+  scrollbar-color: color-mix(in srgb, var(--violet) 50%, transparent) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  [data-reveal="hidden"] {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+  .split-word > span {
+    transform: none;
+  }
+}
+
+/* ---------- README (GitHub-rendered HTML) ---------- */
+.readme {
+  line-height: 1.75;
+}
+.readme :where(h1, h2, h3, h4) {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 1.4em 0 0.5em;
+  line-height: 1.1;
+}
+.readme h1 { font-size: 2rem; }
+.readme h2 { font-size: 1.5rem; }
+.readme h3 { font-size: 1.2rem; }
+.readme :where(p, ul, ol, pre, table, blockquote) { margin: 0 0 1em; }
+.readme :where(ul, ol) { padding-left: 1.4em; list-style: revert; }
+.readme a { color: var(--violet); text-decoration: underline; }
+.readme img { max-width: 100%; display: inline-block; border-radius: 10px; }
+.readme code { background: var(--bg-2); padding: 0.15em 0.4em; border-radius: 6px; font-size: 0.88em; }
+.readme pre { background: var(--bg-2); padding: 1rem; border-radius: 12px; overflow: auto; }
+.readme pre code { background: none; padding: 0; }
+.readme table { border-collapse: collapse; display: block; overflow: auto; }
+.readme :where(td, th) { border: 1px solid var(--line); padding: 0.4em 0.8em; }
+.readme blockquote { border-left: 3px solid var(--rose); padding-left: 1em; color: var(--muted); }
+.readme .anchor, .readme .octicon { display: none; }

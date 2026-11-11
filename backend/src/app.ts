@@ -4,7 +4,8 @@ import helmet from "helmet";
 import sanitizeHtml from "sanitize-html";
 import { z } from "zod";
 import { checkCredentials, COOKIE, isAdmin, issueSession, requireAdmin } from "./auth.js";
-import { connectDb, Cv, Profile, Project } from "./models.js";
+import { isValidObjectId } from "mongoose";
+import { connectDb, Cv, LoginAttempt, Profile, Project } from "./models.js";
 import { demoUrl, fetchSnapshot, GithubError, parseRepoUrl } from "./services/github.js";
 
 const wrap =
@@ -12,7 +13,8 @@ const wrap =
     fn(req, res).catch(next);
 
 const loc = z.object({ az: z.string().max(4000).default(""), en: z.string().max(4000).default("") });
-const url = z.union([z.literal(""), z.string().url().max(500)]);
+// only https links: these end up in href, iframe src and JSON-LD
+const url = z.union([z.literal(""), z.string().url().max(500).refine((u) => /^https:\/\//i.test(u), "https only")]);
 
 export const ProfileInput = z.object({
   name: z.string().min(1).max(120),
@@ -53,7 +55,7 @@ const README_ALLOWED = {
 };
 
 /** Public shape of a project (no internal fields). */
-export function present(p: any) {
+export function present(p: any, admin = false) {
   const gh = p.gh ?? {};
   return {
     id: String(p._id),
@@ -76,7 +78,7 @@ export function present(p: any) {
     hidden: !!p.hidden,
     order: p.order ?? 0,
     syncedAt: p.syncedAt ?? null,
-    syncError: p.syncError || null,
+    ...(admin && { syncError: p.syncError || null }),
   };
 }
 
@@ -94,17 +96,21 @@ async function sync(p: any) {
   return p.save();
 }
 
-// naive per-instance login limiter (5 tries / 15 min per IP)
-const attempts = new Map<string, { n: number; until: number }>();
-function limited(ip: string) {
-  const now = Date.now();
-  const a = attempts.get(ip);
-  if (!a || a.until < now) {
-    attempts.set(ip, { n: 1, until: now + 15 * 60_000 });
-    return false;
-  }
-  a.n++;
-  return a.n > 5;
+/** Failed-login counter in Mongo (shared by all serverless instances, TTL 15 min). */
+const WINDOW = 15 * 60_000;
+function clientKey(req: Request) {
+  const xff = String(req.get("x-forwarded-for") || "").split(",")[0].trim();
+  return "ip:" + (xff || req.ip || "?");
+}
+async function tooMany(req: Request) {
+  const expireAt = new Date(Date.now() + WINDOW);
+  const [ip, all] = await Promise.all(
+    [clientKey(req), "global"].map((k) =>
+      LoginAttempt.findOneAndUpdate({ _id: k }, { $inc: { n: 1 }, $setOnInsert: { expireAt } }, { upsert: true, new: true }).lean(),
+    ),
+  );
+  // 5 tries per client, 50 per window overall (header can be spoofed, the global cap cannot)
+  return ((ip as any)?.n ?? 0) > 5 || ((all as any)?.n ?? 0) > 50;
 }
 
 export function createApp() {
@@ -117,7 +123,8 @@ export function createApp() {
   // state-changing requests must be JSON (blocks simple cross-site form posts) except the CV upload
   app.use((req, res, next) => {
     if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method) && !req.path.startsWith("/api/cv/")) {
-      if (req.method !== "DELETE" && !req.is("application/json")) return res.status(415).json({ error: "json only" });
+      const hasBody = Number(req.headers["content-length"] || 0) > 0 || !!req.headers["transfer-encoding"];
+      if (hasBody && !req.is("application/json")) return res.status(415).json({ error: "json only" });
     }
     next();
   });
@@ -128,10 +135,11 @@ export function createApp() {
   app.post(
     "/api/auth/login",
     wrap(async (req, res) => {
-      if (limited(req.ip ?? "?")) return res.status(429).json({ error: "too many attempts" });
+      await connectDb();
+      if (await tooMany(req)) return res.status(429).json({ error: "too many attempts" });
       const { email, password } = z.object({ email: z.string().max(200), password: z.string().max(200) }).parse(req.body);
       if (!(await checkCredentials(email, password))) return res.status(401).json({ error: "invalid credentials" });
-      attempts.delete(req.ip ?? "?");
+      await LoginAttempt.deleteOne({ _id: clientKey(req) });
       issueSession(res);
       res.json({ ok: true });
     }),
@@ -201,7 +209,7 @@ export function createApp() {
         .sort({ featured: -1, order: -1, "gh.createdAt": -1 })
         .lean();
       res.setHeader("Cache-Control", all ? "no-store" : "public, s-maxage=300, stale-while-revalidate=3600");
-      res.json(list.map(present));
+      res.json(list.map((p) => present(p, all)));
     }),
   );
   app.get(
@@ -236,6 +244,7 @@ export function createApp() {
     "/api/projects/:id",
     requireAdmin,
     wrap(async (req, res) => {
+      if (!isValidObjectId(req.params.id)) return res.status(404).json({ error: "not found" });
       const p = await Project.findByIdAndUpdate(req.params.id, ProjectPatch.parse(req.body), { new: true });
       if (!p) return res.status(404).json({ error: "not found" });
       res.json(present(p));
@@ -245,6 +254,7 @@ export function createApp() {
     "/api/projects/:id",
     requireAdmin,
     wrap(async (req, res) => {
+      if (!isValidObjectId(req.params.id)) return res.status(404).json({ error: "not found" });
       await Project.findByIdAndDelete(req.params.id);
       res.status(204).end();
     }),
@@ -254,7 +264,8 @@ export function createApp() {
       const cron = process.env.CRON_SECRET && req.get("authorization") === `Bearer ${process.env.CRON_SECRET}`;
       if (!cron && !isAdmin(req)) return res.status(401).json({ error: "unauthorized" });
       const list = await Project.find();
-      for (const p of list) await sync(p);
+      // 4 at a time: fast enough for the function timeout, gentle on the GitHub limit
+      for (let i = 0; i < list.length; i += 4) await Promise.allSettled(list.slice(i, i + 4).map(sync));
       res.json({ synced: list.length, errors: list.filter((p: any) => p.syncError).map((p: any) => `${p.name}: ${p.syncError}`) });
   });
   app.post("/api/projects/sync", syncAll);
