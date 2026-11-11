@@ -3,7 +3,9 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import sanitizeHtml from "sanitize-html";
 import { z } from "zod";
-import { checkCredentials, COOKIE, isAdmin, issueSession, requireAdmin } from "./auth.js";
+import { randomBytes } from "node:crypto";
+import { checkCredentials, COOKIE, deviceId, isAdmin, issueDevice, issueSession, requireAdmin } from "./auth.js";
+import { type Limit, type LimitStore, reserveAll } from "./limiter.js";
 import { isValidObjectId } from "mongoose";
 import { connectDb, Cv, LoginAttempt, Profile, Project } from "./models.js";
 import { demoUrl, fetchSnapshot, GithubError, parseRepoUrl } from "./services/github.js";
@@ -100,27 +102,39 @@ async function sync(p: any) {
 const WINDOW = 15 * 60_000;
 const MAX_PER_CLIENT = 5;
 const MAX_GLOBAL = 100;
-// req.ip honours "trust proxy" (the hop the platform proxy added); the leftmost XFF entry is client-controlled
-const clientKey = (req: Request) => "ip:" + (req.ip || "?");
 
-/** Blocked when this client or everyone together already has too many FAILED logins in the window. */
-async function tooMany(req: Request) {
-  const docs = await LoginAttempt.find({ _id: { $in: [clientKey(req), "global"] } }, { n: 1 }).lean();
-  const n = (k: string) => (docs as any[]).find((d) => d._id === k)?.n ?? 0;
-  return n(clientKey(req)) >= MAX_PER_CLIENT || n("global") >= MAX_GLOBAL;
-}
+const mongoLimits: LimitStore = {
+  async reserve(key, max) {
+    const filter = { _id: key, n: { $lt: max } };
+    try {
+      return !!(await LoginAttempt.findOneAndUpdate(
+        filter,
+        { $inc: { n: 1 }, $setOnInsert: { expireAt: new Date(Date.now() + WINDOW) } },
+        { upsert: true, new: true },
+      ).lean());
+    } catch (e) {
+      if ((e as { code?: number }).code !== 11000) throw e;
+      // E11000: the key exists and is full (the upsert tried to insert a duplicate _id),
+      // or a parallel first request created it a moment ago: try once more without upsert
+      return !!(await LoginAttempt.findOneAndUpdate(filter, { $inc: { n: 1 } }, { new: true }).lean());
+    }
+  },
+  async release(key) {
+    await LoginAttempt.updateOne({ _id: key, n: { $gt: 0 } }, { $inc: { n: -1 } });
+  },
+  async reset(key) {
+    await LoginAttempt.deleteOne({ _id: key });
+  },
+};
 
-async function bump(k: string) {
-  const update = { $inc: { n: 1 }, $setOnInsert: { expireAt: new Date(Date.now() + WINDOW) } };
-  try {
-    await LoginAttempt.updateOne({ _id: k }, update, { upsert: true });
-  } catch (e) {
-    // two concurrent first upserts: one loses with E11000, the document exists now
-    if ((e as { code?: number }).code !== 11000) throw e;
-    await LoginAttempt.updateOne({ _id: k }, update);
-  }
+/**
+ * Known device (signed cookie from an earlier login): its own key, no global cap.
+ * Otherwise per IP + global. req.ip honours "trust proxy" (the hop the platform proxy added);
+ * the leftmost X-Forwarded-For entry is client-controlled and is not used.
+ */
+function loginLimits(req: Request, dev: string | null): Limit[] {
+  return dev ? [[`dev:${dev}`, MAX_PER_CLIENT]] : [[`ip:${req.ip || "?"}`, MAX_PER_CLIENT], ["global", MAX_GLOBAL]];
 }
-const recordFailure = (req: Request) => Promise.all([bump(clientKey(req)), bump("global")]);
 
 export function createApp() {
   const app = express();
@@ -145,14 +159,16 @@ export function createApp() {
     "/api/auth/login",
     wrap(async (req, res) => {
       await connectDb();
-      if (await tooMany(req)) return res.status(429).json({ error: "too many attempts" });
       const { email, password } = z.object({ email: z.string().max(200), password: z.string().max(200) }).parse(req.body);
-      if (!(await checkCredentials(email, password))) {
-        await recordFailure(req);
-        return res.status(401).json({ error: "invalid credentials" });
-      }
-      await LoginAttempt.deleteOne({ _id: clientKey(req) });
+      const dev = deviceId(req);
+      const limits = loginLimits(req, dev);
+      // the slot is taken BEFORE the slow bcrypt check, so parallel requests cannot all slip through
+      if (!(await reserveAll(mongoLimits, limits))) return res.status(429).json({ error: "too many attempts" });
+      if (!(await checkCredentials(email, password))) return res.status(401).json({ error: "invalid credentials" });
+      // success: forget this client's failures and give back the global slot (only failures count)
+      await Promise.all(limits.map(([k]) => (k === "global" ? mongoLimits.release(k) : mongoLimits.reset(k))));
       issueSession(res);
+      issueDevice(res, dev ?? randomBytes(16).toString("hex"));
       res.json({ ok: true });
     }),
   );
