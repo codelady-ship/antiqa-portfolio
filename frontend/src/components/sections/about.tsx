@@ -34,11 +34,11 @@ export async function About({ profile, projects }: { profile: Profile; projects:
               [yearCount, t("years")],
             ].map(([n, label], i) => (
               <Reveal key={String(label)} index={i}>
-                <dd className="display text-5xl sm:text-6xl">
+                <dd className="display text-4xl sm:text-6xl">
                   <CountUp to={Number(n)} />
                   <span className="text-rose">+</span>
                 </dd>
-                <dt className="mt-2 text-xs tracking-[0.18em] text-muted uppercase">{label}</dt>
+                <dt className="mt-2 text-[10px] tracking-[0.12em] break-words text-muted uppercase sm:text-xs sm:tracking-[0.18em]">{label}</dt>
               </Reveal>
             ))}
           </dl>

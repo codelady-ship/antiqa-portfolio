@@ -45,11 +45,11 @@ export function Work({ projects }: { projects: Project[] }) {
         </Reveal>
       </div>
 
-      <ProjectSphere projects={projects} onOpen={setOpen} hint={t("sphereHint")} />
+      <ProjectSphere projects={projects} onOpen={setOpen} hint={t("sphereHint")} word={t("sphereWord")} />
 
       <div className="mx-auto max-w-7xl px-4 pb-28 sm:px-8 sm:pb-40">
         <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
-          <div role="group" aria-label="Filter" className="flex flex-wrap gap-2">
+          <div role="group" aria-label={t("filter")} className="flex flex-wrap gap-2">
             {["", ...langs].map((l) => (
               <button
                 key={l || "all"}

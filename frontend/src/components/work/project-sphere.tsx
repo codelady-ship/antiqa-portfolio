@@ -8,7 +8,17 @@ import type { Project } from "@/lib/types";
  * A sphere of floating project cards (pure CSS 3D, no WebGL). A sticky track (200vh)
  * turns scroll into rotation; dragging spins it too. Click a card to open its demo.
  */
-export function ProjectSphere({ projects, onOpen, hint }: { projects: Project[]; onOpen: (p: Project) => void; hint: string }) {
+export function ProjectSphere({
+  projects,
+  onOpen,
+  hint,
+  word,
+}: {
+  projects: Project[];
+  onOpen: (p: Project) => void;
+  hint: string;
+  word: string;
+}) {
   const track = useRef<HTMLDivElement>(null);
   const ball = useRef<HTMLDivElement>(null);
   const moved = useRef(0); // px dragged since pointerdown; a drag must not open a card
@@ -30,6 +40,9 @@ export function ProjectSphere({ projects, onOpen, hint }: { projects: Project[];
       raf = 0,
       running = false,
       dragging = false,
+      focused = false,
+      drift = 0,
+      last = performance.now(),
       lx = 0,
       ly = 0;
 
@@ -44,26 +57,37 @@ export function ProjectSphere({ projects, onOpen, hint }: { projects: Project[];
         vel *= 0.95;
         dragY += vel;
       }
-      const target = p * 300 + dragY + (reduce ? 0 : performance.now() * 0.004);
-      rotY += (target - rotY) * 0.08;
+      // slow auto-spin; it holds still while a card has keyboard focus
+      const now = performance.now();
+      if (!reduce && !focused) drift += Math.min(now - last, 50) * 0.004;
+      last = now;
+      const target = p * 300 + dragY + drift;
+      rotY = reduce ? target : rotY + (target - rotY) * 0.08; // no easing under reduced motion
       const tx = -12 + p * 18 + dragX;
-      rotX += (tx - rotX) * 0.08;
+      rotX = reduce ? tx : rotX + (tx - rotX) * 0.08;
       const scale = 0.75 + Math.sin(p * Math.PI) * 0.35;
       b.style.transform = `translateZ(-200px) scale(${scale}) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
       el.style.setProperty("--sp", p.toFixed(3));
       if (running) raf = requestAnimationFrame(tick);
     };
-    const io = new IntersectionObserver(([e]) => {
-      running = e.isIntersecting;
+    // animate only while the sphere is on screen and the tab is visible
+    let inView = false;
+    const sync = () => {
+      running = inView && !document.hidden;
       cancelAnimationFrame(raf);
       if (running) raf = requestAnimationFrame(tick);
+    };
+    const io = new IntersectionObserver(([e]) => {
+      inView = e.isIntersecting;
+      sync();
     });
     io.observe(el);
+    document.addEventListener("visibilitychange", sync);
 
     const down = (e: PointerEvent) => {
+      moved.current = 0; // before the early return: a tap after a drag must still open the card
       if ((e.target as HTMLElement).closest("button") && e.pointerType !== "mouse") return;
       dragging = true;
-      moved.current = 0;
       lx = e.clientX;
       ly = e.clientY;
     };
@@ -79,8 +103,31 @@ export function ProjectSphere({ projects, onOpen, hint }: { projects: Project[];
       dragX = Math.max(-30, Math.min(30, dragX - dy * 0.15));
     };
     const up = () => (dragging = false);
+
+    // keyboard: turn the sphere so the focused card faces the viewer
+    const onFocus = (e: FocusEvent) => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-lon]");
+      // keyboard only: a click/tap focus must not snap the sphere or fight a drag
+      if (!btn || !btn.matches(":focus-visible")) return;
+      focused = true;
+      vel = 0;
+      const p = progress();
+      const lon = Number(btn.dataset.lon),
+        lat = Number(btn.dataset.lat);
+      const target = p * 300 + dragY + drift;
+      dragY += ((((-lon - target) % 360) + 540) % 360) - 180; // shortest way round
+      dragX = -lat - (-12 + p * 18);
+      if (!running) tick();
+    };
+    const onBlur = () => {
+      focused = false;
+      dragX = Math.max(-30, Math.min(30, dragX));
+    };
+
     const stage = el.querySelector<HTMLElement>("[data-stage]")!;
     stage.addEventListener("pointerdown", down);
+    stage.addEventListener("focusin", onFocus);
+    stage.addEventListener("focusout", onBlur);
     addEventListener("pointermove", move, { passive: true });
     addEventListener("pointerup", up);
     addEventListener("pointercancel", up);
@@ -88,7 +135,10 @@ export function ProjectSphere({ projects, onOpen, hint }: { projects: Project[];
       running = false;
       cancelAnimationFrame(raf);
       io.disconnect();
+      document.removeEventListener("visibilitychange", sync);
       stage.removeEventListener("pointerdown", down);
+      stage.removeEventListener("focusin", onFocus);
+      stage.removeEventListener("focusout", onBlur);
       removeEventListener("pointermove", move);
       removeEventListener("pointerup", up);
       removeEventListener("pointercancel", up);
@@ -106,7 +156,7 @@ export function ProjectSphere({ projects, onOpen, hint }: { projects: Project[];
           className="display outline-text pointer-events-none absolute text-[clamp(4rem,20vw,18rem)] opacity-40"
           style={{ transform: "translateX(calc((var(--sp) - 0.5) * -30vw))" }}
         >
-          WORK
+          {word}
         </p>
         <div ref={ball} className="relative size-0 [transform-style:preserve-3d]">
           {items.map((p, i) => {
@@ -122,10 +172,12 @@ export function ProjectSphere({ projects, onOpen, hint }: { projects: Project[];
                 aria-hidden={i >= projects.length}
                 aria-label={p.title}
                 onClick={() => moved.current < 6 && onOpen(p)}
-                className="group absolute top-0 left-0 -mt-[clamp(38px,6vw,62px)] -ml-[clamp(60px,9.6vw,100px)] w-[clamp(120px,19.2vw,200px)] [backface-visibility:hidden]"
-                style={{ transform: `rotateY(${lon}deg) rotateX(${lat}deg) translateZ(clamp(220px, 36vw, 470px))` }}
+                data-lon={lon}
+                data-lat={lat}
+                className="group absolute focus-visible:outline-none top-0 left-0 -mt-[clamp(30px,6vw,62px)] -ml-[clamp(48px,9.6vw,100px)] w-[clamp(96px,19.2vw,200px)] [backface-visibility:hidden]"
+                style={{ transform: `rotateY(${lon}deg) rotateX(${lat}deg) translateZ(clamp(150px, 36vw, 470px))` }}
               >
-                <span className="block overflow-hidden rounded-xl border border-line bg-bg-2 shadow-[var(--shadow)] transition-transform duration-300 group-hover:scale-110 group-focus-visible:scale-110">
+                <span className="block overflow-hidden rounded-lg border sm:rounded-xl border-line bg-bg-2 shadow-[var(--shadow)] transition-transform duration-300 group-hover:scale-110 group-focus-visible:scale-110 group-focus-visible:ring-2 group-focus-visible:ring-rose group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-bg">
                   {p.demoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element -- remote screenshot, tiny
                     <img src={shot(p.demoUrl, 400)} alt="" loading="lazy" decoding="async" className="aspect-[16/10] w-full object-cover object-top" />
@@ -134,13 +186,13 @@ export function ProjectSphere({ projects, onOpen, hint }: { projects: Project[];
                       {p.title.charAt(0)}
                     </span>
                   )}
-                  <span className="block truncate px-2.5 py-1.5 text-left text-[11px] font-medium">{p.title}</span>
+                  <span className="block truncate px-2 py-1 text-left text-[10px] font-medium sm:px-2.5 sm:py-1.5 sm:text-[11px]">{p.title}</span>
                 </span>
               </button>
             );
           })}
         </div>
-        <p className="absolute bottom-8 text-xs tracking-[0.2em] text-muted uppercase">{hint}</p>
+        <p className="absolute bottom-8 px-4 text-center text-[10px] tracking-[0.2em] text-muted uppercase sm:text-xs">{hint}</p>
       </div>
     </div>
   );

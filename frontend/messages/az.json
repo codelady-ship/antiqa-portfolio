@@ -12,7 +12,9 @@
     "light": "Gündüz",
     "dark": "Gecə",
     "language": "Dil",
-    "menu": "Menyu"
+    "menu": "Menyu",
+    "main": "Əsas menyu",
+    "home": "Ana səhifə"
   },
   "Hero": {
     "available": "Yeni imkanlara açığam",
@@ -33,6 +35,12 @@
     "kicker": "02 — Seçilmiş işlər",
     "title": "Layihələr",
     "sphereHint": "Sürüşdürün və ya dartın — kartlar fırlanır",
+    "sphereWord": "İşlər",
+    "filter": "Dilə görə filtr",
+    "view": "Görünüş",
+    "viewport": "Ekran eni",
+    "demoTab": "Demo",
+    "demoFrame": "{title} — canlı demo",
     "all": "Hamısı",
     "sortNew": "Ən yeni",
     "sortUpdated": "Son yenilənən",
@@ -54,6 +62,7 @@
     "readme": "README",
     "openNew": "Yeni tabda aç",
     "close": "Bağla",
+    "details": "Məlumat",
     "desktop": "Kompüter",
     "tablet": "Planşet",
     "phone": "Telefon",
@@ -68,9 +77,16 @@
     "lead": "İş təklifi, əməkdaşlıq və ya sadəcə salam — yazın, tez cavab verirəm.",
     "copy": "Kopyala",
     "copied": "Kopyalandı",
+    "phone": "Telefon",
     "cv": "CV",
     "cvAz": "CV (AZ)",
     "cvEn": "CV (EN)"
+  },
+  "NotFound": {
+    "kicker": "Xəta 404",
+    "title": "Səhifə tapılmadı",
+    "text": "Bu səhifə mövcud deyil və ya köçürülüb.",
+    "home": "Ana səhifəyə qayıt"
   },
   "Footer": {
     "made": "Next.js, Express və MongoDB ilə hazırlanıb",

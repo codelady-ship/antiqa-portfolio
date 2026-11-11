@@ -50,7 +50,7 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
         onPointerEnter={enter}
         onPointerLeave={leave}
         onPointerMove={move}
-        className="group relative flex h-full flex-col overflow-hidden rounded-[1.6rem] border border-line bg-surface shadow-[var(--shadow)] backdrop-blur-xl transition-[transform,border-color] duration-300 ease-out hover:border-violet/40"
+        className="group relative flex h-full flex-col overflow-hidden rounded-[1.6rem] border border-line bg-surface shadow-[var(--shadow)] backdrop-blur-xl transition-[transform,border-color] duration-300 ease-out focus-within:border-violet/60 hover:border-violet/40"
       >
         {/* spotlight */}
         <span
@@ -96,7 +96,7 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
           </span>
         </div>
 
-        <div className="relative z-20 flex flex-1 flex-col gap-3 p-6">
+        <div className="relative z-20 flex flex-1 flex-col gap-3 p-5 sm:p-6">
           <div className="flex items-center justify-between text-[11px] tracking-[0.16em] text-muted uppercase">
             <span>{p.createdAt ? new Date(p.createdAt).getFullYear() : ""}</span>
             <span>{p.languages[0]?.name}</span>
@@ -129,7 +129,7 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
               </ul>
             </div>
           )}
-          <div className="flex items-center justify-between gap-3 border-t border-line pt-4 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-line pt-4 text-sm">
             <span className="text-muted">
               {p.createdAt && <time dateTime={p.createdAt}>{fmt.format(new Date(p.createdAt))}</time>}
               {p.stars > 0 && <span className="ml-3">★ {p.stars}</span>}
@@ -148,7 +148,7 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
           <button
             type="button"
             onClick={onOpen}
-            className="relative isolate overflow-hidden rounded-full border border-line py-3 text-sm font-medium transition-colors after:absolute after:inset-0 after:-z-10 after:translate-y-full after:bg-ink after:transition-transform after:duration-500 hover:text-bg hover:after:translate-y-0"
+            className="relative isolate overflow-hidden rounded-full border border-line py-3 text-sm font-medium transition-colors after:absolute after:inset-0 after:-z-10 after:translate-y-full after:bg-ink after:transition-transform after:duration-500 hover:text-bg hover:after:translate-y-0 focus-visible:text-bg focus-visible:after:translate-y-0"
           >
             {p.demoUrl ? t("demo") : t("readme")} →<span className="sr-only">: {p.title}</span>
           </button>

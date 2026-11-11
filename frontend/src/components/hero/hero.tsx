@@ -61,11 +61,15 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
       scene?.setTheme(isDark());
       if (reduce) scene?.renderStatic(progress());
     });
+    // render only while the hero is on screen and the tab is visible
+    const sync = () => {
+      if (!scene || reduce) return;
+      if (visible && !document.hidden) scene.start();
+      else scene.stop();
+    };
     const io = new IntersectionObserver(([e]) => {
       visible = e.isIntersecting;
-      if (!scene || reduce) return;
-      if (visible) scene.start();
-      else scene.stop();
+      sync();
     });
 
     const boot = async () => {
@@ -76,7 +80,7 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
         scene = createScene(cv, initials);
         scene.setTheme(isDark());
         if (reduce) scene.renderStatic(progress());
-        else if (visible) scene.start();
+        else sync();
         cv.dataset.ready = "1";
       } catch {
         /* no WebGL */
@@ -89,6 +93,7 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
     addEventListener("scroll", onScroll, { passive: true });
     addEventListener("pointermove", onMove, { passive: true });
     addEventListener("resize", onResize);
+    document.addEventListener("visibilitychange", sync);
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     io.observe(el);
     return () => {
@@ -97,6 +102,7 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
       removeEventListener("scroll", onScroll);
       removeEventListener("pointermove", onMove);
       removeEventListener("resize", onResize);
+      document.removeEventListener("visibilitychange", sync);
       mo.disconnect();
       io.disconnect();
       scene?.dispose();
@@ -136,11 +142,11 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
               {t("available")}
             </p>
           )}
-          <h1 className="display text-[clamp(3.4rem,15vw,13.5rem)]">
+          <h1 className="display text-[clamp(3rem,15vw,13.5rem)] break-words">
             <span className="hero-rise block">{first}</span>
             <span className="serif-it hero-rise grad-text -mt-[0.06em] block pl-[0.04em] text-[0.62em] [animation-delay:120ms]">{last}</span>
           </h1>
-          <div className="mt-8 grid gap-6 sm:grid-cols-[1fr_auto] sm:items-end">
+          <div className="mt-6 grid gap-5 sm:mt-8 sm:grid-cols-[1fr_auto] sm:items-end sm:gap-6">
             <div>
               <p className="sr-only">{roles.join(", ")}</p>
               <p className="h-8 overflow-hidden text-lg font-medium sm:text-xl" aria-hidden>
@@ -148,12 +154,12 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
                   {roles[role]}
                 </span>
               </p>
-              <p className="mt-2 max-w-md text-muted">{tagline}</p>
+              <p className="mt-2 max-w-md text-sm text-muted sm:text-base">{tagline}</p>
             </div>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3 max-sm:[&>a]:flex-1 max-sm:[&>a]:text-center">
               <a
                 href="#work"
-                className="group relative overflow-hidden rounded-full bg-ink px-7 py-3.5 text-sm font-medium text-bg transition-transform hover:-translate-y-0.5"
+                className="group relative overflow-hidden rounded-full bg-ink px-5 py-3.5 text-sm font-medium whitespace-nowrap text-bg transition-transform hover:-translate-y-0.5 sm:px-7"
               >
                 <span className="relative z-10">{t("cta")} →</span>
                 <span aria-hidden className="absolute inset-0 translate-y-full transition-transform duration-500 group-hover:translate-y-0" style={{ background: "var(--grad)" }} />
@@ -162,7 +168,7 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
                 <a
                   href={cvHref}
                   download
-                  className="rounded-full border border-line bg-surface px-7 py-3.5 text-sm font-medium backdrop-blur transition-colors hover:border-rose hover:text-rose"
+                  className="rounded-full border border-line bg-surface px-5 py-3.5 text-sm font-medium whitespace-nowrap backdrop-blur transition-colors hover:border-rose hover:text-rose sm:px-7"
                 >
                   {t("cv")} ↓
                 </a>
@@ -171,7 +177,8 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
           </div>
         </div>
 
-        <div aria-hidden className="absolute bottom-6 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2 text-[10px] tracking-[0.3em] text-muted uppercase" style={{ opacity: "calc(1 - var(--p) * 5)" }}>
+        {/* hidden on phones / short screens: it would sit on top of the CTAs */}
+        <div aria-hidden className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 [@media(min-width:640px)_and_(min-height:700px)]:flex flex-col items-center gap-2 text-[10px] tracking-[0.3em] text-muted uppercase" style={{ opacity: "calc(1 - var(--p) * 5)" }}>
           {t("scroll")}
           <span className="h-10 w-px overflow-hidden bg-line">
             <span className="block h-1/2 w-full animate-[drip_1.8s_ease-in-out_infinite] bg-rose" />

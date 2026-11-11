@@ -101,9 +101,12 @@ const PALETTE = {
 
 export function createScene(canvas: HTMLCanvasElement, monogram: string) {
   const small = innerWidth < 768;
-  const COUNT = small ? 2600 : 6000;
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: "high-performance" });
-  const dpr = Math.min(devicePixelRatio, small ? 1.5 : 2);
+  const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
+  // weak CPU or data saver: fewer particles and a lower pixel ratio
+  const lowPower = (nav.hardwareConcurrency || 8) <= 4 || !!nav.connection?.saveData;
+  const COUNT = small ? (lowPower ? 1200 : 1800) : lowPower ? 3000 : 6000;
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: lowPower ? "low-power" : "high-performance" });
+  const dpr = Math.min(devicePixelRatio, small || lowPower ? 1.25 : 2);
   renderer.setPixelRatio(dpr);
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
@@ -182,9 +185,10 @@ export function createScene(canvas: HTMLCanvasElement, monogram: string) {
     my = 0,
     tmx = 0,
     tmy = 0,
-    running = true,
+    running = false,
     raf = 0;
   const clock = new THREE.Clock();
+  let elapsed = 0;
 
   function resize() {
     const w = canvas.clientWidth,
@@ -200,7 +204,8 @@ export function createScene(canvas: HTMLCanvasElement, monogram: string) {
   function frame() {
     if (!running) return;
     raf = requestAnimationFrame(frame);
-    const t = clock.getElapsedTime();
+    elapsed += Math.min(clock.getDelta(), 0.05); // own time: no jump after a pause
+    const t = elapsed;
     smooth += (progress - smooth) * 0.08;
     mx += (tmx - mx) * 0.06;
     my += (tmy - my) * 0.06;
@@ -216,8 +221,10 @@ export function createScene(canvas: HTMLCanvasElement, monogram: string) {
 
   return {
     start() {
+      // idempotent: the viewport observer and the tab-visibility handler may both call it
+      if (running) return;
       running = true;
-      clock.start();
+      clock.getDelta(); // drop the paused gap
       frame();
     },
     stop() {

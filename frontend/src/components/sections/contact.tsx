@@ -11,7 +11,7 @@ export function Contact({ profile }: { profile: Profile }) {
   const [copied, setCopied] = useState(false);
 
   const links = [
-    c.phone && { label: c.phone, href: `tel:${c.phone.replace(/\s/g, "")}`, k: "Phone" },
+    c.phone && { label: c.phone, href: `tel:${c.phone.replace(/\s/g, "")}`, k: t("phone") },
     c.whatsapp && { label: "WhatsApp", href: `https://wa.me/${c.whatsapp}`, k: "WhatsApp" },
     c.telegram && { label: "Telegram", href: `https://t.me/${c.telegram}`, k: "Telegram" },
     c.linkedin && { label: "LinkedIn", href: c.linkedin, k: "LinkedIn" },
@@ -50,7 +50,7 @@ export function Contact({ profile }: { profile: Profile }) {
         {c.email && (
           <Reveal className="mt-12">
             <div className="flex flex-wrap items-center gap-4">
-              <a href={`mailto:${c.email}`} className="serif-it grad-text text-[clamp(1.8rem,5vw,4rem)] leading-none break-all">
+              <a href={`mailto:${c.email}`} className="serif-it grad-text min-w-0 text-[clamp(1.6rem,5vw,4rem)] leading-none break-all">
                 {c.email}
               </a>
               <button type="button" onClick={copy} className="rounded-full border border-line px-4 py-2 text-sm hover:border-violet" aria-live="polite">
@@ -62,16 +62,16 @@ export function Contact({ profile }: { profile: Profile }) {
 
         <ul className="mt-12 flex flex-wrap gap-3">
           {links.map((l, i) => (
-            <Reveal as="li" key={l.k} index={i}>
+            <Reveal as="li" key={l.k} index={i} className="max-w-full">
               <a
                 href={l.href}
                 target={l.href.startsWith("http") ? "_blank" : undefined}
                 rel="noopener noreferrer me"
-                className="group flex items-center gap-2 rounded-full border border-line bg-surface px-6 py-3.5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-rose"
+                className="group flex max-w-full items-center gap-2 rounded-full border border-line bg-surface px-5 py-3.5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-rose sm:px-6"
               >
-                <span className="text-[11px] tracking-[0.16em] text-muted uppercase">{l.k}</span>
-                <span className="font-medium">{l.label}</span>
-                <span className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">↗</span>
+                <span className="shrink-0 text-[11px] tracking-[0.16em] text-muted uppercase">{l.k}</span>
+                <span className="min-w-0 truncate font-medium">{l.label}</span>
+                <span className="shrink-0 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">↗</span>
               </a>
             </Reveal>
           ))}
