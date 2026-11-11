@@ -122,10 +122,10 @@ export function ProjectSphere({ projects, onOpen, hint }: { projects: Project[];
                 aria-hidden={i >= projects.length}
                 aria-label={p.title}
                 onClick={() => moved.current < 6 && onOpen(p)}
-                className="group absolute top-0 left-0 -mt-[clamp(38px,6vw,62px)] -ml-[clamp(60px,9.6vw,100px)] w-[clamp(120px,19.2vw,200px)] [backface-visibility:hidden]"
-                style={{ transform: `rotateY(${lon}deg) rotateX(${lat}deg) translateZ(clamp(220px, 36vw, 470px))` }}
+                className="group absolute top-0 left-0 -mt-[clamp(30px,6vw,62px)] -ml-[clamp(48px,9.6vw,100px)] w-[clamp(96px,19.2vw,200px)] [backface-visibility:hidden]"
+                style={{ transform: `rotateY(${lon}deg) rotateX(${lat}deg) translateZ(clamp(150px, 36vw, 470px))` }}
               >
-                <span className="block overflow-hidden rounded-xl border border-line bg-bg-2 shadow-[var(--shadow)] transition-transform duration-300 group-hover:scale-110 group-focus-visible:scale-110">
+                <span className="block overflow-hidden rounded-lg border sm:rounded-xl border-line bg-bg-2 shadow-[var(--shadow)] transition-transform duration-300 group-hover:scale-110 group-focus-visible:scale-110">
                   {p.demoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element -- remote screenshot, tiny
                     <img src={shot(p.demoUrl, 400)} alt="" loading="lazy" decoding="async" className="aspect-[16/10] w-full object-cover object-top" />
@@ -134,13 +134,13 @@ export function ProjectSphere({ projects, onOpen, hint }: { projects: Project[];
                       {p.title.charAt(0)}
                     </span>
                   )}
-                  <span className="block truncate px-2.5 py-1.5 text-left text-[11px] font-medium">{p.title}</span>
+                  <span className="block truncate px-2 py-1 text-left text-[10px] font-medium sm:px-2.5 sm:py-1.5 sm:text-[11px]">{p.title}</span>
                 </span>
               </button>
             );
           })}
         </div>
-        <p className="absolute bottom-8 text-xs tracking-[0.2em] text-muted uppercase">{hint}</p>
+        <p className="absolute bottom-8 px-4 text-center text-[10px] tracking-[0.2em] text-muted uppercase sm:text-xs">{hint}</p>
       </div>
     </div>
   );

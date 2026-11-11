@@ -96,7 +96,7 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
           </span>
         </div>
 
-        <div className="relative z-20 flex flex-1 flex-col gap-3 p-6">
+        <div className="relative z-20 flex flex-1 flex-col gap-3 p-5 sm:p-6">
           <div className="flex items-center justify-between text-[11px] tracking-[0.16em] text-muted uppercase">
             <span>{p.createdAt ? new Date(p.createdAt).getFullYear() : ""}</span>
             <span>{p.languages[0]?.name}</span>
@@ -129,7 +129,7 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
               </ul>
             </div>
           )}
-          <div className="flex items-center justify-between gap-3 border-t border-line pt-4 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-line pt-4 text-sm">
             <span className="text-muted">
               {p.createdAt && <time dateTime={p.createdAt}>{fmt.format(new Date(p.createdAt))}</time>}
               {p.stars > 0 && <span className="ml-3">★ {p.stars}</span>}

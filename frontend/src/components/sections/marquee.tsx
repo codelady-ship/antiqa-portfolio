@@ -52,7 +52,7 @@ export function Marquee({ items, label }: { items: string[]; label: string }) {
     ));
 
   return (
-    <section aria-label={label} className="overflow-hidden border-y border-line py-10 text-[clamp(2.6rem,8vw,7rem)]">
+    <section aria-label={label} className="overflow-hidden border-y border-line py-6 text-[clamp(2rem,8vw,7rem)] sm:py-10">
       <ul className="sr-only">
         {items.map((s) => (
           <li key={s}>{s}</li>

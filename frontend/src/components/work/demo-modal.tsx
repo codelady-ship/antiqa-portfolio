@@ -16,17 +16,28 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
   const [tab, setTab] = useState<Tab>("demo");
   const [device, setDevice] = useState<keyof typeof WIDTHS>("desktop");
   const [readme, setReadme] = useState<string | null>(null);
+  // phones/tablets: the info sidebar is a toggle that replaces the preview, not a cramped strip
+  const [info, setInfo] = useState(false);
   const fmt = new Intl.DateTimeFormat(locale === "az" ? "az-AZ" : "en-GB", { day: "numeric", month: "long", year: "numeric" });
 
   const canFrame = !!p?.demoUrl && isSafeFrame(p.demoUrl);
+
+  // reset the view when another project opens (state adjusted during render, not in an effect)
+  const [shown, setShown] = useState<Project | null>(null);
+  if (p !== shown) {
+    setShown(p);
+    if (p) {
+      setTab(canFrame ? "demo" : "readme");
+      setDevice("desktop");
+      setReadme(null);
+      setInfo(false);
+    }
+  }
 
   useEffect(() => {
     const d = dlg.current;
     if (!d) return;
     if (p) {
-      setTab(p.demoUrl && isSafeFrame(p.demoUrl) ? "demo" : "readme");
-      setDevice("desktop");
-      setReadme(null);
       if (!d.open) d.showModal();
       document.documentElement.style.overflow = "hidden";
     } else if (d.open) {
@@ -69,12 +80,12 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
     >
       {p && (
         <div className="flex h-full flex-col">
-          <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4">
-            <div className="min-w-0">
+          <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-line px-4 py-3 sm:px-5 sm:py-4">
+            <div className="min-w-0 flex-1">
               <p className="text-[11px] tracking-[0.18em] text-muted uppercase">
                 {t("created")}: {p.createdAt ? fmt.format(new Date(p.createdAt)) : "—"}
               </p>
-              <h2 id="demo-title" className="display truncate text-2xl sm:text-3xl">
+              <h2 id="demo-title" className="display truncate text-xl sm:text-3xl">
                 {p.title}
               </h2>
             </div>
@@ -89,8 +100,11 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                     aria-controls="demo-panel"
                     aria-selected={tab === k}
                     disabled={k === "demo" && !canFrame}
-                    onClick={() => setTab(k)}
-                    className={`rounded-full px-4 py-1.5 transition-colors disabled:opacity-35 ${tab === k ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}
+                    onClick={() => {
+                      setTab(k);
+                      setInfo(false);
+                    }}
+                    className={`rounded-full px-3 py-1.5 transition-colors disabled:opacity-35 sm:px-4 ${tab === k ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}
                   >
                     {k === "demo" ? "Demo" : t("readme")}
                   </button>
@@ -113,6 +127,15 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
               )}
               <button
                 type="button"
+                onClick={() => setInfo((v) => !v)}
+                aria-expanded={info}
+                aria-controls="demo-info"
+                className={`rounded-full border px-3 py-1.5 text-sm transition-colors md:hidden ${info ? "border-ink bg-ink text-bg" : "border-line text-muted hover:text-ink"}`}
+              >
+                {t("details")}
+              </button>
+              <button
+                type="button"
                 onClick={() => dlg.current?.close()}
                 aria-label={t("close")}
                 className="grid size-10 place-items-center rounded-full border border-line transition-transform duration-300 hover:rotate-90 hover:border-rose hover:text-rose"
@@ -123,7 +146,12 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
           </header>
 
           <div className="grid min-h-0 flex-1 md:grid-cols-[1fr_300px]">
-            <div id="demo-panel" role="tabpanel" aria-labelledby={`tab-${tab}`} className="flex min-h-0 justify-center bg-bg-2 p-3 sm:p-5">
+            <div
+              id="demo-panel"
+              role="tabpanel"
+              aria-labelledby={`tab-${tab}`}
+              className={`min-h-0 justify-center bg-bg-2 p-2 sm:p-5 md:flex ${info ? "max-md:hidden" : "flex"}`}
+            >
               {tab === "demo" && p.demoUrl && canFrame ? (
                 <div
                   className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white transition-[width] duration-500 ease-out"
@@ -165,7 +193,10 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
               )}
             </div>
 
-            <aside className="flex min-h-0 flex-col gap-6 overflow-auto border-line p-5 text-sm max-md:max-h-[34dvh] max-md:border-t md:border-l">
+            <aside
+              id="demo-info"
+              className={`min-h-0 flex-col gap-6 overflow-auto overscroll-contain border-line p-5 text-sm md:flex md:border-l ${info ? "flex" : "max-md:hidden"}`}
+            >
               {(p.summary?.[locale] || p.description) && (
                 <section>
                   <h3 className="kicker mb-2">{t("description")}</h3>
