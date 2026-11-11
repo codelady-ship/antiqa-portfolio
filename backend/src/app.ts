@@ -3,7 +3,9 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import sanitizeHtml from "sanitize-html";
 import { z } from "zod";
-import { checkCredentials, COOKIE, isAdmin, issueSession, requireAdmin } from "./auth.js";
+import { randomBytes } from "node:crypto";
+import { checkCredentials, COOKIE, deviceId, isAdmin, issueDevice, issueSession, requireAdmin } from "./auth.js";
+import { type Limit, type LimitStore, reserveAll } from "./limiter.js";
 import { isValidObjectId } from "mongoose";
 import { connectDb, Cv, LoginAttempt, Profile, Project } from "./models.js";
 import { demoUrl, fetchSnapshot, GithubError, parseRepoUrl } from "./services/github.js";
@@ -78,7 +80,8 @@ export function present(p: any, admin = false) {
     hidden: !!p.hidden,
     order: p.order ?? 0,
     syncedAt: p.syncedAt ?? null,
-    ...(admin && { syncError: p.syncError || null }),
+    // admin edits the raw overrides, not the computed values
+    ...(admin && { syncError: p.syncError || null, titleRaw: p.title || "", demoOverride: p.demoOverride || "" }),
   };
 }
 
@@ -98,19 +101,40 @@ async function sync(p: any) {
 
 /** Failed-login counter in Mongo (shared by all serverless instances, TTL 15 min). */
 const WINDOW = 15 * 60_000;
-function clientKey(req: Request) {
-  const xff = String(req.get("x-forwarded-for") || "").split(",")[0].trim();
-  return "ip:" + (xff || req.ip || "?");
-}
-async function tooMany(req: Request) {
-  const expireAt = new Date(Date.now() + WINDOW);
-  const [ip, all] = await Promise.all(
-    [clientKey(req), "global"].map((k) =>
-      LoginAttempt.findOneAndUpdate({ _id: k }, { $inc: { n: 1 }, $setOnInsert: { expireAt } }, { upsert: true, new: true }).lean(),
-    ),
-  );
-  // 5 tries per client, 50 per window overall (header can be spoofed, the global cap cannot)
-  return ((ip as any)?.n ?? 0) > 5 || ((all as any)?.n ?? 0) > 50;
+const MAX_PER_CLIENT = 5;
+const MAX_GLOBAL = 100;
+
+const mongoLimits: LimitStore = {
+  async reserve(key, max) {
+    const filter = { _id: key, n: { $lt: max } };
+    try {
+      return !!(await LoginAttempt.findOneAndUpdate(
+        filter,
+        { $inc: { n: 1 }, $setOnInsert: { expireAt: new Date(Date.now() + WINDOW) } },
+        { upsert: true, new: true },
+      ).lean());
+    } catch (e) {
+      if ((e as { code?: number }).code !== 11000) throw e;
+      // E11000: the key exists and is full (the upsert tried to insert a duplicate _id),
+      // or a parallel first request created it a moment ago: try once more without upsert
+      return !!(await LoginAttempt.findOneAndUpdate(filter, { $inc: { n: 1 } }, { new: true }).lean());
+    }
+  },
+  async release(key) {
+    await LoginAttempt.updateOne({ _id: key, n: { $gt: 0 } }, { $inc: { n: -1 } });
+  },
+  async reset(key) {
+    await LoginAttempt.deleteOne({ _id: key });
+  },
+};
+
+/**
+ * Known device (signed cookie from an earlier login): its own key, no global cap.
+ * Otherwise per IP + global. req.ip honours "trust proxy" (the hop the platform proxy added);
+ * the leftmost X-Forwarded-For entry is client-controlled and is not used.
+ */
+function loginLimits(req: Request, dev: string | null): Limit[] {
+  return dev ? [[`dev:${dev}`, MAX_PER_CLIENT]] : [[`ip:${req.ip || "?"}`, MAX_PER_CLIENT], ["global", MAX_GLOBAL]];
 }
 
 export function createApp() {
@@ -136,11 +160,16 @@ export function createApp() {
     "/api/auth/login",
     wrap(async (req, res) => {
       await connectDb();
-      if (await tooMany(req)) return res.status(429).json({ error: "too many attempts" });
       const { email, password } = z.object({ email: z.string().max(200), password: z.string().max(200) }).parse(req.body);
+      const dev = deviceId(req);
+      const limits = loginLimits(req, dev);
+      // the slot is taken BEFORE the slow bcrypt check, so parallel requests cannot all slip through
+      if (!(await reserveAll(mongoLimits, limits))) return res.status(429).json({ error: "too many attempts" });
       if (!(await checkCredentials(email, password))) return res.status(401).json({ error: "invalid credentials" });
-      await LoginAttempt.deleteOne({ _id: clientKey(req) });
+      // success: forget this client's failures and give back the global slot (only failures count)
+      await Promise.all(limits.map(([k]) => (k === "global" ? mongoLimits.release(k) : mongoLimits.reset(k))));
       issueSession(res);
+      issueDevice(res, dev ?? randomBytes(16).toString("hex"));
       res.json({ ok: true });
     }),
   );
@@ -160,7 +189,7 @@ export function createApp() {
     wrap(async (_req, res) => {
       const p = await Profile.findById("main").lean();
       const cvs = await Cv.find({}, { _id: 1, updatedAt: 1 }).lean();
-      res.json({ ...(p ?? {}), cv: Object.fromEntries(cvs.map((c: any) => [c._id, `/api/cv/${c._id}`])) });
+      res.json({ ...(p ?? {}), cv: Object.fromEntries(cvs.map((c: any) => [c._id, `/api/cv/${c._id}?v=${new Date(c.updatedAt ?? 0).getTime()}`])) });
     }),
   );
   app.put(
@@ -194,7 +223,12 @@ export function createApp() {
       const lang = z.enum(["az", "en"]).parse(req.params.lang);
       const body = req.body as Buffer;
       if (!Buffer.isBuffer(body) || body.subarray(0, 5).toString() !== "%PDF-") return res.status(400).json({ error: "pdf only" });
-      const fileName = String(req.get("x-file-name") || `cv-${lang}.pdf`).slice(0, 100);
+      let fileName = `cv-${lang}.pdf`;
+      try {
+        fileName = decodeURIComponent(req.get("x-file-name") || fileName).slice(0, 100);
+      } catch {
+        /* malformed header: keep default */
+      }
       await Cv.findByIdAndUpdate(lang, { fileName, data: body, size: body.length }, { upsert: true });
       res.json({ ok: true, size: body.length });
     }),
@@ -208,7 +242,8 @@ export function createApp() {
       const list = await Project.find(all ? {} : { hidden: false }, { "gh.readmeHtml": 0 })
         .sort({ featured: -1, order: -1, "gh.createdAt": -1 })
         .lean();
-      res.setHeader("Cache-Control", all ? "no-store" : "public, s-maxage=300, stale-while-revalidate=3600");
+      // no CDN cache: Next caches the list itself and must see admin changes right after revalidation
+      res.setHeader("Cache-Control", "private, no-store");
       res.json(list.map((p) => present(p, all)));
     }),
   );
@@ -230,14 +265,14 @@ export function createApp() {
       const ref = parseRepoUrl(ProjectCreate.parse(req.body).repoUrl);
       if (!ref) return res.status(400).json({ error: "Not a GitHub repository URL" });
       const exists = await Project.findOne(ref).collation({ locale: "en", strength: 2 });
-      if (exists) return res.status(409).json({ error: "Already added", project: present(exists) });
+      if (exists) return res.status(409).json({ error: "Already added", project: present(exists, true) });
       const p = new Project({ ...ref, repoUrl: `https://github.com/${ref.owner}/${ref.name}` });
       await sync(p);
       if (p.syncError) {
         await p.deleteOne();
         return res.status(422).json({ error: p.syncError });
       }
-      res.status(201).json(present(p));
+      res.status(201).json(present(p, true));
     }),
   );
   app.patch(
@@ -247,7 +282,7 @@ export function createApp() {
       if (!isValidObjectId(req.params.id)) return res.status(404).json({ error: "not found" });
       const p = await Project.findByIdAndUpdate(req.params.id, ProjectPatch.parse(req.body), { new: true });
       if (!p) return res.status(404).json({ error: "not found" });
-      res.json(present(p));
+      res.json(present(p, true));
     }),
   );
   app.delete(

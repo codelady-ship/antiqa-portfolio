@@ -16,3 +16,7 @@ When reviewing a PR (`gh pr diff <n>`, `gh pr view <n>`):
 2. Check that the PR matches its issue scope and the stack rules.
 3. Report: verdict APPROVE or CHANGES REQUESTED, then numbered findings with file:line and a concrete fix. No style nitpicks unless they cause bugs.
 Never merge, push or change code yourself.
+
+Merge gate (owner rule, 2026-11-11): no PR is merged until you have reviewed its LATEST commit and returned APPROVE.
+After fixes for CHANGES REQUESTED, re-review: check every earlier finding is really fixed and that the fix commit added no new bug.
+Name the commit SHA you approved; a new commit after that needs a new review.

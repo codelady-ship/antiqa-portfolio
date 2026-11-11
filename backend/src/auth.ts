@@ -31,6 +31,35 @@ export function issueSession(res: Response) {
   });
 }
 
+/**
+ * "Known device" cookie, set after a successful login. Its holder gets its own rate-limit key
+ * instead of the IP + global keys, so attackers (or many visitors behind one proxy IP)
+ * cannot lock the owner out of the browser she already used.
+ */
+export const DEVICE_COOKIE = "admin_device";
+const DEVICE_AGE = 180 * 24 * 3600;
+
+export function deviceId(req: Request): string | null {
+  const token = req.cookies?.[DEVICE_COOKIE];
+  if (!token) return null;
+  try {
+    const { dev } = jwt.verify(token, secret()) as { dev?: unknown };
+    return typeof dev === "string" && /^[a-f0-9]{32}$/.test(dev) ? dev : null;
+  } catch {
+    return null;
+  }
+}
+
+export function issueDevice(res: Response, dev: string) {
+  res.cookie(DEVICE_COOKIE, jwt.sign({ dev }, secret(), { expiresIn: DEVICE_AGE }), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: DEVICE_AGE * 1000,
+    path: "/api/auth",
+  });
+}
+
 export function isAdmin(req: Request) {
   const token = req.cookies?.[COOKIE];
   if (!token) return false;

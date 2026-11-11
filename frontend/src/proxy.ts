@@ -5,5 +5,5 @@ export default createMiddleware(routing);
 
 export const config = {
   // everything except API, Next internals and files with an extension
-  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
+  matcher: ["/((?!api|admin-revalidate|_next|_vercel|.*\\..*).*)"],
 };
