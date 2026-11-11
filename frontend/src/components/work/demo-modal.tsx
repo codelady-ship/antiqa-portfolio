@@ -90,7 +90,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
               </h2>
             </div>
             <div className="flex items-center gap-2">
-              <div role="tablist" aria-label={t("view")}className="flex rounded-full border border-line p-0.5 text-sm">
+              <div role="tablist" aria-label={t("view")} className="flex rounded-full border border-line p-0.5 text-sm">
                 {(["demo", "readme"] as const).map((k) => (
                   <button
                     key={k}
@@ -111,7 +111,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                 ))}
               </div>
               {tab === "demo" && (
-                <div role="group" aria-label={t("viewport")}className="hidden rounded-full border border-line p-0.5 text-sm md:flex">
+                <div role="group" aria-label={t("viewport")} className="hidden rounded-full border border-line p-0.5 text-sm md:flex">
                   {(Object.keys(WIDTHS) as (keyof typeof WIDTHS)[]).map((k) => (
                     <button
                       key={k}

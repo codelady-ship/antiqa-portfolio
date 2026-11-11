@@ -62,9 +62,9 @@ export function ProjectSphere({
       if (!reduce && !focused) drift += Math.min(now - last, 50) * 0.004;
       last = now;
       const target = p * 300 + dragY + drift;
-      rotY += (target - rotY) * 0.08;
+      rotY = reduce ? target : rotY + (target - rotY) * 0.08; // no easing under reduced motion
       const tx = -12 + p * 18 + dragX;
-      rotX += (tx - rotX) * 0.08;
+      rotX = reduce ? tx : rotX + (tx - rotX) * 0.08;
       const scale = 0.75 + Math.sin(p * Math.PI) * 0.35;
       b.style.transform = `translateZ(-200px) scale(${scale}) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
       el.style.setProperty("--sp", p.toFixed(3));
@@ -85,9 +85,9 @@ export function ProjectSphere({
     document.addEventListener("visibilitychange", sync);
 
     const down = (e: PointerEvent) => {
+      moved.current = 0; // before the early return: a tap after a drag must still open the card
       if ((e.target as HTMLElement).closest("button") && e.pointerType !== "mouse") return;
       dragging = true;
-      moved.current = 0;
       lx = e.clientX;
       ly = e.clientY;
     };
@@ -107,7 +107,8 @@ export function ProjectSphere({
     // keyboard: turn the sphere so the focused card faces the viewer
     const onFocus = (e: FocusEvent) => {
       const btn = (e.target as HTMLElement).closest<HTMLElement>("[data-lon]");
-      if (!btn) return;
+      // keyboard only: a click/tap focus must not snap the sphere or fight a drag
+      if (!btn || !btn.matches(":focus-visible")) return;
       focused = true;
       vel = 0;
       const p = progress();

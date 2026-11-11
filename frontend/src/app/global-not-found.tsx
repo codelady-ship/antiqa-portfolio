@@ -23,7 +23,11 @@ export default function GlobalNotFound() {
       </head>
       <body className="min-h-dvh">
         <main>
-          <NotFoundView kicker={az.NotFound.kicker} title={az.NotFound.title} text={`${az.NotFound.text} / ${en.NotFound.text}`}>
+          <NotFoundView kicker={az.NotFound.kicker} title={az.NotFound.title} text={
+              <>
+                {az.NotFound.text} / <span lang="en">{en.NotFound.text}</span>
+              </>
+            }>
             <Link href="/az" hrefLang="az" className={notFoundCta}>
               {az.NotFound.home} →
             </Link>

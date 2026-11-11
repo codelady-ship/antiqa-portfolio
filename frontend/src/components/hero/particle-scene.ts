@@ -188,6 +188,7 @@ export function createScene(canvas: HTMLCanvasElement, monogram: string) {
     running = false,
     raf = 0;
   const clock = new THREE.Clock();
+  let elapsed = 0;
 
   function resize() {
     const w = canvas.clientWidth,
@@ -203,7 +204,8 @@ export function createScene(canvas: HTMLCanvasElement, monogram: string) {
   function frame() {
     if (!running) return;
     raf = requestAnimationFrame(frame);
-    const t = clock.getElapsedTime();
+    elapsed += Math.min(clock.getDelta(), 0.05); // own time: no jump after a pause
+    const t = elapsed;
     smooth += (progress - smooth) * 0.08;
     mx += (tmx - mx) * 0.06;
     my += (tmy - my) * 0.06;
@@ -222,7 +224,7 @@ export function createScene(canvas: HTMLCanvasElement, monogram: string) {
       // idempotent: the viewport observer and the tab-visibility handler may both call it
       if (running) return;
       running = true;
-      if (!clock.running) clock.start(); // keep elapsed time across pauses (no second fade-in)
+      clock.getDelta(); // drop the paused gap
       frame();
     },
     stop() {

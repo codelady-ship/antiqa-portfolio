@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 /** Shared 404 look: used inside the locale layout and by the bare global 404 page. */
-export function NotFoundView({ kicker, title, text, children }: { kicker: string; title: string; text: string; children: ReactNode }) {
+export function NotFoundView({ kicker, title, text, children }: { kicker: string; title: string; text: ReactNode; children: ReactNode }) {
   return (
     <section className="relative grid min-h-dvh place-items-center overflow-hidden px-4 py-32 sm:px-8">
       <div aria-hidden className="backdrop-grid absolute inset-0 opacity-60" />

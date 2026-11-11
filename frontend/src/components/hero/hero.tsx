@@ -142,7 +142,7 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
               {t("available")}
             </p>
           )}
-          <h1 className="display text-[clamp(3rem,15vw,13.5rem)] [overflow-wrap:anywhere]">
+          <h1 className="display text-[clamp(3rem,15vw,13.5rem)] break-words">
             <span className="hero-rise block">{first}</span>
             <span className="serif-it hero-rise grad-text -mt-[0.06em] block pl-[0.04em] text-[0.62em] [animation-delay:120ms]">{last}</span>
           </h1>
