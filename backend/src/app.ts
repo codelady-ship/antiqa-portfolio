@@ -78,7 +78,8 @@ export function present(p: any, admin = false) {
     hidden: !!p.hidden,
     order: p.order ?? 0,
     syncedAt: p.syncedAt ?? null,
-    ...(admin && { syncError: p.syncError || null }),
+    // admin edits the raw overrides, not the computed values
+    ...(admin && { syncError: p.syncError || null, titleRaw: p.title || "", demoOverride: p.demoOverride || "" }),
   };
 }
 
@@ -160,7 +161,7 @@ export function createApp() {
     wrap(async (_req, res) => {
       const p = await Profile.findById("main").lean();
       const cvs = await Cv.find({}, { _id: 1, updatedAt: 1 }).lean();
-      res.json({ ...(p ?? {}), cv: Object.fromEntries(cvs.map((c: any) => [c._id, `/api/cv/${c._id}`])) });
+      res.json({ ...(p ?? {}), cv: Object.fromEntries(cvs.map((c: any) => [c._id, `/api/cv/${c._id}?v=${new Date(c.updatedAt ?? 0).getTime()}`])) });
     }),
   );
   app.put(
@@ -194,7 +195,12 @@ export function createApp() {
       const lang = z.enum(["az", "en"]).parse(req.params.lang);
       const body = req.body as Buffer;
       if (!Buffer.isBuffer(body) || body.subarray(0, 5).toString() !== "%PDF-") return res.status(400).json({ error: "pdf only" });
-      const fileName = String(req.get("x-file-name") || `cv-${lang}.pdf`).slice(0, 100);
+      let fileName = `cv-${lang}.pdf`;
+      try {
+        fileName = decodeURIComponent(req.get("x-file-name") || fileName).slice(0, 100);
+      } catch {
+        /* malformed header: keep default */
+      }
       await Cv.findByIdAndUpdate(lang, { fileName, data: body, size: body.length }, { upsert: true });
       res.json({ ok: true, size: body.length });
     }),
@@ -208,7 +214,8 @@ export function createApp() {
       const list = await Project.find(all ? {} : { hidden: false }, { "gh.readmeHtml": 0 })
         .sort({ featured: -1, order: -1, "gh.createdAt": -1 })
         .lean();
-      res.setHeader("Cache-Control", all ? "no-store" : "public, s-maxage=300, stale-while-revalidate=3600");
+      // no CDN cache: Next caches the list itself and must see admin changes right after revalidation
+      res.setHeader("Cache-Control", "private, no-store");
       res.json(list.map((p) => present(p, all)));
     }),
   );
