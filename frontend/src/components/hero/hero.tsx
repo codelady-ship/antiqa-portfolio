@@ -61,11 +61,15 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
       scene?.setTheme(isDark());
       if (reduce) scene?.renderStatic(progress());
     });
+    // render only while the hero is on screen and the tab is visible
+    const sync = () => {
+      if (!scene || reduce) return;
+      if (visible && !document.hidden) scene.start();
+      else scene.stop();
+    };
     const io = new IntersectionObserver(([e]) => {
       visible = e.isIntersecting;
-      if (!scene || reduce) return;
-      if (visible) scene.start();
-      else scene.stop();
+      sync();
     });
 
     const boot = async () => {
@@ -76,7 +80,7 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
         scene = createScene(cv, initials);
         scene.setTheme(isDark());
         if (reduce) scene.renderStatic(progress());
-        else if (visible) scene.start();
+        else sync();
         cv.dataset.ready = "1";
       } catch {
         /* no WebGL */
@@ -89,6 +93,7 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
     addEventListener("scroll", onScroll, { passive: true });
     addEventListener("pointermove", onMove, { passive: true });
     addEventListener("resize", onResize);
+    document.addEventListener("visibilitychange", sync);
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     io.observe(el);
     return () => {
@@ -97,6 +102,7 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
       removeEventListener("scroll", onScroll);
       removeEventListener("pointermove", onMove);
       removeEventListener("resize", onResize);
+      document.removeEventListener("visibilitychange", sync);
       mo.disconnect();
       io.disconnect();
       scene?.dispose();

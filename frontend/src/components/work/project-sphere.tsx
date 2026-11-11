@@ -53,12 +53,19 @@ export function ProjectSphere({ projects, onOpen, hint }: { projects: Project[];
       el.style.setProperty("--sp", p.toFixed(3));
       if (running) raf = requestAnimationFrame(tick);
     };
-    const io = new IntersectionObserver(([e]) => {
-      running = e.isIntersecting;
+    // animate only while the sphere is on screen and the tab is visible
+    let inView = false;
+    const sync = () => {
+      running = inView && !document.hidden;
       cancelAnimationFrame(raf);
       if (running) raf = requestAnimationFrame(tick);
+    };
+    const io = new IntersectionObserver(([e]) => {
+      inView = e.isIntersecting;
+      sync();
     });
     io.observe(el);
+    document.addEventListener("visibilitychange", sync);
 
     const down = (e: PointerEvent) => {
       if ((e.target as HTMLElement).closest("button") && e.pointerType !== "mouse") return;
@@ -88,6 +95,7 @@ export function ProjectSphere({ projects, onOpen, hint }: { projects: Project[];
       running = false;
       cancelAnimationFrame(raf);
       io.disconnect();
+      document.removeEventListener("visibilitychange", sync);
       stage.removeEventListener("pointerdown", down);
       removeEventListener("pointermove", move);
       removeEventListener("pointerup", up);
