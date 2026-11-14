@@ -114,14 +114,16 @@ export function ProjectSphere({
       if (animate && !focused) drift += Math.min(now - last, 50) * 0.004;
       last = now;
       const target = p * 300 + dragY + drift;
+      const turning = Math.abs(target - rotY) > 1.5; // fast turn (scroll jump, fling)
       rotY = animate ? rotY + (target - rotY) * 0.08 : target; // no easing when not animating
       const tx = -12 + p * 18 + dragX;
       rotX = animate ? rotX + (tx - rotX) * 0.08 : tx;
       const scale = 0.75 + Math.sin(p * Math.PI) * 0.35;
       b.style.transform = `translateZ(-200px) scale(${scale}) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
       el.style.setProperty("--sp", p.toFixed(3));
-      // hit-test sizes change slowly: every 4th frame while animating, every drawn frame otherwise
-      if (!animate || frame++ % 4 === 0) updateTargets();
+      // hit-test sizes change slowly while drifting: every 4th frame then; every frame while
+      // turning fast, and every drawn frame when not animating
+      if (!animate || turning || frame++ % 4 === 0) updateTargets();
     };
     const tick = () => {
       draw();
