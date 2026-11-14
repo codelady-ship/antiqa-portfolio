@@ -80,10 +80,15 @@ export function Contact({ profile }: { profile: Profile }) {
                 rel="noopener noreferrer me"
                 className="group flex max-w-full items-center gap-2 rounded-full border border-line bg-surface px-5 py-3.5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-rose sm:px-6"
               >
-                <span translate={l.brand ? "no" : undefined} className={`shrink-0 text-[11px] tracking-[0.16em] text-muted uppercase ${l.brand ? "notranslate" : ""}`}>
+                {/* lang="en": CSS uppercase under lang="az" would print "LİNKEDIN" / "GİTHUB" */}
+                <span
+                  translate={l.brand ? "no" : undefined}
+                  lang={l.brand ? "en" : undefined}
+                  className={`shrink-0 text-[11px] tracking-[0.16em] text-muted uppercase ${l.brand ? "notranslate" : ""}`}
+                >
                   {l.k}
                 </span>
-                <span translate="no" className="notranslate min-w-0 truncate font-medium">
+                <span translate="no" lang={l.brand ? "en" : undefined} className="notranslate min-w-0 truncate font-medium">
                   {l.label}
                 </span>
                 <span className="shrink-0 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">↗</span>
