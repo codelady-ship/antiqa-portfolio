@@ -15,7 +15,8 @@ type Props = {
 
 /**
  * Sticky scroll track (260vh). The name is the LCP element and is painted on the server;
- * the particle canvas loads after the browser is idle, so it never blocks first paint.
+ * the particle canvas boots after `load` (desktop: first idle; phones: first interaction or
+ * a later idle), in short tasks, so it stays out of first paint and the TBT window.
  * --p (0..1) drives the text exit in CSS; the same value morphs the particles.
  */
 export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref }: Props) {
@@ -69,6 +70,10 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
     };
     const io = new IntersectionObserver(([e]) => {
       visible = e.isIntersecting;
+      if (visible && armed) {
+        armed = false;
+        go();
+      }
       sync();
     });
 
@@ -77,17 +82,69 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
       try {
         const { createScene } = await import("./particle-scene");
         if (disposed) return;
-        scene = createScene(cv, initials);
+        const s = await createScene(cv, initials, () => disposed);
+        if (disposed) return s.dispose();
+        scene = s;
         scene.setTheme(isDark());
         if (reduce) scene.renderStatic(progress());
         else sync();
         cv.dataset.ready = "1";
       } catch {
-        /* no WebGL */
+        /* no WebGL, or unmounted while booting */
       }
     };
-    const idle = (window as Window & { requestIdleCallback?: (cb: () => void, o?: object) => number }).requestIdleCallback;
-    const idleId = idle ? idle(boot, { timeout: 1500 }) : window.setTimeout(boot, 600);
+
+    /*
+     * When to boot the scene. The name (LCP) and the CTAs must be usable first, so the
+     * scene never starts before `load`, and never inside a forced idle timeout:
+     *  - desktop (fine pointer, ≥ 768 px): the first idle period after load;
+     *  - phones/tablets: the first interaction (scroll, touch, key), or an idle period
+     *    a few seconds after load if the visitor just reads — the page is interactive
+     *    long before the orb appears;
+     *  - Data Saver on: no scene (the gradient glow behind the name stays).
+     * It also waits until the hero is on screen, so a deep link to #work does not pay for it.
+     */
+    const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
+    const saveData = !!nav.connection?.saveData;
+    const mobile = innerWidth < 768 || matchMedia("(pointer: coarse)").matches;
+    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number; cancelIdleCallback?: (id: number) => void };
+    let idleId = 0,
+      timer = 0,
+      booted = false,
+      armed = false;
+    const triggers = ["scroll", "pointerdown", "keydown", "touchstart"] as const;
+    const clearTriggers = () => triggers.forEach((t) => removeEventListener(t, trigger));
+    const go = () => {
+      if (booted || disposed) return;
+      if (!visible) {
+        armed = true; // boot when the hero comes back into view
+        return;
+      }
+      booted = true;
+      clearTriggers();
+      clearTimeout(timer);
+      void boot();
+    };
+    function trigger() {
+      // run after the input is handled, not inside it
+      clearTriggers();
+      timer = window.setTimeout(go, 50);
+    }
+    const whenIdle = () => {
+      if (w.requestIdleCallback) idleId = w.requestIdleCallback(go);
+      else timer = window.setTimeout(go, 200);
+    };
+    const afterLoad = () => {
+      if (disposed) return;
+      if (!mobile) return whenIdle();
+      triggers.forEach((t) => addEventListener(t, trigger, { passive: true, once: true }));
+      timer = window.setTimeout(whenIdle, 4000);
+    };
+    const onLoad = () => afterLoad();
+    if (!saveData) {
+      if (document.readyState === "complete") afterLoad();
+      else addEventListener("load", onLoad, { once: true });
+    }
 
     onScroll();
     addEventListener("scroll", onScroll, { passive: true });
@@ -98,7 +155,10 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
     io.observe(el);
     return () => {
       disposed = true;
-      if (!idle) clearTimeout(idleId);
+      clearTimeout(timer);
+      if (idleId) w.cancelIdleCallback?.(idleId);
+      clearTriggers();
+      removeEventListener("load", onLoad);
       removeEventListener("scroll", onScroll);
       removeEventListener("pointermove", onMove);
       removeEventListener("resize", onResize);

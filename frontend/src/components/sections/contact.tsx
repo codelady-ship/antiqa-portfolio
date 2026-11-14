@@ -30,7 +30,13 @@ export function Contact({ profile }: { profile: Profile }) {
   };
 
   return (
-    <section id="contact" className="relative scroll-mt-24 overflow-hidden px-4 py-28 sm:px-8 sm:py-40">
+    // content-visibility: last section (only the footer follows), already overflow-hidden and
+    // free of fixed/sticky children, so skipping its layout until it nears the viewport cannot
+    // move anything above it or clip anything; `auto` remembers the real height once rendered
+    <section
+      id="contact"
+      className="relative scroll-mt-24 overflow-hidden px-4 py-28 [contain-intrinsic-size:auto_900px] [content-visibility:auto] sm:px-8 sm:py-40"
+    >
       <div
         aria-hidden
         className="pointer-events-none absolute -bottom-1/3 left-1/2 size-[90vmin] -translate-x-1/2 rounded-full opacity-30 blur-3xl"

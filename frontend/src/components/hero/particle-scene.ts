@@ -2,8 +2,35 @@
  * Triangle-particle scene (Three.js, loaded lazily). Three target shapes:
  *  0 = a folded "mind" orb, 1 = the owner's monogram, 2 = a wide scattered galaxy.
  * `setProgress(p)` (0..1, from the hero scroll track) morphs 0 → 1 → 2 on the GPU.
+ *
+ * `createScene` is async and yields to the main thread between the expensive steps
+ * (particle maths, text sampling, WebGL context, shader compile), so booting the scene
+ * is several short tasks instead of one long task that blocks input on a phone.
  */
-import * as THREE from "three";
+import {
+  AdditiveBlending,
+  BufferAttribute,
+  BufferGeometry,
+  Clock,
+  Color,
+  NormalBlending,
+  PerspectiveCamera,
+  Points,
+  Scene,
+  ShaderMaterial,
+  Vector2,
+  WebGLRenderer,
+} from "three";
+
+/** Give the browser a turn (input, paint) between boot steps. */
+function yieldToMain() {
+  const s = (globalThis as { scheduler?: { yield?: () => Promise<void> } }).scheduler;
+  if (s?.yield) return s.yield();
+  return new Promise<void>((r) => setTimeout(r, 0));
+}
+
+/** Thrown (and swallowed by the caller) when the hero unmounts while the scene is still booting. */
+export class Cancelled extends Error {}
 
 const VERT = /* glsl */ `
   attribute vec3 aB;
@@ -99,18 +126,17 @@ const PALETTE = {
   light: ["#6b3fd4", "#c2457d", "#b8861f"],
 };
 
-export function createScene(canvas: HTMLCanvasElement, monogram: string) {
+export async function createScene(canvas: HTMLCanvasElement, monogram: string, isCancelled: () => boolean = () => false) {
+  const step = async () => {
+    await yieldToMain();
+    if (isCancelled()) throw new Cancelled();
+  };
   const small = innerWidth < 768;
-  const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
-  // weak CPU or data saver: fewer particles and a lower pixel ratio
-  const lowPower = (nav.hardwareConcurrency || 8) <= 4 || !!nav.connection?.saveData;
-  const COUNT = small ? (lowPower ? 1200 : 1800) : lowPower ? 3000 : 6000;
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: lowPower ? "low-power" : "high-performance" });
-  const dpr = Math.min(devicePixelRatio, small || lowPower ? 1.25 : 2);
-  renderer.setPixelRatio(dpr);
-  const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-  camera.position.z = 7;
+  const nav = navigator as Navigator & { connection?: { saveData?: boolean }; deviceMemory?: number };
+  // weak CPU/memory or data saver: fewer particles and a lower pixel ratio
+  const lowPower = (nav.hardwareConcurrency || 8) <= 4 || (nav.deviceMemory ?? 8) <= 2 || !!nav.connection?.saveData;
+  // phones get ≤ 30 % of the desktop count (low-end phones 15 %)
+  const COUNT = small ? (lowPower ? 900 : 1800) : lowPower ? 3000 : 6000;
 
   // shape A: folded orb (two lobes, like a mind)
   const A = new Float32Array(COUNT * 3);
@@ -146,36 +172,52 @@ export function createScene(canvas: HTMLCanvasElement, monogram: string) {
     rot[i] = Math.random();
     mixv[i] = (y / (R || 1) + 1) / 2; // gradient bottom→top
   }
+  await step();
   const B = sampleText(monogram, COUNT, `800 190px ${getComputedStyle(document.body).getPropertyValue("--font-grotesk") || "sans-serif"}, sans-serif`);
+  await step();
 
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute("position", new THREE.BufferAttribute(A, 3));
-  geo.setAttribute("aB", new THREE.BufferAttribute(B, 3));
-  geo.setAttribute("aC", new THREE.BufferAttribute(C, 3));
-  geo.setAttribute("aSize", new THREE.BufferAttribute(size, 1));
-  geo.setAttribute("aRot", new THREE.BufferAttribute(rot, 1));
-  geo.setAttribute("aMix", new THREE.BufferAttribute(mixv, 1));
+  // the WebGL context is the costliest single step: give it its own task
+  const renderer = new WebGLRenderer({ canvas, antialias: false, alpha: true, powerPreference: lowPower ? "low-power" : "high-performance" });
+  const dpr = Math.min(devicePixelRatio, small || lowPower ? 1.25 : 2);
+  renderer.setPixelRatio(dpr);
+  const scene = new Scene();
+  const camera = new PerspectiveCamera(45, 1, 0.1, 100);
+  camera.position.z = 7;
+
+  const geo = new BufferGeometry();
+  geo.setAttribute("position", new BufferAttribute(A, 3));
+  geo.setAttribute("aB", new BufferAttribute(B, 3));
+  geo.setAttribute("aC", new BufferAttribute(C, 3));
+  geo.setAttribute("aSize", new BufferAttribute(size, 1));
+  geo.setAttribute("aRot", new BufferAttribute(rot, 1));
+  geo.setAttribute("aMix", new BufferAttribute(mixv, 1));
 
   const uniforms = {
     uMorph: { value: 0 },
     uTime: { value: 0 },
     uPixel: { value: dpr * (small ? 3.2 : 4) },
-    uMouse: { value: new THREE.Vector2(9, 9) },
+    uMouse: { value: new Vector2(9, 9) },
     uOpacity: { value: 0 },
-    uC1: { value: new THREE.Color() },
-    uC2: { value: new THREE.Color() },
-    uC3: { value: new THREE.Color() },
+    uC1: { value: new Color() },
+    uC2: { value: new Color() },
+    uC3: { value: new Color() },
   };
-  const mat = new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: FRAG, uniforms, transparent: true, depthWrite: false });
-  const points = new THREE.Points(geo, mat);
+  const mat = new ShaderMaterial({ vertexShader: VERT, fragmentShader: FRAG, uniforms, transparent: true, depthWrite: false });
+  const points = new Points(geo, mat);
   scene.add(points);
+
+  const dispose = () => {
+    geo.dispose();
+    mat.dispose();
+    renderer.dispose();
+  };
 
   function setTheme(dark: boolean) {
     const p = dark ? PALETTE.dark : PALETTE.light;
     uniforms.uC1.value.set(p[0]);
     uniforms.uC2.value.set(p[1]);
     uniforms.uC3.value.set(p[2]);
-    mat.blending = dark ? THREE.AdditiveBlending : THREE.NormalBlending;
+    mat.blending = dark ? AdditiveBlending : NormalBlending;
     mat.needsUpdate = true;
   }
 
@@ -187,7 +229,7 @@ export function createScene(canvas: HTMLCanvasElement, monogram: string) {
     tmy = 0,
     running = false,
     raf = 0;
-  const clock = new THREE.Clock();
+  const clock = new Clock();
   let elapsed = 0;
 
   function resize() {
@@ -200,6 +242,19 @@ export function createScene(canvas: HTMLCanvasElement, monogram: string) {
     camera.updateProjectionMatrix();
   }
   resize();
+
+  // compile the shader off the critical path (KHR_parallel_shader_compile where supported)
+  // so the first frame does not stall; then hand the main thread back once more
+  try {
+    await renderer.compileAsync(points, camera, scene);
+    await step();
+  } catch (e) {
+    if (e instanceof Cancelled || isCancelled()) {
+      dispose();
+      throw new Cancelled();
+    }
+    /* compile failed here → three compiles on the first render instead */
+  }
 
   function frame() {
     if (!running) return;
@@ -248,9 +303,7 @@ export function createScene(canvas: HTMLCanvasElement, monogram: string) {
     dispose() {
       running = false;
       cancelAnimationFrame(raf);
-      geo.dispose();
-      mat.dispose();
-      renderer.dispose();
+      dispose();
     },
   };
 }
