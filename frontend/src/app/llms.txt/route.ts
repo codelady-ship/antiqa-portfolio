@@ -30,6 +30,7 @@ export async function GET() {
     c.instagram && `- Instagram: https://instagram.com/${c.instagram}`,
     "",
     `Website: ${SITE_URL}/en (English), ${SITE_URL}/az (Azerbaijani)`,
+    `Full profile: ${SITE_URL}/en/about (English), ${SITE_URL}/az/about (Azerbaijani)`,
   ];
   return new Response(lines.filter((l): l is string => typeof l === "string").join("\n"), {
     headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "public, max-age=3600" },

@@ -1,11 +1,11 @@
 import { SITE_URL } from "@/lib/data";
 import type { Profile, Project } from "@/lib/types";
 
-/** Structured data for search and AI answer engines (Person + WebSite + list of source code). */
-export function JsonLd({ profile, projects, locale }: { profile: Profile; projects: Project[]; locale: "az" | "en" }) {
+/** schema.org Person node shared by the home and /about pages. */
+function personNode(profile: Profile, locale: "az" | "en") {
   const c = profile.contacts;
   const sameAs = [c.github, c.linkedin, c.instagram && `https://instagram.com/${c.instagram}`].filter(Boolean);
-  const person = {
+  return {
     "@type": "Person",
     "@id": `${SITE_URL}/#person`,
     name: profile.name,
@@ -19,6 +19,15 @@ export function JsonLd({ profile, projects, locale }: { profile: Profile; projec
     alumniOf: profile.education.map((e) => ({ "@type": "EducationalOrganization", name: e.place })),
     sameAs,
   };
+}
+
+function LdScript({ data }: { data: object }) {
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }} />;
+}
+
+/** Structured data for search and AI answer engines (Person + WebSite + list of source code). */
+export function JsonLd({ profile, projects, locale }: { profile: Profile; projects: Project[]; locale: "az" | "en" }) {
+  const person = personNode(profile, locale);
   const data = {
     "@context": "https://schema.org",
     "@graph": [
@@ -51,5 +60,24 @@ export function JsonLd({ profile, projects, locale }: { profile: Profile; projec
       },
     ],
   };
-  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\\u003c") }} />;
+  return <LdScript data={data} />;
+}
+
+/** /about: an AboutPage whose main entity is the same Person as on the home page. */
+export function AboutJsonLd({ profile, locale, name }: { profile: Profile; locale: "az" | "en"; name: string }) {
+  const data = {
+    "@context": "https://schema.org",
+    "@graph": [
+      personNode(profile, locale),
+      {
+        "@type": "AboutPage",
+        url: `${SITE_URL}/${locale}/about`,
+        name,
+        inLanguage: locale,
+        isPartOf: { "@id": `${SITE_URL}/#site` },
+        mainEntity: { "@id": `${SITE_URL}/#person` },
+      },
+    ],
+  };
+  return <LdScript data={data} />;
 }
