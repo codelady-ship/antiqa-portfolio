@@ -12,27 +12,31 @@ const FACING = 0.45;
 const MIN_TARGET = 44;
 
 /**
- * A sphere of floating project cards (pure CSS 3D, no WebGL). A sticky track (200vh)
- * turns scroll into rotation; dragging spins it too. Click a card to open its demo.
+ * A compact globe of project thumbnails (pure CSS 3D, no WebGL): the centrepiece of the work
+ * section. On desktop (xl) it sits sticky in the middle column between the card columns; below xl
+ * it is a square block above the card grid. Scrolling past it turns it, dragging spins it too.
+ * Click a thumbnail to open its demo. All sizes follow the stage width (container query units).
  *
  * Degrades by device:
  *  - full: eased scroll + drag rotation and a slow auto-spin, rendered every frame while on screen;
  *  - low-end (≤ 4 cores on a small screen, ≤ 2 GB RAM, Data Saver): no auto-spin and no easing,
  *    a frame is drawn only on scroll/drag/focus — no idle rAF loop;
- *  - prefers-reduced-motion: no sticky track and no scroll-linked motion (a static pose that only
- *    turns when dragged or when the keyboard focuses a card).
- * Every project is also in the flat grid below, so the sphere is never the only way to a card.
+ *  - prefers-reduced-motion: no scroll-linked motion (a static pose that only turns when dragged
+ *    or when the keyboard focuses a card).
+ * Every project is also a full card in the grid beside/below, so the globe is never the only way to a card.
  */
 export function ProjectSphere({
   projects,
   onOpen,
   hint,
   word,
+  className = "",
 }: {
   projects: Project[];
   onOpen: (p: Project) => void;
   hint: string;
   word: string;
+  className?: string;
 }) {
   const track = useRef<HTMLDivElement>(null);
   const ball = useRef<HTMLDivElement>(null);
@@ -74,12 +78,12 @@ export function ProjectSphere({
       lx = 0,
       ly = 0;
 
-    // reduced motion: the pose does not follow the scroll
+    // 0 → 1 while the globe's track (the tall middle column on desktop, the globe itself below xl)
+    // passes through the viewport; reduced motion: the pose does not follow the scroll
     const progress = () => {
       if (reduce) return 0.5;
       const r = el.getBoundingClientRect();
-      const total = r.height - innerHeight;
-      return total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0;
+      return Math.min(1, Math.max(0, (innerHeight - r.top) / (r.height + innerHeight)));
     };
 
     // the card that opened the demo modal: the <dialog> returns focus to it on close, so it must
@@ -254,17 +258,22 @@ export function ProjectSphere({
   if (!items.length) return null;
 
   return (
-    // reduced motion: no 200vh sticky scroll track, the sphere is a plain one-screen block
-    <div ref={track} className="group/sp relative h-[200vh] motion-reduce:h-auto" style={{ "--sp": 0 } as CSSProperties}>
+    <div ref={track} className={`relative ${className}`} style={{ "--sp": 0 } as CSSProperties}>
       <div
         data-stage
-        className="sticky top-0 flex h-dvh max-h-[60rem] touch-pan-y items-center justify-center overflow-hidden select-none [perspective:1400px] motion-reduce:relative motion-reduce:h-[min(100dvh,48rem)]"
+        className="@container relative mx-auto flex aspect-square w-full max-w-[min(100%,34rem,72dvh)] touch-pan-y items-center justify-center overflow-hidden select-none [perspective:1400px] xl:sticky xl:top-[max(6rem,calc(50dvh-15rem))] xl:max-w-full"
       >
+        {/* soft halo so the globe reads as one object on both themes */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-[8%] rounded-full opacity-60 blur-2xl"
+          style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--violet) 22%, transparent), transparent 70%)" }}
+        />
         {/* giant word behind the sphere */}
         <p
           aria-hidden
-          className="display outline-text pointer-events-none absolute text-[clamp(4rem,20vw,18rem)] opacity-40"
-          style={{ transform: "translateX(calc((var(--sp) - 0.5) * -30vw))" }}
+          className="display outline-text pointer-events-none absolute text-[clamp(3rem,26cqi,9rem)] opacity-30"
+          style={{ transform: "translateX(calc((var(--sp) - 0.5) * -30cqi))" }}
         >
           {word}
         </p>
@@ -281,11 +290,12 @@ export function ProjectSphere({
                 tabIndex={i < projects.length ? 0 : -1}
                 aria-hidden={i >= projects.length}
                 title={p.title}
+                translate="no"
                 onClick={() => moved.current < 6 && onOpen(p)}
                 data-lon={lon}
                 data-lat={lat}
-                className="group absolute top-0 left-0 -mt-[clamp(40px,6vw,62px)] -ml-[clamp(56px,9.6vw,100px)] w-[clamp(112px,19.2vw,200px)] [backface-visibility:hidden] focus-visible:outline-none"
-                style={{ transform: `rotateY(${lon}deg) rotateX(${lat}deg) translateZ(clamp(170px, 36vw, 470px))` }}
+                className="group notranslate absolute top-0 left-0 -mt-[clamp(25px,7.1cqi,46px)] -ml-[clamp(40px,11.5cqi,75px)] w-[clamp(80px,23cqi,150px)] [backface-visibility:hidden] focus-visible:outline-none"
+                style={{ transform: `rotateY(${lon}deg) rotateX(${lat}deg) translateZ(clamp(120px, 36cqi, 240px))` }}
               >
                 <span className="block overflow-hidden rounded-lg border border-line bg-bg-2 shadow-[var(--shadow)] transition-transform duration-300 group-hover:scale-110 group-focus-visible:scale-110 group-focus-visible:ring-2 group-focus-visible:ring-rose group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-bg sm:rounded-xl">
                   {p.demoUrl ? (
@@ -297,13 +307,13 @@ export function ProjectSphere({
                       {p.title.charAt(0)}
                     </span>
                   )}
-                  <span className="block truncate px-2 py-1 text-left text-[11px] font-medium sm:px-2.5 sm:py-1.5 sm:text-xs">{p.title}</span>
+                  <span className="block truncate px-2 py-1 text-left text-[11px] font-medium">{p.title}</span>
                 </span>
               </button>
             );
           })}
         </div>
-        <p className="absolute bottom-8 px-4 text-center text-xs tracking-[0.2em] text-muted uppercase">{hint}</p>
+        <p className="absolute bottom-2 px-4 text-center text-[11px] tracking-[0.2em] text-muted uppercase">{hint}</p>
       </div>
     </div>
   );

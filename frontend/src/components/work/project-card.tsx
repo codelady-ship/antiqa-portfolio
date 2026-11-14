@@ -58,7 +58,8 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
           className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
           style={{ background: "radial-gradient(500px circle at var(--mx,50%) var(--my,50%), color-mix(in srgb, var(--violet) 14%, transparent), transparent 60%)" } as CSSProperties}
         />
-        <div className={`relative overflow-hidden bg-bg-2 ${p.featured ? "aspect-[16/8]" : "aspect-[16/10]"}`}>
+        {/* featured cards span two columns below xl (wide image); beside the globe all cards are one column */}
+        <div className={`relative overflow-hidden bg-bg-2 ${p.featured ? "aspect-[16/8] xl:aspect-[16/10]" : "aspect-[16/10]"}`}>
           {p.demoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- remote screenshot service, sized by CSS
             <img
@@ -99,12 +100,16 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
         <div className="relative z-20 flex flex-1 flex-col gap-3 p-5 sm:p-6">
           <div className="flex items-center justify-between text-[11px] tracking-[0.16em] text-muted uppercase">
             <span>{p.createdAt ? new Date(p.createdAt).getUTCFullYear() : ""}</span>
-            <span>{p.languages[0]?.name}</span>
+            <span translate="no" className="notranslate">
+              {p.languages[0]?.name}
+            </span>
           </div>
-          <h3 className="display text-2xl leading-none sm:text-3xl">{p.title}</h3>
+          <h3 translate="no" className="display notranslate text-2xl leading-none sm:text-3xl">
+            {p.title}
+          </h3>
           {summary && <p className="line-clamp-3 text-sm text-muted">{summary}</p>}
           {p.topics.length > 0 && (
-            <ul className="flex flex-wrap gap-1.5">
+            <ul translate="no" className="notranslate flex flex-wrap gap-1.5">
               {p.topics.slice(0, 5).map((tp) => (
                 <li key={tp} className="rounded-full bg-violet/10 px-2.5 py-0.5 text-[11px] text-violet">
                   {tp}
@@ -119,7 +124,7 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
                   <i key={l.name} style={{ width: `${l.percent}%`, background: langColor(l.name) }} />
                 ))}
               </div>
-              <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
+              <ul translate="no" className="notranslate mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
                 {p.languages.slice(0, 4).map((l) => (
                   <li key={l.name} className="flex items-center gap-1.5">
                     <span className="size-2 rounded-full" style={{ background: langColor(l.name) }} />
@@ -145,6 +150,23 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
               )}
             </span>
           </div>
+          {!!p.links?.length && (
+            <ul aria-label={t("links")} className="-mt-2 -ml-1.5 flex flex-wrap gap-x-1">
+              {p.links.map((l) => (
+                <li key={l.url}>
+                  <a
+                    href={l.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    translate="no"
+                    className="notranslate inline-flex min-h-11 items-center px-1.5 text-xs text-violet underline-offset-4 transition-colors hover:text-ink hover:underline"
+                  >
+                    {l.label} ↗
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
           <button
             type="button"
             onClick={onOpen}
