@@ -3,18 +3,17 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { Reveal, SplitWords } from "@/components/motion/reveal";
+import { sortProjects, type ProjectSort as Sort } from "@/lib/merge";
 import type { Project } from "@/lib/types";
 import { DemoModal } from "./demo-modal";
 import { ProjectCard } from "./project-card";
 import { ProjectSphere } from "./project-sphere";
 
-type Sort = "created" | "updated" | "stars";
-
 export function Work({ projects }: { projects: Project[] }) {
   const t = useTranslations("Work");
   const locale = useLocale() as "az" | "en";
   const [filter, setFilter] = useState<string>("");
-  const [sort, setSort] = useState<Sort>("created");
+  const [sort, setSort] = useState<Sort>("recommended");
   const [open, setOpen] = useState<Project | null>(null);
 
   const langs = useMemo(() => {
@@ -23,16 +22,10 @@ export function Work({ projects }: { projects: Project[] }) {
     return [...count.entries()].sort((a, b) => b[1] - a[1]).map(([n]) => n);
   }, [projects]);
 
-  const list = useMemo(() => {
-    const time = (d: string | null) => (d ? Date.parse(d) : 0);
-    return projects
-      .filter((p) => !filter || p.languages.some((l) => l.name === filter))
-      .sort(
-        (a, b) =>
-          Number(b.featured) - Number(a.featured) ||
-          (sort === "stars" ? b.stars - a.stars : sort === "updated" ? time(b.pushedAt) - time(a.pushedAt) : time(b.createdAt) - time(a.createdAt)),
-      );
-  }, [projects, filter, sort]);
+  const list = useMemo(
+    () => sortProjects(projects.filter((p) => !filter || p.languages.some((l) => l.name === filter)), sort),
+    [projects, filter, sort],
+  );
 
   return (
     <section id="work" className="relative scroll-mt-24">
@@ -69,6 +62,7 @@ export function Work({ projects }: { projects: Project[] }) {
               onChange={(e) => setSort(e.target.value as Sort)}
               className="cursor-pointer rounded-full border border-line bg-surface px-4 py-2 text-ink"
             >
+              <option value="recommended">{t("sortRecommended")}</option>
               <option value="created">{t("sortNew")}</option>
               <option value="updated">{t("sortUpdated")}</option>
               <option value="stars">{t("sortStars")}</option>

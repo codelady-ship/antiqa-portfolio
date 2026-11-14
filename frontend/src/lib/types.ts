@@ -40,4 +40,6 @@ export type Project = {
   license: string | null;
   languages: { name: string; percent: number }[];
   featured: boolean;
+  /** admin order: higher comes first (after featured); 0 when not set */
+  order?: number;
 };
