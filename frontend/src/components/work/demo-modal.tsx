@@ -94,7 +94,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
               <p className="text-[11px] tracking-[0.18em] whitespace-nowrap text-muted uppercase">
                 {t("created")}: {p.createdAt ? formatDate(p.createdAt, locale) : "—"}
               </p>
-              <h2 id="demo-title" className="display text-xl break-words sm:truncate sm:text-3xl">
+              <h2 id="demo-title" translate="no" className="display notranslate text-xl break-words sm:truncate sm:text-3xl">
                 {p.title}
               </h2>
             </div>
@@ -170,7 +170,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                     <i className="size-2.5 rounded-full bg-rose/70" />
                     <i className="size-2.5 rounded-full bg-gold/70" />
                     <i className="size-2.5 rounded-full bg-emerald-400/70" />
-                    <span className="mx-2 flex-1 truncate rounded-full bg-bg-2 px-3 py-1">{p.demoUrl.replace(/^https?:\/\//, "")}</span>
+                    <span translate="no" className="notranslate mx-2 flex-1 truncate rounded-full bg-bg-2 px-3 py-1">{p.demoUrl.replace(/^https?:\/\//, "")}</span>
                     <a href={p.demoUrl} target="_blank" rel="noopener noreferrer" title={t("openNew")} className="-my-3 -mr-3 grid size-11 shrink-0 place-items-center hover:text-ink">
                       ↗
                     </a>
@@ -239,7 +239,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                   <ul className="grid gap-1.5">
                     {p.languages.map((l) => (
                       <li key={l.name} className="flex items-center justify-between">
-                        <span className="flex items-center gap-2">
+                        <span translate="no" className="notranslate flex items-center gap-2">
                           <span className="size-2 rounded-full" style={{ background: langColor(l.name) }} />
                           {l.name}
                         </span>
@@ -252,10 +252,30 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
               {p.topics.length > 0 && (
                 <section>
                   <h3 className="kicker mb-2">{t("topics")}</h3>
-                  <ul className="flex flex-wrap gap-1.5">
+                  <ul translate="no" className="notranslate flex flex-wrap gap-1.5">
                     {p.topics.map((tp) => (
                       <li key={tp} className="rounded-full bg-violet/10 px-2.5 py-0.5 text-xs text-violet">
                         {tp}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+              {!!p.links?.length && (
+                <section>
+                  <h3 className="kicker mb-2">{t("links")}</h3>
+                  <ul className="grid gap-1">
+                    {p.links.map((l) => (
+                      <li key={l.url}>
+                        <a
+                          href={l.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          translate="no"
+                          className="notranslate flex min-h-11 items-center justify-between gap-2 border-b border-line text-ink transition-colors hover:text-violet"
+                        >
+                          {l.label} <span aria-hidden>↗</span>
+                        </a>
                       </li>
                     ))}
                   </ul>
