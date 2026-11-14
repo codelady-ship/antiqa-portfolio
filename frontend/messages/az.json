@@ -90,7 +90,33 @@
   },
   "Footer": {
     "made": "Next.js, Express və MongoDB ilə hazırlanıb",
-    "top": "Yuxarı"
+    "top": "Yuxarı",
+    "about": "Sadə mətnlə profil"
+  },
+  "AboutPage": {
+    "metaTitle": "Haqqımda — profil, bacarıqlar və layihələr",
+    "metaDescription": "Antiqa Cəlilova haqqında faktlar: Bakıda yaşayan Full Stack (MERN, Next.js) developer. Bacarıqlar, təhsil, canlı demolu layihələr və əlaqə.",
+    "kicker": "Profil",
+    "location": "Yer",
+    "status": "Status",
+    "openToWork": "Yeni imkanlara açığam",
+    "notLooking": "Hazırda iş axtarmıram",
+    "roles": "İxtisas",
+    "summary": "Qısa məlumat",
+    "skills": "Bacarıqlar",
+    "education": "Təhsil",
+    "projects": "Layihələr",
+    "languages": "Dillər",
+    "created": "Yaradılıb",
+    "demo": "Canlı demo",
+    "code": "Mənbə kodu",
+    "backend": "Backend kodu",
+    "contacts": "Əlaqə",
+    "email": "E-poçt",
+    "phone": "Telefon",
+    "cv": "CV",
+    "home": "İnteraktiv portfolio",
+    "plain": "Sadə mətn versiyası (llms.txt)"
   },
   "Admin": {
     "title": "Admin panel",

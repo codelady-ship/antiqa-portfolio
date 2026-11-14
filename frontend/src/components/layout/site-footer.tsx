@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 
 // module scope: evaluated at build, fine for a footer year
 const YEAR = new Date().getFullYear();
@@ -11,9 +12,14 @@ export async function SiteFooter({ name }: { name: string }) {
         <p>
           © {YEAR} {name} · {t("made")}
         </p>
-        <a href="#main" className="transition-colors hover:text-ink">
-          {t("top")} ↑
-        </a>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          <Link href="/about" className="transition-colors hover:text-ink">
+            {t("about")}
+          </Link>
+          <a href="#main" className="transition-colors hover:text-ink">
+            {t("top")} ↑
+          </a>
+        </div>
       </div>
     </footer>
   );

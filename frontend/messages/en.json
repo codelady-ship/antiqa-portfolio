@@ -90,7 +90,33 @@
   },
   "Footer": {
     "made": "Built with Next.js, Express and MongoDB",
-    "top": "Back to top"
+    "top": "Back to top",
+    "about": "Profile in plain text"
+  },
+  "AboutPage": {
+    "metaTitle": "About — profile, skills and projects",
+    "metaDescription": "Plain facts about Antiqa Cəlilova, a Full Stack (MERN, Next.js) developer based in Baku: skills, education, projects with live demos and contacts.",
+    "kicker": "Profile",
+    "location": "Location",
+    "status": "Status",
+    "openToWork": "Open to new opportunities",
+    "notLooking": "Not looking for work right now",
+    "roles": "Roles",
+    "summary": "Summary",
+    "skills": "Skills",
+    "education": "Education",
+    "projects": "Projects",
+    "languages": "Languages",
+    "created": "Created",
+    "demo": "Live demo",
+    "code": "Source code",
+    "backend": "Backend code",
+    "contacts": "Contacts",
+    "email": "Email",
+    "phone": "Phone",
+    "cv": "CV",
+    "home": "Interactive portfolio",
+    "plain": "Plain-text version (llms.txt)"
   },
   "Admin": {
     "title": "Admin panel",
