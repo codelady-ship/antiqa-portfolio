@@ -50,11 +50,21 @@ const ProjectPatch = z.object({
   order: z.number().int().min(-1000).max(1000).optional(),
 });
 
-const README_ALLOWED = {
+const README_ALLOWED: sanitizeHtml.IOptions = {
   allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "h1", "h2", "picture", "source", "details", "summary"]),
-  allowedAttributes: { a: ["href", "title"], img: ["src", "alt", "width", "height"], source: ["srcset", "media"], "*": ["align"] },
+  allowedAttributes: {
+    a: ["href", "title", "target", "rel"],
+    img: ["src", "alt", "width", "height"],
+    source: ["srcset", "media"],
+    "*": ["align"],
+  },
   allowedSchemes: ["http", "https", "mailto"],
+  // README links open in a new tab so the portfolio (and the demo modal) stays open
+  transformTags: { a: sanitizeHtml.simpleTransform("a", { target: "_blank", rel: "noopener noreferrer" }) },
 };
+
+/** Sanitize README HTML. Idempotent, so it is also applied on read (older stored HTML gets the link fix without a re-sync). */
+export const sanitizeReadme = (html: string) => sanitizeHtml(html, README_ALLOWED);
 
 /** Public shape of a project (no internal fields). */
 export function present(p: any, admin = false) {
@@ -88,7 +98,7 @@ export function present(p: any, admin = false) {
 async function sync(p: any) {
   try {
     const s = await fetchSnapshot({ owner: p.owner, name: p.name });
-    p.gh = { ...s, readmeHtml: sanitizeHtml(s.readmeHtml, README_ALLOWED) };
+    p.gh = { ...s, readmeHtml: sanitizeReadme(s.readmeHtml) };
     p.owner = s.owner;
     p.name = s.name;
     p.syncError = "";
@@ -255,7 +265,7 @@ export function createApp() {
         .lean();
       if (!p) return res.status(404).json({ error: "not found" });
       res.setHeader("Cache-Control", "public, s-maxage=3600");
-      res.json({ html: p.gh?.readmeHtml ?? "" });
+      res.json({ html: sanitizeReadme(p.gh?.readmeHtml ?? "") });
     }),
   );
   app.post(

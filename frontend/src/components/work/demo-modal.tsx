@@ -81,11 +81,12 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
       {p && (
         <div className="flex h-full flex-col">
           <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-line px-4 py-3 sm:px-5 sm:py-4">
-            <div className="min-w-0 flex-1">
-              <p className="text-[11px] tracking-[0.18em] text-muted uppercase">
+            {/* phones: the title gets its own full-width row, the controls wrap below it */}
+            <div className="min-w-0 flex-1 basis-full sm:basis-0">
+              <p className="text-[11px] tracking-[0.18em] whitespace-nowrap text-muted uppercase">
                 {t("created")}: {p.createdAt ? formatDate(p.createdAt, locale) : "—"}
               </p>
-              <h2 id="demo-title" className="display truncate text-xl sm:text-3xl">
+              <h2 id="demo-title" className="display text-xl break-words sm:truncate sm:text-3xl">
                 {p.title}
               </h2>
             </div>
@@ -145,12 +146,12 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
             </div>
           </header>
 
-          <div className="grid min-h-0 flex-1 md:grid-cols-[1fr_300px]">
+          <div className="grid min-h-0 flex-1 md:grid-cols-[minmax(0,1fr)_300px]">
             <div
               id="demo-panel"
               role="tabpanel"
               aria-labelledby={`tab-${tab}`}
-              className={`min-h-0 justify-center bg-bg-2 p-2 sm:p-5 md:flex ${info ? "max-md:hidden" : "flex"}`}
+              className={`min-h-0 min-w-0 justify-center bg-bg-2 p-2 sm:p-5 md:flex ${info ? "max-md:hidden" : "flex"}`}
             >
               {tab === "demo" && p.demoUrl && canFrame ? (
                 <div
@@ -176,7 +177,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                   />
                 </div>
               ) : (
-                <article className="readme size-full overflow-auto rounded-2xl border border-line bg-bg p-6 sm:p-10">
+                <article className="readme size-full min-w-0 overflow-auto rounded-2xl border border-line bg-bg p-6 sm:p-10">
                   {readme === null ? (
                     <p className="text-muted">{t("loading")}</p>
                   ) : readme ? (
