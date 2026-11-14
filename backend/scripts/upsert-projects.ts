@@ -45,8 +45,8 @@ const ENTRIES: Entry[] = [
       hidden: false,
       order: 20,
       summary: {
-        az: "Restoranlar üçün QR əsaslı hesab bölmə və ödəniş platforması: müştəri masadakı QR kodu skan edib canlı hesabı görür, hesabı bölür, bəxşiş əlavə edir və Payriff ilə ödəyir. React + TypeScript, Java Spring Boot, PostgreSQL və WebSocket üzərində qurulub.",
-        en: "A QR-based bill-splitting and payment platform for restaurants: guests scan the table's QR code, see the live bill, split it, add a tip and pay via Payriff. Built with React + TypeScript, Java Spring Boot, PostgreSQL and WebSocket.",
+        az: "Komanda layihəsi. Restoranlar üçün QR əsaslı hesab bölmə və ödəniş platforması: müştəri masadakı QR kodu skan edib canlı hesabı görür, hesabı bölür, bəxşiş əlavə edir və Payriff ilə ödəyir. React + TypeScript, Java Spring Boot, PostgreSQL və WebSocket üzərində qurulub.",
+        en: "Team project. A QR-based bill-splitting and payment platform for restaurants: guests scan the table's QR code, see the live bill, split it, add a tip and pay via Payriff. Built with React + TypeScript, Java Spring Boot, PostgreSQL and WebSocket.",
       },
     },
   },
@@ -58,8 +58,8 @@ const ENTRIES: Entry[] = [
       hidden: false,
       order: 10,
       summary: {
-        az: "Agensi-də yayımlanan üç pulsuz Claude AI skill-i: təqaüd və viza fırıldaqlarını yoxlayan köməkçi, Azərbaycan dilində səsləndirmə studiyası və Photoshop dizayn məşqçisi.",
-        en: "Three free Claude AI skills listed on Agensi: a scholarship and visa scam checker, an Azerbaijani voiceover studio and a Photoshop design coach.",
+        az: "Agensi marketplace-i üçün hazırladığım üç pulsuz Claude AI skill-i: təqaüd və viza fırıldaqlarını yoxlayan köməkçi, Azərbaycan dilində səsləndirmə studiyası və Photoshop dizayn məşqçisi.",
+        en: "Three free Claude AI skills I built for the Agensi marketplace: a scholarship and visa scam checker, an Azerbaijani voiceover studio and a Photoshop design coach.",
       },
       links: [
         { label: "Scholarship & Visa Scam Checker", url: "https://github.com/codelady-ship/scholarship-visa-scam-checker" },
