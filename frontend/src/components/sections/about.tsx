@@ -52,7 +52,7 @@ export async function About({ profile, projects }: { profile: Profile; projects:
                 {profile.education.map((e) => (
                   <li key={e.place + e.period} className="flex items-baseline justify-between gap-4 border-b border-line pb-3">
                     <span>
-                      <span className="font-medium">{e.title[locale]}</span>
+                      <span className="font-medium">{withNames(e.title[locale], [...techs])}</span>
                       <span translate="no" className="notranslate block text-sm text-muted">
                         {e.place}
                       </span>

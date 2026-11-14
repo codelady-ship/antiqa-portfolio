@@ -7,7 +7,7 @@ import { getProfile, getProjects } from "@/lib/data";
 import { formatDate } from "@/lib/date";
 import { buildFaq } from "@/lib/faq";
 import { NoTr, withNames } from "@/components/ui/no-translate";
-import { ALT_NAME_INLINE, NAME_SPELLINGS } from "@/lib/identity";
+import { ALT_NAME, ALT_NAME_INLINE, NAME_SPELLINGS } from "@/lib/identity";
 
 /**
  * Plain-facts profile for AI answer engines and link previews: server-rendered text only,
@@ -67,7 +67,7 @@ export default async function AboutPage() {
   ].filter((x): x is { k: string; label: string; href: string } => !!x);
   const faq = buildFaq(t, profile, locale, projects.length);
   // names inside sentences stay as written under machine translation (#21)
-  const names = [profile.name, ...NAME_SPELLINGS, ...profile.skills, ...projects.flatMap((p) => [p.title, ...p.languages.map((l) => l.name)])];
+  const names = [profile.name, ALT_NAME, ...NAME_SPELLINGS, ...profile.skills, ...projects.flatMap((p) => [p.title, ...p.languages.map((l) => l.name)])];
   const tr = (s: string) => withNames(s, names);
 
   return (
