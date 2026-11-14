@@ -35,7 +35,7 @@ export function AdminApp({ seedProfile, seedRepos, hasApi }: { seedProfile: Prof
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <h1 className="display text-4xl sm:text-5xl">{t("title")}</h1>
         <div className="flex gap-2">
-          <Link href="/" className="rounded-full border border-line px-5 py-2.5 text-sm hover:border-violet">
+          <Link href="/" className="inline-flex min-h-11 items-center rounded-full border border-line px-5 py-2.5 text-sm hover:border-violet">
             {t("view")} ↗
           </Link>
           {admin && (

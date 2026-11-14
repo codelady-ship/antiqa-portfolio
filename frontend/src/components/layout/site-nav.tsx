@@ -91,31 +91,32 @@ export function SiteNav({ initials }: { initials: string }) {
         className={`fixed top-4 left-1/2 z-50 w-[min(calc(100%-32px),64rem)] -translate-x-1/2 transition-transform duration-500 ${hidden ? "-translate-y-[150%]" : ""}`}
       >
         <nav aria-label={t("main")}>
-          <div className="flex items-center justify-between gap-2 rounded-full border border-line bg-bg/70 py-2 pr-2 pl-4 backdrop-blur-xl sm:gap-3 sm:pl-5">
+          {/* every control is ≥ 44×44 px (touch target); the pill stays one row down to 320 px */}
+          <div className="flex items-center justify-between gap-1 rounded-full border border-line bg-bg/70 py-1 pr-1 pl-3 backdrop-blur-xl sm:gap-3 sm:pl-4">
             {/* accessible name must contain the visible text (WCAG 2.5.3): "AC — Home" */}
-            <Link href="/" className="display text-lg tracking-tight">
+            <Link href="/" className="display inline-flex min-h-11 min-w-11 items-center px-1 text-lg tracking-tight">
               {initials}
               <span className="text-rose" aria-hidden>
                 .
               </span>
               <span className="sr-only"> — {t("home")}</span>
             </Link>
-            <ul className="hidden items-center gap-7 text-sm text-muted sm:flex">
+            <ul className="hidden items-center gap-3 text-sm text-muted sm:flex md:gap-5">
               {links.map(([hash, label]) => (
                 <li key={hash}>
                   {section(
                     hash,
-                    "group relative transition-colors hover:text-ink",
+                    "group relative inline-flex min-h-11 min-w-11 items-center justify-center px-1 transition-colors hover:text-ink",
                     <>
                       {label}
-                      <span className="absolute -bottom-1 left-0 h-px w-0 bg-rose transition-all duration-300 group-hover:w-full" />
+                      <span className="absolute bottom-2.5 left-1 h-px w-0 bg-rose transition-all duration-300 group-hover:w-[calc(100%-0.5rem)]" />
                     </>,
                   )}
                 </li>
               ))}
             </ul>
-            <div className="flex shrink-0 items-center gap-1.5">
-              <div role="group" aria-label={t("language")} className="flex rounded-full border border-line p-0.5 text-xs">
+            <div className="flex shrink-0 items-center gap-1">
+              <div role="group" aria-label={t("language")} className="flex rounded-full border border-line text-xs">
                 {routing.locales.map((l) => (
                   <Link
                     key={l}
@@ -123,7 +124,7 @@ export function SiteNav({ initials }: { initials: string }) {
                     locale={l}
                     hrefLang={l}
                     aria-current={l === locale ? "true" : undefined}
-                    className={`rounded-full px-2 py-1.5 font-medium uppercase transition-colors sm:px-2.5 ${l === locale ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}
+                    className={`grid size-11 place-items-center rounded-full font-medium uppercase transition-colors ${l === locale ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}
                   >
                     {l}
                   </Link>
@@ -134,7 +135,7 @@ export function SiteNav({ initials }: { initials: string }) {
                 onClick={toggleTheme}
                 aria-label={t("theme")}
                 title={mounted ? (resolvedTheme === "dark" ? t("light") : t("dark")) : t("theme")}
-                className="grid size-9 place-items-center rounded-full border border-line transition-transform duration-500 hover:rotate-45"
+                className="grid size-11 place-items-center rounded-full border border-line transition-transform duration-500 hover:rotate-45"
               >
                 <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
                   {mounted && resolvedTheme === "light" ? (
@@ -154,7 +155,7 @@ export function SiteNav({ initials }: { initials: string }) {
                 aria-expanded={menu}
                 aria-controls="nav-menu"
                 aria-label={t("menu")}
-                className="grid size-9 place-items-center rounded-full border border-line sm:hidden"
+                className="grid size-11 place-items-center rounded-full border border-line sm:hidden"
               >
                 <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
                   {menu ? <path d="M6 6l12 12M18 6 6 18" /> : <path d="M4 8h16M4 16h16" />}

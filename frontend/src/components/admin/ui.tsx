@@ -3,7 +3,7 @@
 import type { InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
 
 const box =
-  "w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-muted focus:border-violet";
+  "min-h-11 w-full rounded-xl border border-line bg-surface px-3.5 py-2.5 text-sm text-ink outline-none transition-colors placeholder:text-muted focus:border-violet";
 
 export function Field({ label, children, wide }: { label: string; children: ReactNode; wide?: boolean }) {
   return (
@@ -34,7 +34,7 @@ export function Button({
         ? "border border-rose/50 text-rose hover:bg-rose hover:text-bg"
         : "border border-line hover:border-violet";
   return (
-    <button type="button" {...rest} className={`rounded-full px-5 py-2.5 text-sm font-medium transition disabled:opacity-50 ${v} ${rest.className ?? ""}`}>
+    <button type="button" {...rest} className={`min-h-11 rounded-full px-5 py-2.5 text-sm font-medium transition disabled:opacity-50 ${v} ${rest.className ?? ""}`}>
       {children}
     </button>
   );

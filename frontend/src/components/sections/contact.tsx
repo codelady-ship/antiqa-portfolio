@@ -56,10 +56,10 @@ export function Contact({ profile }: { profile: Profile }) {
         {c.email && (
           <Reveal className="mt-12">
             <div className="flex flex-wrap items-center gap-4">
-              <a href={`mailto:${c.email}`} className="serif-it grad-text min-w-0 text-[clamp(1.6rem,5vw,4rem)] leading-none break-all">
+              <a href={`mailto:${c.email}`} className="serif-it grad-text flex min-h-11 min-w-0 items-center text-[clamp(1.6rem,5vw,4rem)] leading-none break-all">
                 {c.email}
               </a>
-              <button type="button" onClick={copy} className="rounded-full border border-line px-4 py-2 text-sm hover:border-violet" aria-live="polite">
+              <button type="button" onClick={copy} className="min-h-11 rounded-full border border-line px-5 py-2 text-sm hover:border-violet" aria-live="polite">
                 {copied ? `${t("copied")} ✓` : t("copy")}
               </button>
             </div>

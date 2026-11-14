@@ -46,7 +46,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const h2 = "display mt-14 text-3xl sm:text-4xl";
-const link = "underline decoration-line underline-offset-4 transition-colors hover:text-rose";
+// inline-block + py-3: standalone links get a ≥ 44 px tall touch target without changing the text layout
+const link = "inline-block min-w-11 py-3 underline decoration-line underline-offset-4 transition-colors hover:text-rose";
 
 export default async function AboutPage() {
   const locale = await currentLocale();
@@ -144,7 +145,7 @@ export default async function AboutPage() {
                     </>
                   )}
                 </dl>
-                <p className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm">
+                <p className="flex flex-wrap gap-x-5 text-sm">
                   {p.demoUrl && (
                     <a href={p.demoUrl} className={link} rel="noopener">
                       {t("demo")}
@@ -169,7 +170,7 @@ export default async function AboutPage() {
         <h2 id="contacts" className={h2}>
           {t("contacts")}
         </h2>
-        <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2">
+        <dl className="mt-4 grid grid-cols-[auto_1fr] items-baseline gap-x-6">
           {contacts.map((x) => (
             <div key={x.k} className="contents">
               <dt className="text-muted">{x.k}</dt>
@@ -197,7 +198,7 @@ export default async function AboutPage() {
         </div>
       </section>
 
-      <footer className="mt-16 flex flex-wrap gap-x-6 gap-y-2 border-t border-line pt-6 text-sm">
+      <footer className="mt-16 flex flex-wrap gap-x-6 border-t border-line pt-3 text-sm">
         <Link href="/" className={link}>
           {t("home")}
         </Link>

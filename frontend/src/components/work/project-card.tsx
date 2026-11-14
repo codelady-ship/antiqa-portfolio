@@ -134,12 +134,12 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
               {p.createdAt && <time dateTime={p.createdAt}>{formatDate(p.createdAt, locale, "short")}</time>}
               {p.stars > 0 && <span className="ml-3">★ {p.stars}</span>}
             </span>
-            <span className="flex items-center gap-3">
-              <a href={p.repoUrl} target="_blank" rel="noopener noreferrer" className="text-muted transition-colors hover:text-ink">
+            <span className="-my-2 flex items-center gap-1">
+              <a href={p.repoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 min-w-11 items-center justify-center px-1.5 text-muted transition-colors hover:text-ink">
                 {t("code")} ↗
               </a>
               {p.backendUrl && (
-                <a href={p.backendUrl} target="_blank" rel="noopener noreferrer" className="text-muted transition-colors hover:text-ink">
+                <a href={p.backendUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 min-w-11 items-center justify-center px-1.5 text-muted transition-colors hover:text-ink">
                   {t("backend")} ↗
                 </a>
               )}

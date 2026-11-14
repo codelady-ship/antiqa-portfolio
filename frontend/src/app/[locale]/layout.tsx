@@ -76,7 +76,7 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
       <body className="min-h-dvh">
         <a
           href="#main"
-          className="sr-only z-[100] rounded-full bg-ink px-4 py-2 text-bg focus:not-sr-only focus:fixed focus:top-4 focus:left-4"
+          className="sr-only z-[100] rounded-full bg-ink px-5 py-3 text-bg focus:not-sr-only focus:fixed focus:top-4 focus:left-4"
         >
           {t("skip")}
         </a>
