@@ -134,12 +134,12 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
               {p.createdAt && <time dateTime={p.createdAt}>{formatDate(p.createdAt, locale, "short")}</time>}
               {p.stars > 0 && <span className="ml-3">★ {p.stars}</span>}
             </span>
-            <span className="flex items-center gap-3">
-              <a href={p.repoUrl} target="_blank" rel="noopener noreferrer" className="text-muted transition-colors hover:text-ink">
+            <span className="-my-2 flex items-center gap-1">
+              <a href={p.repoUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 min-w-11 items-center justify-center px-1.5 text-muted transition-colors hover:text-ink">
                 {t("code")} ↗
               </a>
               {p.backendUrl && (
-                <a href={p.backendUrl} target="_blank" rel="noopener noreferrer" className="text-muted transition-colors hover:text-ink">
+                <a href={p.backendUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 min-w-11 items-center justify-center px-1.5 text-muted transition-colors hover:text-ink">
                   {t("backend")} ↗
                 </a>
               )}
@@ -148,6 +148,7 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
           <button
             type="button"
             onClick={onOpen}
+            data-open-project={p.id}
             className="relative isolate overflow-hidden rounded-full border border-line py-3 text-sm font-medium transition-colors after:absolute after:inset-0 after:-z-10 after:translate-y-full after:bg-ink after:transition-transform after:duration-500 hover:text-bg hover:after:translate-y-0 focus-visible:text-bg focus-visible:after:translate-y-0"
           >
             {p.demoUrl ? t("demo") : t("readme")} →<span className="sr-only">: {p.title}</span>

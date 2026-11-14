@@ -38,7 +38,7 @@ export function Work({ projects }: { projects: Project[] }) {
         </Reveal>
       </div>
 
-      <ProjectSphere projects={projects} onOpen={setOpen} hint={t("sphereHint")} word={t("sphereWord")} shotAlt={(title) => t("shotAlt", { title })} />
+      <ProjectSphere projects={projects} onOpen={setOpen} hint={t("sphereHint")} word={t("sphereWord")} />
 
       <div className="mx-auto max-w-7xl px-4 pb-28 sm:px-8 sm:pb-40">
         <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
@@ -49,7 +49,7 @@ export function Work({ projects }: { projects: Project[] }) {
                 type="button"
                 aria-pressed={filter === l}
                 onClick={() => setFilter(l)}
-                className={`rounded-full border px-4 py-1.5 text-sm transition-all duration-300 ${filter === l ? "border-ink bg-ink text-bg" : "border-line hover:border-violet"}`}
+                className={`min-h-11 rounded-full border px-4 py-2 text-sm transition-all duration-300 ${filter === l ? "border-ink bg-ink text-bg" : "border-line hover:border-violet"}`}
               >
                 {l || t("all")}
               </button>
@@ -60,7 +60,7 @@ export function Work({ projects }: { projects: Project[] }) {
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value as Sort)}
-              className="cursor-pointer rounded-full border border-line bg-surface px-4 py-2 text-ink"
+              className="min-h-11 cursor-pointer rounded-full border border-line bg-surface px-4 py-2 text-ink"
             >
               <option value="recommended">{t("sortRecommended")}</option>
               <option value="created">{t("sortNew")}</option>

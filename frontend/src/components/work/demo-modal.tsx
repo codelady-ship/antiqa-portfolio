@@ -67,7 +67,15 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
 
   const close = () => {
     document.documentElement.style.overflow = "";
+    const id = p?.id;
     onClose();
+    // the browser returns focus to the opener; if that failed (opener gone, hidden or inert),
+    // put keyboard focus on the same project's card in the grid instead of <body>
+    requestAnimationFrame(() => {
+      const a = document.activeElement;
+      if (id == null || (a && a !== document.body && !a.closest("[inert]"))) return;
+      document.querySelector<HTMLElement>(`[data-open-project="${CSS.escape(String(id))}"]`)?.focus();
+    });
   };
 
   return (
@@ -105,7 +113,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                       setTab(k);
                       setInfo(false);
                     }}
-                    className={`rounded-full px-3 py-1.5 transition-colors disabled:opacity-35 sm:px-4 ${tab === k ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}
+                    className={`min-h-11 rounded-full px-3 transition-colors disabled:opacity-35 sm:px-4 ${tab === k ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}
                   >
                     {k === "demo" ? t("demoTab") : t("readme")}
                   </button>
@@ -119,7 +127,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                       type="button"
                       aria-pressed={device === k}
                       onClick={() => setDevice(k)}
-                      className={`rounded-full px-3 py-1.5 transition-colors ${device === k ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}
+                      className={`min-h-11 rounded-full px-3 transition-colors ${device === k ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}
                     >
                       {t(k)}
                     </button>
@@ -131,7 +139,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                 onClick={() => setInfo((v) => !v)}
                 aria-expanded={info}
                 aria-controls="demo-info"
-                className={`rounded-full border px-3 py-1.5 text-sm transition-colors md:hidden ${info ? "border-ink bg-ink text-bg" : "border-line text-muted hover:text-ink"}`}
+                className={`min-h-11 rounded-full border px-3 text-sm transition-colors md:hidden ${info ? "border-ink bg-ink text-bg" : "border-line text-muted hover:text-ink"}`}
               >
                 {t("details")}
               </button>
@@ -139,7 +147,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                 type="button"
                 onClick={() => dlg.current?.close()}
                 aria-label={t("close")}
-                className="grid size-10 place-items-center rounded-full border border-line transition-transform duration-300 hover:rotate-90 hover:border-rose hover:text-rose"
+                className="grid size-11 shrink-0 place-items-center rounded-full border border-line transition-transform duration-300 hover:rotate-90 hover:border-rose hover:text-rose"
               >
                 ✕
               </button>
@@ -163,7 +171,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                     <i className="size-2.5 rounded-full bg-gold/70" />
                     <i className="size-2.5 rounded-full bg-emerald-400/70" />
                     <span className="mx-2 flex-1 truncate rounded-full bg-bg-2 px-3 py-1">{p.demoUrl.replace(/^https?:\/\//, "")}</span>
-                    <a href={p.demoUrl} target="_blank" rel="noopener noreferrer" title={t("openNew")} className="hover:text-ink">
+                    <a href={p.demoUrl} target="_blank" rel="noopener noreferrer" title={t("openNew")} className="-my-3 -mr-3 grid size-11 shrink-0 place-items-center hover:text-ink">
                       ↗
                     </a>
                   </div>

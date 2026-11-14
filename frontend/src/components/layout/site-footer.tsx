@@ -18,11 +18,11 @@ export async function SiteFooter({ name, location }: { name: string; location: s
             {t("aka", { alt: ALT_NAME })} · {t("made")}
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-          <Link href="/about" className="transition-colors hover:text-ink">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+          <Link href="/about" className="inline-flex min-h-11 items-center transition-colors hover:text-ink">
             {t("about")}
           </Link>
-          <a href="#main" className="transition-colors hover:text-ink">
+          <a href="#main" className="inline-flex min-h-11 items-center transition-colors hover:text-ink">
             {t("top")} ↑
           </a>
         </div>
