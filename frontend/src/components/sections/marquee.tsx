@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-/** Two kinetic rows of big type; scrolling speeds them up and skews them (editorial feel). */
+/** Two kinetic rows of display type; scrolling speeds them up and skews them (editorial feel). */
 export function Marquee({ items, label }: { items: string[]; label: string }) {
   const rows = useRef<(HTMLDivElement | null)[]>([]);
 
@@ -43,27 +43,28 @@ export function Marquee({ items, label }: { items: string[]; label: string }) {
 
   const line = (outline: boolean) =>
     [...items, ...items].map((s, i) => (
-      <span key={i} className={`display flex items-center gap-[0.35em] pr-[0.35em] ${outline ? "outline-text" : ""}`}>
+      <span key={i} className={`display flex items-center gap-[0.5em] pr-[0.5em] ${outline ? "outline-text" : ""}`}>
         {s}
-        <span className="text-[0.45em] text-rose" aria-hidden>
+        <span className="text-[0.4em] text-rose" aria-hidden>
           ✦
         </span>
       </span>
     ));
 
   return (
-    <section aria-label={label} className="overflow-hidden border-y border-line py-6 text-[clamp(2rem,8vw,7rem)] sm:py-10">
-      <ul className="sr-only">
+    // tech names are brand names: translate="no" (Chrome rendered "React" as a verb, #21), lang="en"
+    <section aria-label={label} className="type-marquee overflow-hidden border-y border-line py-6 sm:py-8">
+      <ul className="sr-only notranslate" translate="no" lang="en">
         {items.map((s) => (
           <li key={s}>{s}</li>
         ))}
       </ul>
-      <div aria-hidden>
+      <div aria-hidden translate="no" lang="en" className="notranslate">
         <div ref={(el) => void (rows.current[0] = el)} className="marquee">
           {line(false)}
         </div>
       </div>
-      <div className="mt-2">
+      <div className="notranslate mt-1" translate="no" lang="en">
         <div ref={(el) => void (rows.current[1] = el)} className="marquee" aria-hidden>
           {line(true)}
         </div>

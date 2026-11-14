@@ -48,6 +48,23 @@ describe("validation", () => {
     expect(ProfileInput.safeParse({ ...base, contacts: { ...base.contacts, linkedin: "http://x.com" } }).success).toBe(false);
     expect(ProfileInput.safeParse({ ...base, contacts: { ...base.contacts, linkedin: "https://x.com/a" } }).success).toBe(true);
   });
+  it("accepts only short, https project links and at most 6", async () => {
+    const { ProjectPatch } = await import("./app.js");
+    const ok = { label: "Repo", url: "https://github.com/a/b" };
+    expect(ProjectPatch.safeParse({ links: [ok] }).success).toBe(true);
+    expect(ProjectPatch.safeParse({ links: [] }).success).toBe(true);
+    expect(ProjectPatch.safeParse({ links: [{ ...ok, url: "http://github.com/a/b" }] }).success).toBe(false);
+    expect(ProjectPatch.safeParse({ links: [{ ...ok, url: "javascript:alert(1)" }] }).success).toBe(false);
+    expect(ProjectPatch.safeParse({ links: [{ ...ok, label: "" }] }).success).toBe(false);
+    expect(ProjectPatch.safeParse({ links: [{ ...ok, label: "x".repeat(61) }] }).success).toBe(false);
+    expect(ProjectPatch.safeParse({ links: Array(7).fill(ok) }).success).toBe(false);
+  });
+  it("returns links in the public project shape", async () => {
+    const { present } = await import("./app.js");
+    const base = { _id: "1", owner: "o", name: "my-repo", gh: {} };
+    expect(present({ ...base, links: [{ label: "A", url: "https://a.dev" }] }).links).toEqual([{ label: "A", url: "https://a.dev" }]);
+    expect(present(base).links).toEqual([]);
+  });
   it("logout without a body is not rejected as non-JSON", async () => {
     const r = await request(createApp()).post("/api/auth/logout");
     expect(r.status).toBe(200);

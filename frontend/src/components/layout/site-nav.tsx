@@ -94,8 +94,11 @@ export function SiteNav({ initials }: { initials: string }) {
           {/* every control is ≥ 44×44 px (touch target); the pill stays one row down to 320 px */}
           <div className="flex items-center justify-between gap-1 rounded-full border border-line bg-bg/70 py-1 pr-1 pl-3 backdrop-blur-xl sm:gap-3 sm:pl-4">
             {/* accessible name must contain the visible text (WCAG 2.5.3): "AC — Home" */}
+            {/* monogram: translate="no", Chrome read "AC" as air conditioner (#21) */}
             <Link href="/" className="display inline-flex min-h-11 min-w-11 items-center px-1 text-lg tracking-tight">
-              {initials}
+              <span translate="no" className="notranslate">
+                {initials}
+              </span>
               <span className="text-rose" aria-hidden>
                 .
               </span>
@@ -116,7 +119,7 @@ export function SiteNav({ initials }: { initials: string }) {
               ))}
             </ul>
             <div className="flex shrink-0 items-center gap-1">
-              <div role="group" aria-label={t("language")} className="flex rounded-full border border-line text-xs">
+              <div role="group" aria-label={t("language")} translate="no" className="notranslate flex rounded-full border border-line text-xs">
                 {routing.locales.map((l) => (
                   <Link
                     key={l}

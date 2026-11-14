@@ -72,10 +72,30 @@ body {
 /* ---------- type helpers ---------- */
 .display {
   font-family: var(--font-display);
-  font-weight: 800;
-  letter-spacing: -0.045em;
-  line-height: 0.88;
+  font-weight: 600;
+  letter-spacing: -0.028em;
+  /* 1, not tighter: Azerbaijani capitals carry marks (İ dot, Ş/Ç cedilla, Ə) that would touch the next line */
+  line-height: 1;
   text-transform: uppercase;
+}
+/*
+ * Type scale (#22): one ratio from hero to section titles to the marquee, so the page reads as
+ * one system. Fluid between 360 px and 1920 px; use together with .display.
+ */
+.type-hero {
+  font-size: clamp(3.25rem, 1.6rem + 7.4vw, 9.5rem);
+}
+.type-section {
+  font-size: clamp(2.25rem, 1.35rem + 4vw, 5.5rem);
+}
+.type-marquee {
+  font-size: clamp(1.75rem, 1.15rem + 2.6vw, 4rem);
+}
+/* tech names keep their own casing (JavaScript, Next.js): no all-caps, no Turkic İ */
+.type-marquee .display {
+  text-transform: none;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
 }
 .serif-it {
   font-family: var(--font-serif);
@@ -139,7 +159,9 @@ body {
   display: inline-block;
   overflow: hidden;
   vertical-align: top;
-  padding-bottom: 0.08em;
+  /* room for the dot of İ and the cedilla of Ş/Ç, which reach outside the tight line box */
+  padding-block: 0.14em 0.08em;
+  margin-block: -0.14em -0.08em;
 }
 .split-word > span {
   display: inline-block;
@@ -208,7 +230,7 @@ html {
 }
 .readme :where(h1, h2, h3, h4) {
   font-family: var(--font-display);
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -0.03em;
   margin: 1.4em 0 0.5em;
   line-height: 1.1;

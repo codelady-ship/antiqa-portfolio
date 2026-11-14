@@ -93,11 +93,11 @@
     "home": "Ana səhifəyə qayıt"
   },
   "Footer": {
-    "made": "Next.js, Express və MongoDB ilə hazırlanıb",
+    "made": "<tech>Next.js</tech>, <tech>Express</tech> və <tech>MongoDB</tech> ilə hazırlanıb",
     "top": "Yuxarı",
     "about": "Sadə mətnlə profil",
     "role": "Frontend / Full Stack developer, {location}",
-    "aka": "Digər yazılışı: {alt}"
+    "aka": "Digər yazılışı: <name>{alt}</name>"
   },
   "AboutPage": {
     "metaTitle": "Haqqımda — profil, bacarıqlar və layihələr",

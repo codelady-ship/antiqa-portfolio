@@ -3,7 +3,8 @@ import { Cormorant_Garamond, Inter_Tight } from "next/font/google";
 export const grotesk = Inter_Tight({
   variable: "--font-grotesk",
   subsets: ["latin", "latin-ext"],
-  weight: ["800"],
+  // one cut keeps the payload small; 600 reads as display type without the slab-heavy look (#22)
+  weight: ["600"],
   display: "swap",
 });
 
