@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useRef, useState, type CSSProperties } from "react";
 import { Reveal } from "@/components/motion/reveal";
+import { withNames } from "@/components/ui/no-translate";
 import { formatDate } from "@/lib/date";
 import { shot } from "@/lib/shot";
 import type { Project } from "@/lib/types";
@@ -21,6 +22,8 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
   const timer = useRef<number>(0);
   const [live, setLive] = useState(false);
   const summary = p.summary?.[locale] || p.description;
+  // tech names inside the summary stay as written when the page is machine-translated (#21)
+  const names = [...p.languages.map((l) => l.name), p.title];
 
   const enter = (e: React.PointerEvent) => {
     if (e.pointerType !== "mouse" || !p.demoUrl || !isSafeFrame(p.demoUrl)) return;
@@ -99,14 +102,15 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
         <div className="relative z-20 flex flex-1 flex-col gap-3 p-5 sm:p-6">
           <div className="flex items-center justify-between text-[11px] tracking-[0.16em] text-muted uppercase">
             <span>{p.createdAt ? new Date(p.createdAt).getUTCFullYear() : ""}</span>
-            <span translate="no" className="notranslate">
+            {/* lang="en": CSS uppercase under lang="az" would print "JAVASCRİPT" */}
+            <span translate="no" lang="en" className="notranslate">
               {p.languages[0]?.name}
             </span>
           </div>
-          <h3 translate="no" className="display notranslate text-2xl leading-none sm:text-3xl">
+          <h3 translate="no" lang="en" className="display notranslate text-2xl leading-none sm:text-3xl">
             {p.title}
           </h3>
-          {summary && <p className="line-clamp-3 text-sm text-muted">{summary}</p>}
+          {summary && <p className="line-clamp-3 text-sm text-muted">{withNames(summary, names)}</p>}
           {p.topics.length > 0 && (
             <ul translate="no" className="notranslate flex flex-wrap gap-1.5">
               {p.topics.slice(0, 5).map((tp) => (

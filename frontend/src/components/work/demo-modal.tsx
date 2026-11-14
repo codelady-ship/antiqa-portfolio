@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
+import { withNames } from "@/components/ui/no-translate";
 import { formatDate } from "@/lib/date";
 import type { Project } from "@/lib/types";
 import { isSafeFrame } from "./frame";
@@ -94,7 +95,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
               <p className="text-[11px] tracking-[0.18em] whitespace-nowrap text-muted uppercase">
                 {t("created")}: {p.createdAt ? formatDate(p.createdAt, locale) : "—"}
               </p>
-              <h2 id="demo-title" translate="no" className="display notranslate text-xl break-words sm:truncate sm:text-3xl">
+              <h2 id="demo-title" translate="no" lang="en" className="display notranslate text-xl break-words sm:truncate sm:text-3xl">
                 {p.title}
               </h2>
             </div>
@@ -209,7 +210,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
               {(p.summary?.[locale] || p.description) && (
                 <section>
                   <h3 className="kicker mb-2">{t("description")}</h3>
-                  <p>{p.summary?.[locale] || p.description}</p>
+                  <p>{withNames(p.summary?.[locale] || p.description, [...p.languages.map((l) => l.name), p.title])}</p>
                 </section>
               )}
               <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">

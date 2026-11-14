@@ -33,7 +33,7 @@ export function Work({ projects }: { projects: Project[] }) {
         <Reveal as="p" className="kicker">
           {t("kicker")}
         </Reveal>
-        <Reveal as="h2" className="display mt-6 text-[clamp(3rem,11vw,10rem)]">
+        <Reveal as="h2" className="display type-section mt-6">
           <SplitWords text={t("title")} />
         </Reveal>
 

@@ -116,15 +116,20 @@ export function ProjectSphere({
     };
 
     const draw = () => {
+      // the demo modal is open: hold the pose as it is (the hit-test state is frozen too, so the
+      // cards must not keep easing edge-on behind the dialog); resumes on close
+      if (dialogOpen()) {
+        last = performance.now();
+        return;
+      }
       const p = progress();
       if (!dragging) {
         vel *= animate ? 0.95 : 0; // no inertia when not animating
         dragY += vel;
       }
-      // slow auto-spin; it holds still while a card has keyboard focus or the demo modal is open
+      // slow auto-spin; it holds still while a card has keyboard focus
       const now = performance.now();
-      const modal = dialogOpen();
-      if (animate && !focused && !modal) drift += Math.min(now - last, 50) * 0.004;
+      if (animate && !focused) drift += Math.min(now - last, 50) * 0.004;
       last = now;
       const target = p * 300 + dragY + drift;
       const turning = Math.abs(target - rotY) > 1.5; // fast turn (scroll jump, fling)
@@ -136,7 +141,7 @@ export function ProjectSphere({
       el.style.setProperty("--sp", p.toFixed(3));
       // hit-test sizes change slowly while drifting: every 4th frame then; every frame while
       // turning fast, and every drawn frame when not animating; frozen while the modal is open
-      if (!modal && (!animate || turning || frame++ % 4 === 0)) updateTargets();
+      if (!animate || turning || frame++ % 4 === 0) updateTargets();
     };
     const tick = () => {
       draw();
