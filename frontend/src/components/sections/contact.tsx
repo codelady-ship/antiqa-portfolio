@@ -12,12 +12,13 @@ export function Contact({ profile }: { profile: Profile }) {
 
   const links = [
     c.phone && { label: c.phone, href: `tel:${c.phone.replace(/\s/g, "")}`, k: t("phone") },
-    c.whatsapp && { label: "WhatsApp", href: `https://wa.me/${c.whatsapp}`, k: "WhatsApp" },
-    c.telegram && { label: "Telegram", href: `https://t.me/${c.telegram}`, k: "Telegram" },
-    c.linkedin && { label: "LinkedIn", href: c.linkedin, k: "LinkedIn" },
-    c.github && { label: "GitHub", href: c.github, k: "GitHub" },
-    c.instagram && { label: `@${c.instagram}`, href: `https://instagram.com/${c.instagram}`, k: "Instagram" },
-  ].filter(Boolean) as { label: string; href: string; k: string }[];
+    // brand: the key is a product name (not translated); the label is always a name/handle/number
+    c.whatsapp && { label: "WhatsApp", href: `https://wa.me/${c.whatsapp}`, k: "WhatsApp", brand: true },
+    c.telegram && { label: "Telegram", href: `https://t.me/${c.telegram}`, k: "Telegram", brand: true },
+    c.linkedin && { label: "LinkedIn", href: c.linkedin, k: "LinkedIn", brand: true },
+    c.github && { label: "GitHub", href: c.github, k: "GitHub", brand: true },
+    c.instagram && { label: `@${c.instagram}`, href: `https://instagram.com/${c.instagram}`, k: "Instagram", brand: true },
+  ].filter(Boolean) as { label: string; href: string; k: string; brand?: boolean }[];
 
   const copy = async () => {
     try {
@@ -46,7 +47,7 @@ export function Contact({ profile }: { profile: Profile }) {
         <Reveal as="p" className="kicker">
           {t("kicker")}
         </Reveal>
-        <Reveal as="h2" className="display mt-6 max-w-5xl text-[clamp(2.8rem,9vw,8.5rem)]">
+        <Reveal as="h2" className="display type-section mt-6 max-w-5xl">
           <SplitWords text={t("title")} />
         </Reveal>
         <Reveal as="p" className="mt-8 max-w-xl text-lg text-muted">
@@ -56,7 +57,11 @@ export function Contact({ profile }: { profile: Profile }) {
         {c.email && (
           <Reveal className="mt-12">
             <div className="flex flex-wrap items-center gap-4">
-              <a href={`mailto:${c.email}`} className="serif-it grad-text flex min-h-11 min-w-0 items-center text-[clamp(1.6rem,5vw,4rem)] leading-none break-all">
+              <a
+                href={`mailto:${c.email}`}
+                translate="no"
+                className="notranslate serif-it grad-text flex min-h-11 min-w-0 items-center text-[clamp(1.6rem,1rem+2.6vw,3.25rem)] leading-none break-all"
+              >
                 {c.email}
               </a>
               <button type="button" onClick={copy} className="min-h-11 rounded-full border border-line px-5 py-2 text-sm hover:border-violet" aria-live="polite">
@@ -75,8 +80,12 @@ export function Contact({ profile }: { profile: Profile }) {
                 rel="noopener noreferrer me"
                 className="group flex max-w-full items-center gap-2 rounded-full border border-line bg-surface px-5 py-3.5 backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:border-rose sm:px-6"
               >
-                <span className="shrink-0 text-[11px] tracking-[0.16em] text-muted uppercase">{l.k}</span>
-                <span className="min-w-0 truncate font-medium">{l.label}</span>
+                <span translate={l.brand ? "no" : undefined} className={`shrink-0 text-[11px] tracking-[0.16em] text-muted uppercase ${l.brand ? "notranslate" : ""}`}>
+                  {l.k}
+                </span>
+                <span translate="no" className="notranslate min-w-0 truncate font-medium">
+                  {l.label}
+                </span>
                 <span className="shrink-0 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">↗</span>
               </a>
             </Reveal>

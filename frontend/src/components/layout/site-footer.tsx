@@ -12,10 +12,15 @@ export async function SiteFooter({ name, location }: { name: string; location: s
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
         <div className="space-y-1">
           <p>
-            © {YEAR} {name} · {t("role", { location })}
+            © {YEAR}{" "}
+            <span translate="no" className="notranslate">
+              {name}
+            </span>{" "}
+            · {t("role", { location })}
           </p>
           <p>
-            {t("aka", { alt: ALT_NAME })} · {t("made")}
+            {t.rich("aka", { alt: ALT_NAME, name: (s) => <span translate="no" className="notranslate">{s}</span> })} ·{" "}
+            {t.rich("made", { tech: (s) => <span translate="no" className="notranslate">{s}</span> })}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">

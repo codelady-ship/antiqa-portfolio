@@ -6,7 +6,8 @@ import { Link } from "@/i18n/navigation";
 import { getProfile, getProjects } from "@/lib/data";
 import { formatDate } from "@/lib/date";
 import { buildFaq } from "@/lib/faq";
-import { ALT_NAME_INLINE } from "@/lib/identity";
+import { NoTr, withNames } from "@/components/ui/no-translate";
+import { ALT_NAME_INLINE, NAME_SPELLINGS } from "@/lib/identity";
 
 /**
  * Plain-facts profile for AI answer engines and link previews: server-rendered text only,
@@ -65,14 +66,19 @@ export default async function AboutPage() {
     cv && { k: t("cv"), label: "PDF", href: cv },
   ].filter((x): x is { k: string; label: string; href: string } => !!x);
   const faq = buildFaq(t, profile, locale, projects.length);
+  // names inside sentences stay as written under machine translation (#21)
+  const names = [profile.name, ...NAME_SPELLINGS, ...profile.skills, ...projects.flatMap((p) => [p.title, ...p.languages.map((l) => l.name)])];
+  const tr = (s: string) => withNames(s, names);
 
   return (
     <article className="mx-auto max-w-3xl px-4 pt-32 pb-24 sm:px-8 sm:pt-40">
       <AboutJsonLd profile={profile} locale={locale} name={t("metaTitle")} faq={faq} />
       <header>
         <p className="kicker">{t("kicker")}</p>
-        <h1 className="display mt-4 text-[clamp(2.4rem,8vw,4.5rem)] [overflow-wrap:anywhere]">{profile.name}</h1>
-        <p className="mt-3 text-xl text-muted">{profile.roles[locale].join(" · ")}</p>
+        <h1 className="display mt-4 text-[clamp(2.4rem,8vw,4.5rem)] [overflow-wrap:anywhere]">
+          <NoTr>{profile.name}</NoTr>
+        </h1>
+        <p className="mt-3 text-xl text-muted">{tr(profile.roles[locale].join(" · "))}</p>
         <dl className="mt-8 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2">
           <dt className="text-muted">{t("location")}</dt>
           <dd>{profile.location[locale]}</dd>
@@ -85,15 +91,15 @@ export default async function AboutPage() {
         <h2 id="summary" className={h2}>
           {t("summary")}
         </h2>
-        <p className="mt-4 text-lg leading-relaxed text-pretty">{profile.about[locale]}</p>
-        {profile.tagline[locale] && <p className="mt-4 leading-relaxed text-muted">{profile.tagline[locale]}</p>}
+        <p className="mt-4 text-lg leading-relaxed text-pretty">{tr(profile.about[locale])}</p>
+        {profile.tagline[locale] && <p className="mt-4 leading-relaxed text-muted">{tr(profile.tagline[locale])}</p>}
       </section>
 
       <section aria-labelledby="skills">
         <h2 id="skills" className={h2}>
           {t("skills")}
         </h2>
-        <ul className="mt-4 flex flex-wrap gap-2">
+        <ul translate="no" lang="en" className="notranslate mt-4 flex flex-wrap gap-2">
           {profile.skills.map((s) => (
             <li key={s} className="rounded-full border border-line px-3 py-1 text-sm">
               {s}
@@ -110,7 +116,7 @@ export default async function AboutPage() {
           <ul className="mt-4 space-y-3">
             {profile.education.map((e) => (
               <li key={`${e.place}-${e.period}`}>
-                <strong className="font-medium">{e.title[locale]}</strong>, {e.place} <span className="text-muted">({e.period})</span>
+                <strong className="font-medium">{tr(e.title[locale])}</strong>, <NoTr>{e.place}</NoTr> <span className="text-muted">({e.period})</span>
               </li>
             ))}
           </ul>
@@ -127,13 +133,17 @@ export default async function AboutPage() {
             const created = p.createdAt ? formatDate(p.createdAt, locale) : "";
             return (
               <li key={p.id}>
-                <h3 className="text-xl font-medium">{p.title}</h3>
-                {text && <p className="mt-1 leading-relaxed text-pretty">{text}</p>}
+                <h3 translate="no" className="notranslate text-xl font-medium">
+                  {p.title}
+                </h3>
+                {text && <p className="mt-1 leading-relaxed text-pretty">{tr(text)}</p>}
                 <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
                   {p.languages.length > 0 && (
                     <>
                       <dt className="text-muted">{t("languages")}</dt>
-                      <dd>{p.languages.map((l) => l.name).join(", ")}</dd>
+                      <dd translate="no" lang="en" className="notranslate">
+                        {p.languages.map((l) => l.name).join(", ")}
+                      </dd>
                     </>
                   )}
                   {created && (
@@ -173,8 +183,8 @@ export default async function AboutPage() {
         <dl className="mt-4 grid grid-cols-[auto_1fr] items-baseline gap-x-6">
           {contacts.map((x) => (
             <div key={x.k} className="contents">
-              <dt className="text-muted">{x.k}</dt>
-              <dd className="min-w-0 [overflow-wrap:anywhere]">
+              <dt className="text-muted">{tr(x.k)}</dt>
+              <dd translate="no" className="notranslate min-w-0 [overflow-wrap:anywhere]">
                 <a href={x.href} className={link}>
                   {x.label}
                 </a>
@@ -191,8 +201,8 @@ export default async function AboutPage() {
         <div className="mt-6 space-y-6">
           {faq.map((x) => (
             <div key={x.q}>
-              <h3 className="text-lg font-medium">{x.q}</h3>
-              <p className="mt-1 leading-relaxed text-pretty">{x.a}</p>
+              <h3 className="text-lg font-medium">{tr(x.q)}</h3>
+              <p className="mt-1 leading-relaxed text-pretty">{tr(x.a)}</p>
             </div>
           ))}
         </div>

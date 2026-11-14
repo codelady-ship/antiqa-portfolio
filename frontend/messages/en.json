@@ -92,11 +92,11 @@
     "home": "Back to home"
   },
   "Footer": {
-    "made": "Built with Next.js, Express and MongoDB",
+    "made": "Built with <tech>Next.js</tech>, <tech>Express</tech> and <tech>MongoDB</tech>",
     "top": "Back to top",
     "about": "Profile in plain text",
     "role": "Frontend / Full Stack developer, {location}",
-    "aka": "Also written as {alt}"
+    "aka": "Also written as <name>{alt}</name>"
   },
   "AboutPage": {
     "metaTitle": "About — profile, skills and projects",
