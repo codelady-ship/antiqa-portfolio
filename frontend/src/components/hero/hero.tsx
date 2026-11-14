@@ -202,14 +202,18 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
               {t("available")}
             </p>
           )}
-          <h1 className="display text-[clamp(3rem,15vw,13.5rem)] break-words">
+          {/* her name: never machine-translated (Chrome turned it into words, #21) */}
+          <h1 translate="no" className="notranslate display type-hero break-words">
             <span className="hero-rise block">{first}</span>
-            <span className="serif-it hero-rise grad-text -mt-[0.06em] block pl-[0.04em] text-[0.62em] [animation-delay:120ms]">{last}</span>
+            <span className="serif-it hero-rise grad-text mt-[0.02em] block pl-[0.04em] text-[0.66em] leading-[1] [animation-delay:120ms]">{last}</span>
           </h1>
           <div className="mt-6 grid gap-5 sm:mt-8 sm:grid-cols-[1fr_auto] sm:items-end sm:gap-6">
             <div>
-              <p className="sr-only">{roles.join(", ")}</p>
-              <p className="h-8 overflow-hidden text-lg font-medium sm:text-xl" aria-hidden>
+              {/* roles are tech job titles ("React & Next.js"): kept as written */}
+              <p translate="no" className="notranslate sr-only">
+                {roles.join(", ")}
+              </p>
+              <p translate="no" className="notranslate h-8 overflow-hidden text-lg font-medium sm:text-xl" aria-hidden>
                 <span key={role} className="block animate-[roleIn_.6s_cubic-bezier(.2,.8,.2,1)]">
                   {roles[role]}
                 </span>
