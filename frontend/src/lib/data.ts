@@ -1,4 +1,5 @@
 import { cacheLife, cacheTag } from "next/cache";
+import { mergeProfile } from "./merge";
 import { SEED_PROFILE, SEED_REPOS } from "./seed";
 import type { Profile, Project } from "./types";
 
@@ -20,7 +21,7 @@ export async function getProfile(): Promise<Profile> {
   cacheLife("minutes");
   cacheTag("profile");
   const p = await api<Partial<Profile>>("/api/profile");
-  return p?.name ? ({ ...SEED_PROFILE, ...p, cv: { ...SEED_PROFILE.cv, ...p.cv } } as Profile) : SEED_PROFILE;
+  return mergeProfile(SEED_PROFILE, p);
 }
 
 export async function getProjects(): Promise<Project[]> {
@@ -53,7 +54,7 @@ function staticSeed(): Project[] {
     return {
       id: `${owner}/${name}`, owner, name, title: s.title || name, summary: { az: "", en: "" }, description: "",
       repoUrl: s.url, backendUrl: s.backend ?? null, demoUrl: s.demo ?? null, createdAt: null, pushedAt: null,
-      stars: 0, forks: 0, topics: [], license: null, languages: [], featured: !!s.featured,
+      stars: 0, forks: 0, topics: [], license: null, languages: [], featured: !!s.featured, order: 0,
     };
   });
 }
@@ -92,6 +93,7 @@ async function fromGithub(): Promise<Project[]> {
             .map(([n, v]) => ({ name: n, percent: Math.round((v / total) * 1000) / 10 }))
             .sort((a, b) => b.percent - a.percent),
           featured: !!s.featured,
+          order: 0,
         };
       } catch {
         return null;
