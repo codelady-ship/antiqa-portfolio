@@ -67,7 +67,15 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
 
   const close = () => {
     document.documentElement.style.overflow = "";
+    const id = p?.id;
     onClose();
+    // the browser returns focus to the opener; if that failed (opener gone, hidden or inert),
+    // put keyboard focus on the same project's card in the grid instead of <body>
+    requestAnimationFrame(() => {
+      const a = document.activeElement;
+      if (id == null || (a && a !== document.body && !a.closest("[inert]"))) return;
+      document.querySelector<HTMLElement>(`[data-open-project="${CSS.escape(String(id))}"]`)?.focus();
+    });
   };
 
   return (

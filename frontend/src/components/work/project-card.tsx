@@ -148,6 +148,7 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
           <button
             type="button"
             onClick={onOpen}
+            data-open-project={p.id}
             className="relative isolate overflow-hidden rounded-full border border-line py-3 text-sm font-medium transition-colors after:absolute after:inset-0 after:-z-10 after:translate-y-full after:bg-ink after:transition-transform after:duration-500 hover:text-bg hover:after:translate-y-0 focus-visible:text-bg focus-visible:after:translate-y-0"
           >
             {p.demoUrl ? t("demo") : t("readme")} →<span className="sr-only">: {p.title}</span>

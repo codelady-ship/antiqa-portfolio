@@ -82,25 +82,33 @@ export function ProjectSphere({
       return total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0;
     };
 
+    // the card that opened the demo modal: the <dialog> returns focus to it on close, so it must
+    // never be inert while the dialog is open (an inert element cannot take focus → focus is lost)
+    let opener: HTMLButtonElement | null = null;
+    const dialogOpen = () => !!document.querySelector("dialog[open]");
+
     // which cards may take pointer/keyboard input: facing the viewer and big enough on screen
     const updateTargets = () => {
       const rx = rotX * RAD;
       const front: HTMLButtonElement[] = [];
+      const back: HTMLButtonElement[] = [];
       for (const c of cards) {
         // z of the card normal after rotateX(rotX) rotateY(rotY + lon) rotateX(lat)
         const lat = c.lat * RAD,
           lon = (c.lon + rotY) * RAD;
         const z = -Math.sin(lat) * Math.sin(rx) + Math.cos(lat) * Math.cos(lon) * Math.cos(rx);
-        if (z >= FACING) front.push(c.btn);
-        else if (c.btn !== document.activeElement) c.btn.inert = true;
+        (z >= FACING ? front : back).push(c.btn);
       }
-      // one batched read after all transforms are written; while animating, a margin keeps a card
-      // that is shrinking between two checks above 44 px until the next check
+      // all layout reads first (after the transform is written), then all `inert` writes;
+      // while animating, a margin keeps a card that is shrinking between two checks above 44 px
       const min = animate ? MIN_TARGET + 10 : MIN_TARGET;
-      for (const btn of front) {
+      const small = front.map((btn) => {
         const r = btn.getBoundingClientRect();
-        btn.inert = btn !== document.activeElement && (r.width < min || r.height < min);
-      }
+        return r.width < min || r.height < min;
+      });
+      const keep = (btn: HTMLButtonElement) => btn === document.activeElement || btn === opener;
+      for (const btn of back) btn.inert = !keep(btn);
+      front.forEach((btn, i) => (btn.inert = small[i] && !keep(btn)));
     };
 
     const draw = () => {
@@ -109,9 +117,10 @@ export function ProjectSphere({
         vel *= animate ? 0.95 : 0; // no inertia when not animating
         dragY += vel;
       }
-      // slow auto-spin; it holds still while a card has keyboard focus
+      // slow auto-spin; it holds still while a card has keyboard focus or the demo modal is open
       const now = performance.now();
-      if (animate && !focused) drift += Math.min(now - last, 50) * 0.004;
+      const modal = dialogOpen();
+      if (animate && !focused && !modal) drift += Math.min(now - last, 50) * 0.004;
       last = now;
       const target = p * 300 + dragY + drift;
       const turning = Math.abs(target - rotY) > 1.5; // fast turn (scroll jump, fling)
@@ -122,8 +131,8 @@ export function ProjectSphere({
       b.style.transform = `translateZ(-200px) scale(${scale}) rotateX(${rotX}deg) rotateY(${rotY}deg)`;
       el.style.setProperty("--sp", p.toFixed(3));
       // hit-test sizes change slowly while drifting: every 4th frame then; every frame while
-      // turning fast, and every drawn frame when not animating
-      if (!animate || turning || frame++ % 4 === 0) updateTargets();
+      // turning fast, and every drawn frame when not animating; frozen while the modal is open
+      if (!modal && (!animate || turning || frame++ % 4 === 0)) updateTargets();
     };
     const tick = () => {
       draw();
@@ -199,10 +208,27 @@ export function ProjectSphere({
       if (!running) request();
     };
 
+    // remember which card opens the modal (capture: before the card's onClick opens it)
+    const onCardClick = (e: MouseEvent) => {
+      const btn = (e.target as HTMLElement).closest<HTMLButtonElement>("[data-lon]");
+      if (btn && moved.current < 6) opener = btn;
+    };
+    // `close` does not bubble: listen in the capture phase. The browser has already returned
+    // focus to the opener; refresh the targets once, then forget the opener
+    const onDialogClose = () =>
+      requestAnimationFrame(() => {
+        if (dialogOpen()) return;
+        updateTargets();
+        opener = null;
+        if (!running && inView) request();
+      });
+
     const stage = el.querySelector<HTMLElement>("[data-stage]")!;
     stage.addEventListener("pointerdown", down);
+    stage.addEventListener("click", onCardClick, true);
     stage.addEventListener("focusin", onFocus);
     stage.addEventListener("focusout", onBlur);
+    document.addEventListener("close", onDialogClose, true);
     addEventListener("pointermove", move, { passive: true });
     addEventListener("pointerup", up);
     addEventListener("pointercancel", up);
@@ -215,6 +241,8 @@ export function ProjectSphere({
       removeEventListener("scroll", onScroll);
       removeEventListener("resize", onResize);
       stage.removeEventListener("pointerdown", down);
+      stage.removeEventListener("click", onCardClick, true);
+      document.removeEventListener("close", onDialogClose, true);
       stage.removeEventListener("focusin", onFocus);
       stage.removeEventListener("focusout", onBlur);
       removeEventListener("pointermove", move);
@@ -263,7 +291,7 @@ export function ProjectSphere({
                   {p.demoUrl ? (
                     // decorative: the button already shows (and is named by) the project title
                     // eslint-disable-next-line @next/next/no-img-element -- remote screenshot, tiny
-                    <img src={shot(p.demoUrl, 400)} alt=""loading="lazy" decoding="async" className="aspect-[16/10] w-full object-cover object-top" />
+                    <img src={shot(p.demoUrl, 400)} alt="" loading="lazy" decoding="async" className="aspect-[16/10] w-full object-cover object-top" />
                   ) : (
                     <span aria-hidden className="display grid aspect-[16/10] place-items-center text-3xl" style={{ background: "var(--grad)", color: "var(--bg)" }}>
                       {p.title.charAt(0)}
