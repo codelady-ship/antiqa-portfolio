@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
 
-export const alt = "Antiqa Cəlilova — Full Stack Developer";
+export const alt = "Antiqa Cəlilova — Frontend / Full Stack Developer";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -74,7 +74,7 @@ export default async function OG({ params }: { params: Promise<{ locale: string 
               color: "transparent",
             }}
           >
-            Full Stack Developer — MERN · Next.js
+            Frontend / Full Stack Developer
           </div>
         </div>
         <div style={{ display: "flex", fontSize: 30, color: "#a99fae" }}>{c.line}</div>

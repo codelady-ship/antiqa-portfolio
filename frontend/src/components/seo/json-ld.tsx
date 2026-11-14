@@ -1,4 +1,5 @@
 import { SITE_URL } from "@/lib/data";
+import { JOB_TITLE, NAME_SPELLINGS, PERSON_IMAGE } from "@/lib/identity";
 import type { Profile, Project } from "@/lib/types";
 
 /** schema.org Person node shared by the home and /about pages. */
@@ -9,8 +10,9 @@ function personNode(profile: Profile, locale: "az" | "en") {
     "@type": "Person",
     "@id": `${SITE_URL}/#person`,
     name: profile.name,
-    alternateName: "Antiqa",
-    jobTitle: profile.roles.en[0] ?? "Full Stack Developer",
+    alternateName: NAME_SPELLINGS.filter((n) => n !== profile.name),
+    jobTitle: JOB_TITLE,
+    image: PERSON_IMAGE,
     description: profile.about[locale],
     url: SITE_URL,
     homeLocation: { "@type": "Place", name: profile.location.en },
@@ -64,7 +66,18 @@ export function JsonLd({ profile, projects, locale }: { profile: Profile; projec
 }
 
 /** /about: an AboutPage whose main entity is the same Person as on the home page. */
-export function AboutJsonLd({ profile, locale, name }: { profile: Profile; locale: "az" | "en"; name: string }) {
+export function AboutJsonLd({
+  profile,
+  locale,
+  name,
+  faq,
+}: {
+  profile: Profile;
+  locale: "az" | "en";
+  name: string;
+  /** the exact visible FAQ text on /about (FAQPage must match what readers see) */
+  faq: { q: string; a: string }[];
+}) {
   const data = {
     "@context": "https://schema.org",
     "@graph": [
@@ -76,6 +89,16 @@ export function AboutJsonLd({ profile, locale, name }: { profile: Profile; local
         inLanguage: locale,
         isPartOf: { "@id": `${SITE_URL}/#site` },
         mainEntity: { "@id": `${SITE_URL}/#person` },
+      },
+      {
+        "@type": "FAQPage",
+        url: `${SITE_URL}/${locale}/about#faq`,
+        inLanguage: locale,
+        mainEntity: faq.map((x) => ({
+          "@type": "Question",
+          name: x.q,
+          acceptedAnswer: { "@type": "Answer", text: x.a },
+        })),
       },
     ],
   };

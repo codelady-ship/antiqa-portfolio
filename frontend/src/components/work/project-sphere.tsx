@@ -13,11 +13,14 @@ export function ProjectSphere({
   onOpen,
   hint,
   word,
+  shotAlt,
 }: {
   projects: Project[];
   onOpen: (p: Project) => void;
   hint: string;
   word: string;
+  /** alt text for a project screenshot ("<title> — screenshot") */
+  shotAlt: (title: string) => string;
 }) {
   const track = useRef<HTMLDivElement>(null);
   const ball = useRef<HTMLDivElement>(null);
@@ -180,7 +183,7 @@ export function ProjectSphere({
                 <span className="block overflow-hidden rounded-lg border sm:rounded-xl border-line bg-bg-2 shadow-[var(--shadow)] transition-transform duration-300 group-hover:scale-110 group-focus-visible:scale-110 group-focus-visible:ring-2 group-focus-visible:ring-rose group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-bg">
                   {p.demoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element -- remote screenshot, tiny
-                    <img src={shot(p.demoUrl, 400)} alt="" loading="lazy" decoding="async" className="aspect-[16/10] w-full object-cover object-top" />
+                    <img src={shot(p.demoUrl, 400)} alt={shotAlt(p.title)} loading="lazy" decoding="async" className="aspect-[16/10] w-full object-cover object-top" />
                   ) : (
                     <span aria-hidden className="display grid aspect-[16/10] place-items-center text-3xl" style={{ background: "var(--grad)", color: "var(--bg)" }}>
                       {p.title.charAt(0)}
