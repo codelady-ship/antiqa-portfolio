@@ -16,7 +16,8 @@ const wrap =
 
 const loc = z.object({ az: z.string().max(4000).default(""), en: z.string().max(4000).default("") });
 // only https links: these end up in href, iframe src and JSON-LD
-const url = z.union([z.literal(""), z.string().url().max(500).refine((u) => /^https:\/\//i.test(u), "https only")]);
+const httpsUrl = z.string().url().max(500).refine((u) => /^https:\/\//i.test(u), "https only");
+const url = z.union([z.literal(""), httpsUrl]);
 
 export const ProfileInput = z.object({
   name: z.string().min(1).max(120),
@@ -39,8 +40,11 @@ export const ProfileInput = z.object({
   }),
 });
 
+// extra card links (e.g. related repos): https only, short labels, a handful per project
+export const ProjectLinks = z.array(z.object({ label: z.string().trim().min(1).max(60), url: httpsUrl })).max(6);
+
 const ProjectCreate = z.object({ repoUrl: z.string().max(300) });
-const ProjectPatch = z.object({
+export const ProjectPatch = z.object({
   title: z.string().max(120).optional(),
   summary: loc.optional(),
   demoOverride: url.optional(),
@@ -48,6 +52,7 @@ const ProjectPatch = z.object({
   featured: z.boolean().optional(),
   hidden: z.boolean().optional(),
   order: z.number().int().min(-1000).max(1000).optional(),
+  links: ProjectLinks.optional(),
 });
 
 const README_ALLOWED: sanitizeHtml.IOptions = {
@@ -89,13 +94,15 @@ export function present(p: any, admin = false) {
     featured: !!p.featured,
     hidden: !!p.hidden,
     order: p.order ?? 0,
+    links: (p.links ?? []).map((l: { label?: string; url?: string }) => ({ label: l.label ?? "", url: l.url ?? "" })),
     syncedAt: p.syncedAt ?? null,
     // admin edits the raw overrides, not the computed values
     ...(admin && { syncError: p.syncError || null, titleRaw: p.title || "", demoOverride: p.demoOverride || "" }),
   };
 }
 
-async function sync(p: any) {
+/** Refreshes and saves a project's GitHub snapshot (POST /api/projects, sync, scripts). Never throws on GitHub errors: sets syncError. */
+export async function sync(p: any) {
   try {
     const s = await fetchSnapshot({ owner: p.owner, name: p.name });
     p.gh = { ...s, readmeHtml: sanitizeReadme(s.readmeHtml) };
