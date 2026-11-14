@@ -63,7 +63,7 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
             // eslint-disable-next-line @next/next/no-img-element -- remote screenshot service, sized by CSS
             <img
               src={shot(p.demoUrl, p.featured ? 960 : 640)}
-              alt=""
+              alt={t("shotAlt", { title: p.title })}
               loading="lazy"
               decoding="async"
               className="absolute inset-0 size-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.04]"

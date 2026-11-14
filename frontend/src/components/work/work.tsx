@@ -38,7 +38,7 @@ export function Work({ projects }: { projects: Project[] }) {
         </Reveal>
       </div>
 
-      <ProjectSphere projects={projects} onOpen={setOpen} hint={t("sphereHint")} word={t("sphereWord")} />
+      <ProjectSphere projects={projects} onOpen={setOpen} hint={t("sphereHint")} word={t("sphereWord")} shotAlt={(title) => t("shotAlt", { title })} />
 
       <div className="mx-auto max-w-7xl px-4 pb-28 sm:px-8 sm:pb-40">
         <div className="mb-10 flex flex-wrap items-center justify-between gap-4">

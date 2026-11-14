@@ -1,7 +1,8 @@
 {
   "Meta": {
-    "title": "Antiqa Cəlilova — Full Stack Developer",
-    "description": "Antiqa Cəlilova — Full Stack (MERN, Next.js) developer based in Baku. Projects, live demos, CV and contact.",
+    "title": "Antiqa Cəlilova — Frontend / Full Stack Developer",
+    "description": "Antiqa (Entiqə) Cəlilova — Frontend / Full Stack developer (React, Next.js, MERN) based in Baku. Projects, live demos, CV and contact.",
+    "ogAlt": "Antiqa Cəlilova — Frontend / Full Stack Developer, Baku",
     "skip": "Skip to content"
   },
   "Nav": {
@@ -41,6 +42,7 @@
     "viewport": "Screen width",
     "demoTab": "Demo",
     "demoFrame": "{title} — live demo",
+    "shotAlt": "{title} — screenshot",
     "all": "All",
     "sortRecommended": "Recommended",
     "sortNew": "Newest",
@@ -92,11 +94,28 @@
   "Footer": {
     "made": "Built with Next.js, Express and MongoDB",
     "top": "Back to top",
-    "about": "Profile in plain text"
+    "about": "Profile in plain text",
+    "role": "Frontend / Full Stack developer, {location}",
+    "aka": "Also written as {alt}"
   },
   "AboutPage": {
     "metaTitle": "About — profile, skills and projects",
-    "metaDescription": "Plain facts about Antiqa Cəlilova, a Full Stack (MERN, Next.js) developer based in Baku: skills, education, projects with live demos and contacts.",
+    "metaDescription": "Plain facts about {name} ({alt}), a Frontend / Full Stack (MERN, Next.js) developer based in {location}: skills, education, projects with live demos, FAQ and contacts.",
+    "ogAlt": "{name} — Frontend / Full Stack Developer",
+    "faq": "Frequently asked questions",
+    "faqWhoQ": "Who is {name}?",
+    "faqWhoA": "{name} is a Frontend / Full Stack developer based in {location} who builds web applications with React, Next.js, Node.js and MongoDB; her name is also written {alt}.",
+    "faqBuildQ": "What does {name} build?",
+    "faqBuildA": "She builds responsive websites and full-stack web apps (React and Next.js interfaces, Node.js and Express REST APIs); this portfolio lists {count} of her projects.",
+    "faqStackQ": "Which technologies does {name} use?",
+    "faqStackA": "Her stack includes {skills}.",
+    "faqOpenQ": "Is {name} open to work?",
+    "faqOpenYes": "Yes, {name} is open to new job offers and collaborations.",
+    "faqOpenNo": "{name} is not looking for a new job right now, but you can still get in touch.",
+    "faqContactQ": "How can I contact {name}?",
+    "faqContactA": "You can reach her via {channels}.",
+    "faqProjectsQ": "Where can I see {name}'s projects?",
+    "faqProjectsA": "Her projects with live demos are on {site}, and the source code is on GitHub at {github}.",
     "kicker": "Profile",
     "location": "Location",
     "status": "Status",
@@ -117,7 +136,8 @@
     "phone": "Phone",
     "cv": "CV",
     "home": "Interactive portfolio",
-    "plain": "Plain-text version (llms.txt)"
+    "plain": "Plain-text version (llms.txt)",
+    "plainFull": "Full facts (llms-full.txt)"
   },
   "Admin": {
     "title": "Admin panel",

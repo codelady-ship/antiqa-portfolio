@@ -1,7 +1,8 @@
 {
   "Meta": {
-    "title": "Antiqa Cəlilova — Full Stack Developer",
-    "description": "Antiqa Cəlilova — Bakıda yaşayan Full Stack (MERN, Next.js) developer. Layihələr, canlı demolar, CV və əlaqə.",
+    "title": "Antiqa Cəlilova — Frontend / Full Stack Developer",
+    "description": "Antiqa (Entiqə) Cəlilova — Bakıda yaşayan Frontend / Full Stack developer (React, Next.js, MERN). Layihələr, canlı demolar, CV və əlaqə.",
+    "ogAlt": "Antiqa Cəlilova — Frontend / Full Stack Developer, Bakı",
     "skip": "Əsas məzmuna keç"
   },
   "Nav": {
@@ -41,6 +42,7 @@
     "viewport": "Ekran eni",
     "demoTab": "Demo",
     "demoFrame": "{title} — canlı demo",
+    "shotAlt": "{title} — ekran görüntüsü",
     "all": "Hamısı",
     "sortRecommended": "Tövsiyə olunan",
     "sortNew": "Ən yeni",
@@ -92,11 +94,28 @@
   "Footer": {
     "made": "Next.js, Express və MongoDB ilə hazırlanıb",
     "top": "Yuxarı",
-    "about": "Sadə mətnlə profil"
+    "about": "Sadə mətnlə profil",
+    "role": "Frontend / Full Stack developer, {location}",
+    "aka": "Digər yazılışı: {alt}"
   },
   "AboutPage": {
     "metaTitle": "Haqqımda — profil, bacarıqlar və layihələr",
-    "metaDescription": "Antiqa Cəlilova haqqında faktlar: Bakıda yaşayan Full Stack (MERN, Next.js) developer. Bacarıqlar, təhsil, canlı demolu layihələr və əlaqə.",
+    "metaDescription": "{name} ({alt}) haqqında faktlar: Frontend / Full Stack (MERN, Next.js) developer, {location}. Bacarıqlar, təhsil, canlı demolu layihələr, suallar və əlaqə.",
+    "ogAlt": "{name} — Frontend / Full Stack Developer",
+    "faq": "Tez-tez verilən suallar",
+    "faqWhoQ": "{name} kimdir?",
+    "faqWhoA": "{name} React, Next.js, Node.js və MongoDB ilə veb tətbiqlər quran Frontend / Full Stack developerdir, yaşadığı yer: {location}; adı {alt} kimi də yazılır.",
+    "faqBuildQ": "{name} nə hazırlayır?",
+    "faqBuildA": "Responsiv saytlar və full-stack veb tətbiqlər hazırlayır (React və Next.js ilə interfeyslər, Node.js və Express ilə REST API-lər); bu portfolioda onun {count} layihəsi var.",
+    "faqStackQ": "{name} hansı texnologiyalardan istifadə edir?",
+    "faqStackA": "Onun texnologiyaları: {skills}.",
+    "faqOpenQ": "{name} iş təkliflərinə açıqdırmı?",
+    "faqOpenYes": "Bəli, {name} yeni iş təkliflərinə və əməkdaşlığa açıqdır.",
+    "faqOpenNo": "{name} hazırda yeni iş axtarmır, amma onunla əlaqə saxlaya bilərsiniz.",
+    "faqContactQ": "{name} ilə necə əlaqə saxlamaq olar?",
+    "faqContactA": "Onunla bu yollarla əlaqə saxlaya bilərsiniz: {channels}.",
+    "faqProjectsQ": "{name} layihələrini harada görmək olar?",
+    "faqProjectsA": "Canlı demolu layihələri {site} saytındadır, mənbə kodu isə GitHub-dadır: {github}.",
     "kicker": "Profil",
     "location": "Yer",
     "status": "Status",
@@ -117,7 +136,8 @@
     "phone": "Telefon",
     "cv": "CV",
     "home": "İnteraktiv portfolio",
-    "plain": "Sadə mətn versiyası (llms.txt)"
+    "plain": "Sadə mətn versiyası (llms.txt)",
+    "plainFull": "Tam faktlar (llms-full.txt)"
   },
   "Admin": {
     "title": "Admin panel",

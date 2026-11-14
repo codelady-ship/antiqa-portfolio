@@ -9,6 +9,7 @@ import { SiteNav } from "@/components/layout/site-nav";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { routing } from "@/i18n/routing";
 import { getProfile, SITE_URL } from "@/lib/data";
+import { NAME_SPELLINGS } from "@/lib/identity";
 import { grotesk, serif } from "../fonts";
 import "../globals.css";
 
@@ -44,10 +45,16 @@ export async function generateMetadata(): Promise<Metadata> {
       locale: locale === "az" ? "az_AZ" : "en_US",
       alternateLocale: locale === "az" ? ["en_US"] : ["az_AZ"],
     },
-    twitter: { card: "summary_large_image", title: t("title"), description: t("description") },
+    // og:image (+ its alt) comes from ./opengraph-image.tsx; twitter needs the same image and alt spelled out
+    twitter: {
+      card: "summary_large_image",
+      title: t("title"),
+      description: t("description"),
+      images: [{ url: `/${locale}/opengraph-image`, width: 1200, height: 630, alt: t("ogAlt") }],
+    },
     authors: [{ name: "Antiqa Cəlilova", url: SITE_URL }],
     creator: "Antiqa Cəlilova",
-    keywords: ["Antiqa Cəlilova", "Full Stack Developer", "MERN", "React", "Next.js", "Node.js", "Baku", "Azerbaijan", "portfolio"],
+    keywords: ["Antiqa Cəlilova", ...NAME_SPELLINGS, "Frontend Developer", "Full Stack Developer", "MERN", "React", "Next.js", "Node.js", "Baku", "Azerbaijan", "portfolio"],
     verification: process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : undefined,
     other: { "darkreader-lock": "true" },
   };
@@ -79,7 +86,7 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
             <main id="main" tabIndex={-1} className="outline-none">
               {children}
             </main>
-            <SiteFooter name={profile.name} />
+            <SiteFooter name={profile.name} location={profile.location[locale]} />
           </ThemeProvider>
         </IntlProvider>
       </body>

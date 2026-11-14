@@ -5,6 +5,8 @@ import { AboutJsonLd } from "@/components/seo/json-ld";
 import { Link } from "@/i18n/navigation";
 import { getProfile, getProjects } from "@/lib/data";
 import { formatDate } from "@/lib/date";
+import { buildFaq } from "@/lib/faq";
+import { ALT_NAME_INLINE } from "@/lib/identity";
 
 /**
  * Plain-facts profile for AI answer engines and link previews: server-rendered text only,
@@ -17,13 +19,14 @@ async function currentLocale(): Promise<"az" | "en"> {
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await currentLocale();
-  const t = await getTranslations({ locale, namespace: "AboutPage" });
+  const [t, profile] = await Promise.all([getTranslations({ locale, namespace: "AboutPage" }), getProfile()]);
+  const description = t("metaDescription", { name: profile.name, alt: ALT_NAME_INLINE, location: profile.location[locale] });
   // this page's own openGraph replaces the layout's, which also drops the inherited
   // [locale]/opengraph-image: point at the same per-locale image explicitly
-  const image = { url: `/${locale}/opengraph-image`, width: 1200, height: 630, alt: t("metaTitle") };
+  const image = { url: `/${locale}/opengraph-image`, width: 1200, height: 630, alt: t("ogAlt", { name: profile.name }) };
   return {
     title: t("metaTitle"),
-    description: t("metaDescription"),
+    description,
     alternates: {
       canonical: `/${locale}/about`,
       languages: { az: "/az/about", en: "/en/about", "x-default": "/az/about" },
@@ -32,13 +35,13 @@ export async function generateMetadata(): Promise<Metadata> {
       type: "profile",
       siteName: "Antiqa Cəlilova",
       title: t("metaTitle"),
-      description: t("metaDescription"),
+      description,
       url: `/${locale}/about`,
       locale: locale === "az" ? "az_AZ" : "en_US",
       alternateLocale: locale === "az" ? ["en_US"] : ["az_AZ"],
       images: [image],
     },
-    twitter: { card: "summary_large_image", title: t("metaTitle"), description: t("metaDescription"), images: [image] },
+    twitter: { card: "summary_large_image", title: t("metaTitle"), description, images: [image] },
   };
 }
 
@@ -60,10 +63,11 @@ export default async function AboutPage() {
     c.instagram && { k: "Instagram", label: `@${c.instagram}`, href: `https://instagram.com/${c.instagram}` },
     cv && { k: t("cv"), label: "PDF", href: cv },
   ].filter((x): x is { k: string; label: string; href: string } => !!x);
+  const faq = buildFaq(t, profile, locale, projects.length);
 
   return (
     <article className="mx-auto max-w-3xl px-4 pt-32 pb-24 sm:px-8 sm:pt-40">
-      <AboutJsonLd profile={profile} locale={locale} name={t("metaTitle")} />
+      <AboutJsonLd profile={profile} locale={locale} name={t("metaTitle")} faq={faq} />
       <header>
         <p className="kicker">{t("kicker")}</p>
         <h1 className="display mt-4 text-[clamp(2.4rem,8vw,4.5rem)] [overflow-wrap:anywhere]">{profile.name}</h1>
@@ -179,12 +183,29 @@ export default async function AboutPage() {
         </dl>
       </section>
 
+      <section aria-labelledby="faq">
+        <h2 id="faq" className={h2}>
+          {t("faq")}
+        </h2>
+        <div className="mt-6 space-y-6">
+          {faq.map((x) => (
+            <div key={x.q}>
+              <h3 className="text-lg font-medium">{x.q}</h3>
+              <p className="mt-1 leading-relaxed text-pretty">{x.a}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       <footer className="mt-16 flex flex-wrap gap-x-6 gap-y-2 border-t border-line pt-6 text-sm">
         <Link href="/" className={link}>
           {t("home")}
         </Link>
         <a href="/llms.txt" className={link}>
           {t("plain")}
+        </a>
+        <a href="/llms-full.txt" className={link}>
+          {t("plainFull")}
         </a>
       </footer>
     </article>
