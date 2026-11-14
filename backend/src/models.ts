@@ -40,6 +40,8 @@ const ProjectSchema = new Schema(
     featured: { type: Boolean, default: false },
     hidden: { type: Boolean, default: false },
     order: { type: Number, default: 0 },
+    // extra links shown on the card (e.g. related repos)
+    links: { type: [{ _id: false, label: { type: String, default: "" }, url: { type: String, default: "" } }], default: [] },
     // GitHub snapshot
     gh: {
       url: String,
