@@ -23,6 +23,19 @@ describe("api without database", () => {
   });
 });
 
+describe("readme sanitizer", () => {
+  it("opens links in a new tab and still strips scripts and handlers", async () => {
+    const { sanitizeReadme } = await import("./app.js");
+    const out = sanitizeReadme(
+      '<p><a href="https://x.com" target="_self" onclick="alert(1)">site</a><script>alert(1)</script><img src="https://x.com/a.png" onerror="alert(1)"></p>',
+    );
+    expect(out).toContain('<a href="https://x.com" target="_blank" rel="noopener noreferrer">site</a>');
+    expect(out).not.toMatch(/script|onerror|onclick|_self/);
+    expect(sanitizeReadme(out)).toBe(out);
+    expect(sanitizeReadme('<a href="javascript:alert(1)">x</a>')).not.toContain("javascript");
+  });
+});
+
 describe("validation", () => {
   it("rejects javascript: and http: links in the profile", async () => {
     const { ProfileInput } = await import("./app.js");

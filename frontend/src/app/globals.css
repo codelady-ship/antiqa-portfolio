@@ -204,6 +204,7 @@ html {
 /* ---------- README (GitHub-rendered HTML) ---------- */
 .readme {
   line-height: 1.75;
+  overflow-wrap: break-word; /* long URLs wrap instead of widening the panel */
 }
 .readme :where(h1, h2, h3, h4) {
   font-family: var(--font-display);
