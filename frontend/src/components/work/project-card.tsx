@@ -58,8 +58,7 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
           className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
           style={{ background: "radial-gradient(500px circle at var(--mx,50%) var(--my,50%), color-mix(in srgb, var(--violet) 14%, transparent), transparent 60%)" } as CSSProperties}
         />
-        {/* featured cards span two columns below xl (wide image); beside the globe all cards are one column */}
-        <div className={`relative overflow-hidden bg-bg-2 ${p.featured ? "aspect-[16/8] xl:aspect-[16/10]" : "aspect-[16/10]"}`}>
+        <div className="relative aspect-[16/10] overflow-hidden bg-bg-2">
           {p.demoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- remote screenshot service, sized by CSS
             <img

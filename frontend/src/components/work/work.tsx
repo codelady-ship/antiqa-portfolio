@@ -92,7 +92,7 @@ export function Work({ projects }: { projects: Project[] }) {
               ].join(" ")}
             >
               {list.map((p, i) => (
-                <li key={p.id} className={p.featured ? "sm:max-xl:col-span-2" : ""}>
+                <li key={p.id}>
                   <ProjectCard project={p} index={i} locale={locale} onOpen={() => setOpen(p)} />
                 </li>
               ))}
