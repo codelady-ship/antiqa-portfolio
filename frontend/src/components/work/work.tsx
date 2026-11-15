@@ -82,7 +82,8 @@ export function Work({ projects }: { projects: Project[] }) {
           {list.length ? (
             <ul
               className={[
-                "grid gap-6 sm:max-lg:grid-cols-2 lg:max-xl:grid-cols-3 xl:col-start-1 xl:row-start-2 xl:min-h-[32rem]",
+                // xl: cards keep their own height (no stretch to the tallest card in the row, no empty band)
+                "grid gap-6 sm:max-lg:grid-cols-2 lg:max-xl:grid-cols-3 xl:col-start-1 xl:row-start-2 xl:min-h-[32rem] xl:items-start",
                 // xl: one card column each side of a 30rem globe column (odd cards left, even right)
                 "xl:max-[1759px]:grid-cols-[minmax(0,1fr)_30rem_minmax(0,1fr)] xl:max-[1759px]:[&>li:nth-child(odd)]:col-start-1 xl:max-[1759px]:[&>li:nth-child(even)]:col-start-3",
                 // ≥ 1760 px: two card columns (ranges do not overlap: arbitrary breakpoints sort before xl) each side of a 28rem globe column

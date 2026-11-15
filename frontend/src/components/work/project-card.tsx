@@ -112,12 +112,14 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
           </h3>
           {summary && <p className="line-clamp-3 text-sm text-muted">{withNames(summary, names)}</p>}
           {p.topics.length > 0 && (
-            <ul translate="no" className="notranslate flex flex-wrap gap-1.5">
-              {p.topics.slice(0, 5).map((tp) => (
-                <li key={tp} className="rounded-full bg-violet/10 px-2.5 py-0.5 text-[11px] text-violet">
+            // one line on every card (all topics are listed in the modal details)
+            <ul translate="no" className="notranslate flex gap-1.5 overflow-hidden">
+              {p.topics.slice(0, 2).map((tp) => (
+                <li key={tp} className="min-w-0 truncate rounded-full bg-violet/10 px-2.5 py-0.5 text-[11px] text-violet">
                   {tp}
                 </li>
               ))}
+              {p.topics.length > 2 && <li className="shrink-0 rounded-full bg-violet/10 px-2.5 py-0.5 text-[11px] text-violet">+{p.topics.length - 2}</li>}
             </ul>
           )}
           {p.languages.length > 0 && (
@@ -154,20 +156,20 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
             </span>
           </div>
           {!!p.links?.length && (
-            <ul aria-label={t("links")} className="-mt-2 -ml-1.5 flex flex-wrap gap-x-1">
-              {p.links.map((l) => (
-                <li key={l.url}>
-                  <a
-                    href={l.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    translate="no"
-                    className="notranslate inline-flex min-h-11 items-center px-1.5 text-xs text-violet underline-offset-4 transition-colors hover:text-ink hover:underline"
-                  >
-                    {l.label} ↗
-                  </a>
-                </li>
-              ))}
+            // one line: the first link + "+N" (every link is listed in the modal details)
+            <ul aria-label={t("links")} className="-mt-2 -ml-1.5 flex items-center gap-x-1">
+              <li className="min-w-0">
+                <a
+                  href={p.links[0].url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  translate="no"
+                  className="notranslate flex min-h-11 items-center px-1.5 text-xs text-violet underline-offset-4 transition-colors hover:text-ink hover:underline"
+                >
+                  <span className="truncate">{p.links[0].label}</span>&nbsp;↗
+                </a>
+              </li>
+              {p.links.length > 1 && <li className="shrink-0 text-xs text-muted">+{p.links.length - 1}</li>}
             </ul>
           )}
           <button
