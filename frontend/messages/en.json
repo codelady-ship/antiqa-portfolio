@@ -76,7 +76,9 @@
     "loading": "Loading…",
     "noReadme": "This project has no README.",
     "empty": "No projects for this filter.",
-    "frameNote": "If the site does not load here, open it in a new tab."
+    "frameNote": "If the site does not load here, open it in a new tab.",
+    "more": "{n} more — see details",
+    "featured": "Featured"
   },
   "Contact": {
     "kicker": "03 — Contact",

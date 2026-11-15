@@ -76,7 +76,9 @@
     "loading": "Yüklənir…",
     "noReadme": "Bu layihədə README yoxdur.",
     "empty": "Bu filtrdə layihə yoxdur.",
-    "frameNote": "Sayt pəncərədə açılmırsa, yeni tabda açın."
+    "frameNote": "Sayt pəncərədə açılmırsa, yeni tabda açın.",
+    "more": "daha {n} — hamısı ətraflı məlumatda",
+    "featured": "Seçilmiş"
   },
   "Contact": {
     "kicker": "03 — Əlaqə",

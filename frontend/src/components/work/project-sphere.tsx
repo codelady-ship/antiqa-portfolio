@@ -268,11 +268,10 @@ export function ProjectSphere({
         data-stage
         className="@container relative mx-auto flex aspect-square w-full max-w-[min(100%,34rem,72dvh)] touch-pan-y items-center justify-center overflow-hidden select-none [perspective:1400px] xl:sticky xl:top-[max(6rem,calc(50dvh-15rem))] xl:max-w-full"
       >
-        {/* soft halo so the globe reads as one object on both themes */}
+        {/* a soft paper disc so the globe reads as one object on both themes (no blur, #32) */}
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-[8%] rounded-full opacity-60 blur-2xl"
-          style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--violet) 22%, transparent), transparent 70%)" }}
+          className="pointer-events-none absolute inset-[12%] rounded-full bg-peach-soft opacity-80"
         />
         {/* giant word behind the sphere */}
         <p
@@ -302,7 +301,7 @@ export function ProjectSphere({
                 className="group notranslate absolute top-0 left-0 -mt-[clamp(25px,7.1cqi,46px)] -ml-[clamp(40px,11.5cqi,75px)] w-[clamp(80px,23cqi,150px)] [backface-visibility:hidden] focus-visible:outline-none"
                 style={{ transform: `rotateY(${lon}deg) rotateX(${lat}deg) translateZ(clamp(120px, 36cqi, 240px))` }}
               >
-                <span className="block overflow-hidden rounded-lg border border-line bg-bg-2 shadow-[var(--shadow)] transition-transform duration-300 group-hover:scale-110 group-focus-visible:scale-110 group-focus-visible:ring-2 group-focus-visible:ring-rose group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-bg sm:rounded-xl">
+                <span className="block overflow-hidden rounded-lg border border-line bg-surface shadow-[var(--shadow)] transition-transform duration-300 group-hover:scale-110 group-focus-visible:scale-110 group-focus-visible:ring-2 group-focus-visible:ring-rose group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-bg sm:rounded-xl">
                   {p.demoUrl ? (
                     // decorative: the button already shows (and is named by) the project title
                     // eslint-disable-next-line @next/next/no-img-element -- remote screenshot, tiny
@@ -318,7 +317,7 @@ export function ProjectSphere({
             );
           })}
         </div>
-        <p className="absolute bottom-2 px-4 text-center text-[11px] tracking-[0.2em] text-muted uppercase">{hint}</p>
+        <p className="absolute bottom-2 px-4 text-center text-xs font-medium text-muted">{hint}</p>
       </div>
     </div>
   );

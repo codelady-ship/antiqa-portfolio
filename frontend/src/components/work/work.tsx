@@ -29,11 +29,12 @@ export function Work({ projects }: { projects: Project[] }) {
 
   return (
     <section id="work" className="relative scroll-mt-24">
-      <div className="mx-auto max-w-[118rem] px-4 pt-28 pb-28 sm:px-8 sm:pt-40 sm:pb-40">
+      {/* wider than .wrap on purpose: at xl the card columns sit left and right of the globe (#28) */}
+      <div className="mx-auto max-w-[118rem] px-4 pt-24 pb-24 sm:px-8 sm:pt-32 sm:pb-32 xl:px-12">
         <Reveal as="p" className="kicker">
           {t("kicker")}
         </Reveal>
-        <Reveal as="h2" className="display type-section mt-6">
+        <Reveal as="h2" className="display type-section mt-5">
           <SplitWords text={t("title")} />
         </Reveal>
 
@@ -58,7 +59,7 @@ export function Work({ projects }: { projects: Project[] }) {
                   aria-pressed={filter === l}
                   onClick={() => setFilter(l)}
                   translate={l ? "no" : undefined}
-                  className={`min-h-11 rounded-full border px-4 py-2 text-sm transition-all duration-300 ${l ? "notranslate" : ""} ${filter === l ? "border-ink bg-ink text-bg" : "border-line hover:border-violet"}`}
+                  className={`min-h-11 rounded-full border px-4 py-2 text-sm transition-all duration-300 ${l ? "notranslate" : ""} ${filter === l ? "border-ink bg-accent font-semibold text-on-accent" : "border-line bg-surface hover:bg-pink-soft"}`}
                 >
                   {l || t("all")}
                 </button>
@@ -69,7 +70,7 @@ export function Work({ projects }: { projects: Project[] }) {
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as Sort)}
-                className="min-h-11 cursor-pointer rounded-full border border-line bg-surface px-4 py-2 text-ink"
+                className="min-h-11 cursor-pointer rounded-full border border-line bg-surface px-4 py-2 font-medium text-ink"
               >
                 <option value="recommended">{t("sortRecommended")}</option>
                 <option value="created">{t("sortNew")}</option>
