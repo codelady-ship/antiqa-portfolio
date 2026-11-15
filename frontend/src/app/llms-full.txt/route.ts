@@ -16,7 +16,7 @@ export async function GET() {
   const lines = [
     `# ${p.name} — ${JOB_TITLE}`,
     "",
-    `> ${p.name} is a ${JOB_TITLE} based in ${p.location.en}. ${p.openToWork ? "Open to new opportunities." : "Not looking for work right now."}`,
+    `> ${p.name} is a ${JOB_TITLE} based in ${p.location.en}.${p.openToWork ? " Open to new opportunities." : ""}`,
     "",
     "## Name",
     `- Name: ${p.name}`,
@@ -28,7 +28,7 @@ export async function GET() {
     `- Roles: ${p.roles.en.join(", ")}`,
     `- Experience: ${EXPERIENCE_YEARS}+ years`,
     `- Location: ${p.location.en}`,
-    `- Status: ${p.openToWork ? "open to new job offers and collaborations" : "not looking for work right now"}`,
+    p.openToWork ? "- Status: open to new job offers and collaborations" : null,
     `- Languages of this site: Azerbaijani, English`,
     "",
     "## About",

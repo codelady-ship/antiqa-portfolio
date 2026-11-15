@@ -27,7 +27,8 @@ export function buildFaq(t: T, profile: Profile, locale: "az" | "en", projectCou
     { q: t("faqWhoQ", { name }), a: t("faqWhoA", { name, alt: ALT_NAME, location: profile.location[locale] }) },
     { q: t("faqBuildQ", { name }), a: t("faqBuildA", { count: projectCount }) },
     { q: t("faqStackQ", { name }), a: t("faqStackA", { skills: profile.skills.join(", ") }) },
-    { q: t("faqOpenQ", { name }), a: t(profile.openToWork ? "faqOpenYes" : "faqOpenNo", { name }) },
+    // openToWork false only hides the badge: no "not looking" claim, the item is left out
+    profile.openToWork && { q: t("faqOpenQ", { name }), a: t("faqOpenYes", { name }) },
     channels.length > 0 && { q: t("faqContactQ", { name }), a: t("faqContactA", { channels: channels.join(", ") }) },
     c.github && { q: t("faqProjectsQ", { name }), a: t("faqProjectsA", { site: short(SITE_URL), github: short(c.github) }) },
   ];
