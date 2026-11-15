@@ -14,7 +14,7 @@ export function NoTr({ children, className = "" }: { children: ReactNode; classN
 }
 
 /** Brand words that show up in prose but are not in the profile's skill list. */
-const BRANDS = ["MERN", "Express", "GitHub", "LinkedIn", "WhatsApp", "Telegram", "Instagram", "Jet Academy", "TexnoEra Academy", "Aliyev Space", "Masapay", "Full Stack", "Frontend", "Backend"];
+const BRANDS = ["MERN", "Express", "GitHub", "LinkedIn", "WhatsApp", "Telegram", "Instagram", "Jet Academy", "TexnoEra Academy", "Aliyev Space", "masapay", "Masapay" /* old spelling, until the DB is re-seeded */, "Full Stack", "Frontend", "Backend"];
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 

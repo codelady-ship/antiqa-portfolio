@@ -50,7 +50,7 @@ export const SEED_PROFILE: Profile = {
 
 export const SEED_REPOS: { url: string; featured?: boolean; backend?: string; title?: string; demo?: string; links?: { label: string; url: string }[] }[] = [
   { url: "https://github.com/codelady-ship/hypedomino", featured: true, title: "HypeDomino" },
-  { url: "https://github.com/codelady-ship/masapay", featured: true, title: "MasaPay" },
+  { url: "https://github.com/codelady-ship/masapay", featured: true, title: "masapay" },
   {
     url: "https://github.com/codelady-ship/scholarship-visa-scam-checker",
     featured: true,
