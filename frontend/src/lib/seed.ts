@@ -8,8 +8,8 @@ export const SEED_PROFILE: Profile = {
   name: "Antiqa Cəlilova",
   initials: "AC",
   roles: {
-    az: ["Full Stack Developer", "MERN Stack Developer", "React & Next.js", "Node.js Backend"],
-    en: ["Full Stack Developer", "MERN Stack Developer", "React & Next.js", "Node.js Backend"],
+    az: ["Full Stack Developer", "Backend Developer", "Java 21 · Spring Boot 3", "React & Next.js", "Node.js · Express"],
+    en: ["Full Stack Developer", "Backend Developer", "Java 21 · Spring Boot 3", "React & Next.js", "Node.js · Express"],
   },
   tagline: {
     az: "Zərif interfeyslər və etibarlı backend — insanların sevərək istifadə etdiyi veb tətbiqlər qururam.",
@@ -20,9 +20,15 @@ export const SEED_PROFILE: Profile = {
     en: "I'm a Full Stack developer with a deep interest in web technologies and digital tools. I completed the Full Stack MERN programme at Jet Academy, building full web applications and RESTful APIs with MongoDB, Express, React and Node.js. My goal is to ship useful, user-friendly products that make a difference.",
   },
   location: { az: "Bakı, Azərbaycan", en: "Baku, Azerbaijan" },
-  openToWork: true,
+  // owner decision 2026-11-15: no "open to work" badge (she works at Aliyev Space)
+  openToWork: false,
   skills: ["JavaScript", "TypeScript", "React", "Next.js", "Node.js", "Express.js", "MongoDB", "Tailwind CSS", "Three.js", "Java", "Spring Boot", "Python", "Git"],
   education: [
+    {
+      title: { az: "Java Spring Boot kursu (6 ay)", en: "Java Spring Boot course (6 months)" },
+      place: "TexnoEra Academy",
+      period: "2025 – 2026",
+    },
     {
       title: { az: "Full Stack MERN proqramı", en: "Full Stack MERN Programme" },
       place: "Jet Academy",
@@ -30,7 +36,7 @@ export const SEED_PROFILE: Profile = {
     },
   ],
   contacts: {
-    email: "",
+    email: "jalilova.antiqa@gmail.com",
     phone: "+994 70 523 99 28",
     whatsapp: "994705239928",
     telegram: "",
@@ -38,7 +44,8 @@ export const SEED_PROFILE: Profile = {
     github: "https://github.com/codelady-ship",
     instagram: "codelady.abroad",
   },
-  cv: { az: "/cv-az.pdf" },
+  // fallback copies of backend/cv/*.pdf; the API CVs (admin upload / upsert-profile) win when present
+  cv: { az: "/Antiqa_Calilova_CV_AZ.pdf", en: "/Antiqa_Calilova_CV_EN.pdf" },
 };
 
 export const SEED_REPOS: { url: string; featured?: boolean; backend?: string; title?: string; demo?: string; links?: { label: string; url: string }[] }[] = [

@@ -1,8 +1,8 @@
 {
   "Meta": {
-    "title": "Antiqa Cəlilova — Frontend / Full Stack Developer",
-    "description": "Antiqa (Entiqə) Cəlilova — Frontend / Full Stack developer (React, Next.js, MERN) based in Baku. Projects, live demos, CV and contact.",
-    "ogAlt": "Antiqa Cəlilova — Frontend / Full Stack Developer, Baku",
+    "title": "Antiqa Cəlilova — Full Stack Developer (Java · Spring Boot · React/Next.js)",
+    "description": "Antiqa (Entiqə) Cəlilova — Full Stack developer (Java, Spring Boot, React, Next.js) based in Baku. Projects, live demos, CV and contact.",
+    "ogAlt": "Antiqa Cəlilova — Full Stack Developer (Java · Spring Boot · React/Next.js), Baku",
     "skip": "Skip to content"
   },
   "Nav": {
@@ -96,23 +96,22 @@
     "made": "Built with <tech>Next.js</tech>, <tech>Express</tech> and <tech>MongoDB</tech>",
     "top": "Back to top",
     "about": "Profile in plain text",
-    "role": "Frontend / Full Stack developer, {location}",
+    "role": "Full Stack developer (Java, Spring Boot, React/Next.js), {location}",
     "aka": "Also written as <name>{alt}</name>"
   },
   "AboutPage": {
     "metaTitle": "About — profile, skills and projects",
-    "metaDescription": "Plain facts about {name} ({alt}), a Frontend / Full Stack (MERN, Next.js) developer based in {location}: skills, education, projects with live demos, FAQ and contacts.",
-    "ogAlt": "{name} — Frontend / Full Stack Developer",
+    "metaDescription": "Plain facts about {name} ({alt}), a Full Stack (Java, Spring Boot, React, Next.js) developer based in {location}: skills, education, projects with live demos, FAQ and contacts.",
+    "ogAlt": "{name} — Full Stack Developer (Java · Spring Boot · React/Next.js)",
     "faq": "Frequently asked questions",
     "faqWhoQ": "Who is {name}?",
-    "faqWhoA": "{name} is a Frontend / Full Stack developer based in {location} who builds web applications with React, Next.js, Node.js and MongoDB; her name is also written {alt}.",
+    "faqWhoA": "{name} is a Full Stack developer based in {location} who builds web applications with Java and Spring Boot on the backend and React and Next.js on the frontend; her name is also written {alt}.",
     "faqBuildQ": "What does {name} build?",
     "faqBuildA": "She builds responsive websites and full-stack web apps (React and Next.js interfaces, Node.js and Express REST APIs); this portfolio lists {count} of her projects.",
     "faqStackQ": "Which technologies does {name} use?",
     "faqStackA": "Her stack includes {skills}.",
     "faqOpenQ": "Is {name} open to work?",
     "faqOpenYes": "Yes, {name} is open to new job offers and collaborations.",
-    "faqOpenNo": "{name} is not looking for a new job right now, but you can still get in touch.",
     "faqContactQ": "How can I contact {name}?",
     "faqContactA": "You can reach her via {channels}.",
     "faqProjectsQ": "Where can I see {name}'s projects?",
@@ -121,7 +120,6 @@
     "location": "Location",
     "status": "Status",
     "openToWork": "Open to new opportunities",
-    "notLooking": "Not looking for work right now",
     "roles": "Roles",
     "summary": "Summary",
     "skills": "Skills",
