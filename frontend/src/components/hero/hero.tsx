@@ -1,68 +1,49 @@
 "use client";
 
+import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
+import photo from "./antiqa.jpg";
 
 type Props = {
   first: string;
   last: string;
-  initials: string;
-  roles: string[];
+  /** static job title + stack (identity.ts), shown under the name */
+  title: string;
+  stack: string;
   tagline: string;
-  openToWork: boolean;
+  location: string;
+  stickers: string[];
   cvHref: string | null;
 };
 
 /**
- * Sticky scroll track (260vh). The name is the LCP element and is painted on the server;
- * the particle canvas boots after `load` (desktop: first idle; phones: first interaction or
- * a later idle), in short tasks, so it stays out of first paint and the TBT window.
- * --p (0..1) drives the text exit in CSS; the same value morphs the particles.
+ * Hero (#32): her name (the LCP element, painted on the server, never faded in), what she does,
+ * two calls to action, and her real photo in a pastel arch. On wide screens a small confetti
+ * scene (Three.js, lazy) drifts around the photo; it boots after `load` on the first idle
+ * period and only while the hero is on screen. Phones and tablets get a round avatar instead
+ * of the arch and no WebGL at all.
  */
-export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref }: Props) {
+export function Hero({ first, last, title, stack, tagline, location, stickers, cvHref }: Props) {
   const t = useTranslations("Hero");
-  const track = useRef<HTMLElement>(null);
+  const host = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const [role, setRole] = useState(0);
-
-  // rotate roles
   useEffect(() => {
-    if (roles.length < 2 || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const id = setInterval(() => setRole((r) => (r + 1) % roles.length), 2600);
-    return () => clearInterval(id);
-  }, [roles.length]);
-
-  useEffect(() => {
-    const el = track.current!;
+    const el = host.current!;
     const cv = canvas.current!;
+    const wide = matchMedia("(min-width: 1024px) and (pointer: fine)");
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let scene: Awaited<ReturnType<typeof import("./particle-scene").createScene>> | null = null;
-    let disposed = false;
-    let visible = true;
+    const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
+    if (!wide.matches || nav.connection?.saveData) return;
 
-    const progress = () => {
-      const r = el.getBoundingClientRect();
-      const total = r.height - innerHeight;
-      return total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0;
-    };
-    let raf = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const p = progress();
-        el.style.setProperty("--p", p.toFixed(4));
-        if (reduce) scene?.renderStatic(p);
-        else scene?.setProgress(p);
-      });
-    };
-    const onMove = (e: PointerEvent) => scene?.setPointer((e.clientX / innerWidth) * 2 - 1, -((e.clientY / innerHeight) * 2 - 1));
-    const onResize = () => scene?.resize();
+    let scene: Awaited<ReturnType<typeof import("./particle-scene").createScene>> | null = null;
+    let disposed = false,
+      visible = true,
+      idleId = 0,
+      timer = 0;
+    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number; cancelIdleCallback?: (id: number) => void };
     const isDark = () => document.documentElement.classList.contains("dark");
-    const mo = new MutationObserver(() => {
-      scene?.setTheme(isDark());
-      if (reduce) scene?.renderStatic(progress());
-    });
-    // render only while the hero is on screen and the tab is visible
+
     const sync = () => {
       if (!scene || reduce) return;
       if (visible && !document.hidden) scene.start();
@@ -70,84 +51,42 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
     };
     const io = new IntersectionObserver(([e]) => {
       visible = e.isIntersecting;
-      if (visible && armed) {
-        armed = false;
-        go();
-      }
       sync();
     });
+    const mo = new MutationObserver(() => {
+      scene?.setTheme(isDark());
+      if (reduce) scene?.renderStatic();
+    });
+    const onMove = (e: PointerEvent) => {
+      const r = cv.getBoundingClientRect();
+      scene?.setPointer(((e.clientX - r.left) / r.width) * 2 - 1, -(((e.clientY - r.top) / r.height) * 2 - 1));
+    };
+    const onResize = () => scene?.resize();
 
     const boot = async () => {
-      // WebGL is optional decoration: no support → the page still works
+      // WebGL is optional decoration: no support → the photo and shapes stay
       try {
         const { createScene } = await import("./particle-scene");
         if (disposed) return;
-        const s = await createScene(cv, initials, () => disposed);
+        const s = await createScene(cv, () => disposed);
         if (disposed) return s.dispose();
         scene = s;
         scene.setTheme(isDark());
-        if (reduce) scene.renderStatic(progress());
+        if (reduce) scene.renderStatic();
         else sync();
         cv.dataset.ready = "1";
       } catch {
         /* no WebGL, or unmounted while booting */
       }
     };
-
-    /*
-     * When to boot the scene. The name (LCP) and the CTAs must be usable first, so the
-     * scene never starts before `load`, and never inside a forced idle timeout:
-     *  - desktop (fine pointer, ≥ 768 px): the first idle period after load;
-     *  - phones/tablets: the first interaction (scroll, touch, key), or an idle period
-     *    a few seconds after load if the visitor just reads — the page is interactive
-     *    long before the orb appears;
-     *  - Data Saver on: no scene (the gradient glow behind the name stays).
-     * It also waits until the hero is on screen, so a deep link to #work does not pay for it.
-     */
-    const nav = navigator as Navigator & { connection?: { saveData?: boolean } };
-    const saveData = !!nav.connection?.saveData;
-    const mobile = innerWidth < 768 || matchMedia("(pointer: coarse)").matches;
-    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number; cancelIdleCallback?: (id: number) => void };
-    let idleId = 0,
-      timer = 0,
-      booted = false,
-      armed = false;
-    const triggers = ["scroll", "pointerdown", "keydown", "touchstart"] as const;
-    const clearTriggers = () => triggers.forEach((t) => removeEventListener(t, trigger));
-    const go = () => {
-      if (booted || disposed) return;
-      if (!visible) {
-        armed = true; // boot when the hero comes back into view
-        return;
-      }
-      booted = true;
-      clearTriggers();
-      clearTimeout(timer);
-      void boot();
-    };
-    function trigger() {
-      // run after the input is handled, not inside it
-      clearTriggers();
-      timer = window.setTimeout(go, 50);
-    }
     const whenIdle = () => {
-      if (w.requestIdleCallback) idleId = w.requestIdleCallback(go);
-      else timer = window.setTimeout(go, 200);
-    };
-    const afterLoad = () => {
       if (disposed) return;
-      if (!mobile) return whenIdle();
-      triggers.forEach((t) => addEventListener(t, trigger, { passive: true, once: true }));
-      timer = window.setTimeout(whenIdle, 4000);
+      if (w.requestIdleCallback) idleId = w.requestIdleCallback(() => void boot());
+      else timer = window.setTimeout(() => void boot(), 200);
     };
-    const onLoad = () => afterLoad();
-    if (!saveData) {
-      if (document.readyState === "complete") afterLoad();
-      else addEventListener("load", onLoad, { once: true });
-    }
+    if (document.readyState === "complete") whenIdle();
+    else addEventListener("load", whenIdle, { once: true });
 
-    onScroll();
-    addEventListener("scroll", onScroll, { passive: true });
     addEventListener("pointermove", onMove, { passive: true });
     addEventListener("resize", onResize);
     document.addEventListener("visibilitychange", sync);
@@ -157,9 +96,7 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
       disposed = true;
       clearTimeout(timer);
       if (idleId) w.cancelIdleCallback?.(idleId);
-      clearTriggers();
-      removeEventListener("load", onLoad);
-      removeEventListener("scroll", onScroll);
+      removeEventListener("load", whenIdle);
       removeEventListener("pointermove", onMove);
       removeEventListener("resize", onResize);
       document.removeEventListener("visibilitychange", sync);
@@ -167,94 +104,118 @@ export function Hero({ first, last, initials, roles, tagline, openToWork, cvHref
       io.disconnect();
       scene?.dispose();
     };
-  }, [initials]);
+  }, []);
+
+  const dots = ["bg-rose", "bg-mint", "bg-violet"];
 
   return (
-    <section ref={track} aria-label={`${first} ${last}`} className="relative h-[260vh]" style={{ "--p": 0 } as CSSProperties}>
-      <div className="sticky top-0 h-dvh overflow-hidden">
-        <div aria-hidden className="backdrop-grid absolute inset-0 opacity-60" />
-        <canvas
-          ref={canvas}
-          aria-hidden
-          className="absolute inset-0 size-full opacity-0 transition-opacity duration-1000 data-[ready]:opacity-100"
-        />
-        {/* soft glow behind the orb */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute top-1/2 left-1/2 size-[70vmin] -translate-1/2 rounded-full opacity-40 blur-3xl"
-          style={{ background: "radial-gradient(circle, color-mix(in srgb, var(--violet) 45%, transparent), transparent 65%)" }}
-        />
+    <section aria-labelledby="hero-name" className="relative overflow-hidden">
+      {/* soft paper shapes (no blur, no grid): a peach sun behind the photo, a mint pebble */}
+      <div aria-hidden className="pointer-events-none absolute -top-40 -right-40 size-[38rem] rounded-full bg-peach-soft max-lg:hidden" />
+      <div aria-hidden className="pointer-events-none absolute bottom-10 -left-24 size-56 rounded-full bg-mint-soft opacity-70 max-sm:hidden" />
 
-        <div
-          className="relative z-10 mx-auto flex h-full max-w-7xl flex-col justify-end px-4 pb-[12vh] sm:px-8"
-          style={{
-            transform: "translateY(calc(var(--p) * -28vh))",
-            opacity: "calc(1 - var(--p) * 2.6)",
-            filter: "blur(calc(var(--p) * 14px))",
-          }}
-        >
-          {openToWork && (
-            <p className="mb-6 inline-flex w-fit items-center gap-2.5 rounded-full border border-line bg-surface px-4 py-1.5 text-xs tracking-[0.18em] uppercase text-muted backdrop-blur">
-              <span className="relative flex size-2">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-                <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
-              </span>
-              {t("available")}
-            </p>
-          )}
-          {/* her name: never machine-translated (Chrome turned it into words, #21) */}
-          <h1 translate="no" className="notranslate display type-hero break-words">
-            <span className="hero-rise block">{first}</span>
-            <span className="serif-it hero-rise grad-text mt-[0.02em] block pl-[0.04em] text-[0.66em] leading-[1] [animation-delay:120ms]">{last}</span>
+      <div className="wrap relative grid items-center gap-12 pt-28 pb-16 sm:pt-36 sm:pb-24 lg:min-h-[min(100svh,960px)] lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:pt-32 lg:pb-20">
+        <div>
+          {/* phones / tablets: a small round photo above the greeting */}
+            <Image
+              src={photo}
+              alt=""
+              width={64}
+              height={64}
+              sizes="64px"
+              className="mb-4 size-16 rounded-full bg-[#ffd9e3] object-cover object-top ring-4 ring-pink-soft lg:hidden"
+            />
+          {/* "Hi, I'm" + her name + her job title: one text block, the LCP element (bigger than the photo
+              at every width, painted on the server, never faded in). The lines are inline (<br>), so they
+              stay one block for LCP; the name and the title are never machine-translated (#21). */}
+          <h1 id="hero-name" className="break-words">
+            <span className="hand mb-2 block w-fit -rotate-2 text-[1.5rem] leading-none font-semibold text-rose sm:text-[1.75rem] xl:text-[2rem]">{t("hello")}</span>
+            <span translate="no" className="notranslate display type-hero font-[700]">
+              {first}
+              <br />
+              <span className="squiggle text-rose">{last}</span>
+            </span>
+            <br />
+            {/* tall line box = the gap below the squiggle */}
+            <span translate="no" className="notranslate text-xl leading-[2.6] font-bold sm:text-2xl xl:text-[1.75rem]">
+              {title}
+            </span>
+            <br />
+            <span translate="no" className="notranslate text-base leading-snug font-semibold text-violet sm:text-lg xl:text-xl">
+              {stack}
+            </span>
           </h1>
-          <div className="mt-6 grid gap-5 sm:mt-8 sm:grid-cols-[1fr_auto] sm:items-end sm:gap-6">
-            <div>
-              {/* roles are tech job titles ("React & Next.js"): kept as written */}
-              <p translate="no" className="notranslate sr-only">
-                {roles.join(", ")}
-              </p>
-              <p translate="no" className="notranslate h-8 overflow-hidden text-lg font-medium sm:text-xl" aria-hidden>
-                <span key={role} className="block animate-[roleIn_.6s_cubic-bezier(.2,.8,.2,1)]">
-                  {roles[role]}
-                </span>
-              </p>
-              <p className="mt-2 max-w-md text-sm text-muted sm:text-base">{tagline}</p>
-            </div>
-            <div className="flex flex-wrap gap-3 max-sm:[&>a]:flex-1 max-sm:[&>a]:text-center">
+
+          <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <p className="flex items-center gap-1.5 text-base text-muted">
+              <svg viewBox="0 0 24 24" className="size-4 shrink-0 text-rose" fill="currentColor" aria-hidden>
+                <path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" />
+              </svg>
+              {location}
+            </p>
+          </div>
+          <p className="mt-5 max-w-xl text-base leading-relaxed text-pretty text-muted sm:text-lg">{tagline}</p>
+
+          <div className="mt-9 flex flex-wrap gap-3 max-sm:[&>a]:flex-1 max-sm:[&>a]:text-center">
+            <a
+              href="#work"
+              className="rounded-full border-2 border-ink bg-accent px-6 py-3.5 font-semibold whitespace-nowrap text-on-accent shadow-[4px_4px_0_var(--ink)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[6px_6px_0_var(--ink)] sm:px-8"
+            >
+              {t("cta")} →
+            </a>
+            {cvHref && (
               <a
-                href="#work"
-                className="group relative overflow-hidden rounded-full bg-ink px-5 py-3.5 text-sm font-medium whitespace-nowrap text-bg transition-transform hover:-translate-y-0.5 sm:px-7"
+                href={cvHref}
+                download
+                className="rounded-full border-2 border-ink bg-surface px-6 py-3.5 font-semibold whitespace-nowrap transition-colors hover:bg-butter-soft sm:px-8"
               >
-                <span className="relative z-10">{t("cta")} →</span>
-                <span aria-hidden className="absolute inset-0 translate-y-full transition-transform duration-500 group-hover:translate-y-0" style={{ background: "var(--grad)" }} />
+                {t("cv")} ↓
               </a>
-              {cvHref && (
-                <a
-                  href={cvHref}
-                  download
-                  className="rounded-full border border-line bg-surface px-5 py-3.5 text-sm font-medium whitespace-nowrap backdrop-blur transition-colors hover:border-rose hover:text-rose sm:px-7"
-                >
-                  {t("cv")} ↓
-                </a>
-              )}
-            </div>
+            )}
           </div>
         </div>
 
-        {/* hidden on phones / short screens: it would sit on top of the CTAs */}
-        <div aria-hidden className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 [@media(min-width:640px)_and_(min-height:700px)]:flex flex-col items-center gap-2 text-[10px] tracking-[0.3em] text-muted uppercase" style={{ opacity: "calc(1 - var(--p) * 5)" }}>
-          {t("scroll")}
-          <span className="h-10 w-px overflow-hidden bg-line">
-            <span className="block h-1/2 w-full animate-[drip_1.8s_ease-in-out_infinite] bg-rose" />
-          </span>
+        {/* wide screens: the photo in a pastel arch, a handwritten note, three tech stickers */}
+        <div ref={host} className="relative mx-auto hidden w-full max-w-[12.5rem] lg:block xl:max-w-[16rem] 2xl:max-w-[18rem] min-[1800px]:max-w-[20rem]">
+          <canvas
+            ref={canvas}
+            aria-hidden
+            className="pointer-events-none absolute -inset-x-28 -inset-y-20 h-[calc(100%+10rem)] w-[calc(100%+14rem)] opacity-0 transition-opacity duration-1000 data-[ready]:opacity-100"
+          />
+          <div aria-hidden className="absolute -top-6 -right-8 size-24 rotate-12 rounded-[1.75rem] bg-lilac-soft" />
+          <div aria-hidden className="absolute -bottom-8 -left-10 size-28 rounded-full bg-mint-soft" />
+          <figure className="relative isolate aspect-[4/5] overflow-hidden rounded-t-[6.25rem] rounded-b-[2rem] xl:rounded-t-[8rem] 2xl:rounded-t-[9rem] min-[1800px]:rounded-t-[10rem] border-[6px] border-surface bg-gradient-to-b from-[#ffd3df] to-[#ffe4d1] shadow-[var(--shadow)]">
+            <Image
+              src={photo}
+              alt={t("photoAlt", { name: `${first} ${last}` })}
+              sizes="(min-width: 1800px) 320px, (min-width: 1536px) 288px, (min-width: 1280px) 256px, 200px"
+              placeholder="blur"
+              className="absolute inset-0 size-full object-cover object-top mix-blend-multiply"
+            />
+          </figure>
+          <p aria-hidden className="hand absolute -top-2 -left-24 flex -rotate-6 items-end gap-1 text-[1.6rem] leading-none text-rose xl:-left-28">
+            {t("me")}
+            <svg viewBox="0 0 60 40" className="h-8 w-12 translate-y-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M4 8c14-4 32 0 44 20" />
+              <path d="M40 26l9 4 1-10" />
+            </svg>
+          </p>
+          <ul translate="no" lang="en" className="notranslate">
+            {stickers.slice(0, 3).map((s, i) => (
+              <li
+                key={s}
+                className={`bob absolute flex items-center gap-2 rounded-full border border-line bg-surface px-3.5 py-1.5 text-[0.8125rem] font-semibold shadow-[var(--shadow)] ${
+                  ["top-[38%] -left-16", "-right-14 bottom-[30%]", "bottom-[6%] left-[18%]"][i]
+                }`}
+                style={{ "--r": `${[-6, 5, -3][i]}deg`, animationDelay: `${i * -1.6}s` } as CSSProperties}
+              >
+                <span aria-hidden className={`size-2 rounded-full ${dots[i]}`} />
+                {s}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
-      <style>{`
-        @keyframes roleIn { from { transform: translateY(100%); opacity: 0 } to { transform: none; opacity: 1 } }
-        @keyframes drip { from { transform: translateY(-100%) } to { transform: translateY(200%) } }
-        @keyframes heroRise { from { transform: translateY(40%) } to { transform: none } }
-        .hero-rise { animation: heroRise 1.1s cubic-bezier(.2,.8,.2,1) both; }
-      `}</style>
     </section>
   );
 }

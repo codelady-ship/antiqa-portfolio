@@ -21,7 +21,10 @@
     "available": "Yeni imkanlara açığam",
     "scroll": "Aşağı sürüşdürün",
     "cta": "Layihələrə bax",
-    "cv": "CV yüklə"
+    "cv": "CV yüklə",
+    "hello": "Salam, mən",
+    "me": "bu mənəm!",
+    "photoAlt": "{name} — portret fotosu"
   },
   "About": {
     "kicker": "01 — Haqqımda",
@@ -73,7 +76,9 @@
     "loading": "Yüklənir…",
     "noReadme": "Bu layihədə README yoxdur.",
     "empty": "Bu filtrdə layihə yoxdur.",
-    "frameNote": "Sayt pəncərədə açılmırsa, yeni tabda açın."
+    "frameNote": "Sayt pəncərədə açılmırsa, yeni tabda açın.",
+    "more": "daha {n} — hamısı ətraflı məlumatda",
+    "featured": "Seçilmiş"
   },
   "Contact": {
     "kicker": "03 — Əlaqə",
@@ -136,7 +141,8 @@
     "cv": "CV",
     "home": "İnteraktiv portfolio",
     "plain": "Sadə mətn versiyası (llms.txt)",
-    "plainFull": "Tam faktlar (llms-full.txt)"
+    "plainFull": "Tam faktlar (llms-full.txt)",
+    "photoAlt": "{name} — portret fotosu"
   },
   "Admin": {
     "title": "Admin panel",

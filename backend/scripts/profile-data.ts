@@ -17,12 +17,12 @@ export const PROFILE = {
     az: "Java və Spring Boot ilə etibarlı backend, React və Next.js ilə rahat interfeyslər qururam.",
     en: "I build reliable backends with Java and Spring Boot, and clean interfaces with React and Next.js.",
   },
-  // LinkedIn: Junior Full Stack Developer @ Aliyev Space from Oct 2026. English CV (Backend Java, 2026-11-14): Masapay,
+  // LinkedIn: Junior Full Stack Developer @ Aliyev Space from Oct 2026. English CV (Backend Java, 2026-11-14): masapay,
   // Java 21 / Spring Boot 3, PostgreSQL, Redis, WebSocket, tests, documentation-minded. seed.ts: Jet Academy MERN.
   // CV education: TexnoEra Academy Java Spring Boot course (6 months), 2025 – 2026. Owner: 2+ years of experience.
   about: {
-    az: "2+ il təcrübəsi olan, backend yönümlü Full Stack developerəm. 2026-cı ilin oktyabrından Aliyev Space-də Junior Full Stack Developer kimi çalışıram: restoranlar üçün real vaxtda hesab bölmə və ödəniş platforması olan Masapay üzərində Java 21, Spring Boot 3, PostgreSQL, Redis və WebSocket ilə işləyirəm. Jet Academy-də Full Stack MERN proqramını bitirmişəm, TexnoEra Academy-də isə Java və Spring Boot üzrə backend təlimi keçirəm. Səliqəli REST API-lər, testlər və aydın sənədləşmə mənim üçün önəmlidir.",
-    en: "I'm a backend-focused Full Stack developer with 2+ years of experience. Since October 2026 I have been working as a Junior Full Stack Developer at Aliyev Space on Masapay, a real-time bill-splitting and payment platform for restaurants, using Java 21, Spring Boot 3, PostgreSQL, Redis and WebSocket. I completed the Full Stack MERN programme at Jet Academy and I'm in backend training (Java, Spring Boot) at TexnoEra Academy. I care about clean REST APIs, tests and clear documentation.",
+    az: "2+ il təcrübəsi olan, backend yönümlü Full Stack developerəm. 2026-cı ilin oktyabrından Aliyev Space-də Junior Full Stack Developer kimi çalışıram: restoranlar üçün real vaxtda hesab bölmə və ödəniş platforması olan masapay üzərində Java 21, Spring Boot 3, PostgreSQL, Redis və WebSocket ilə işləyirəm. Jet Academy-də Full Stack MERN proqramını bitirmişəm, TexnoEra Academy-də isə Java və Spring Boot üzrə backend təlimi keçirəm. Səliqəli REST API-lər, testlər və aydın sənədləşmə mənim üçün önəmlidir.",
+    en: "I'm a backend-focused Full Stack developer with 2+ years of experience. Since October 2026 I have been working as a Junior Full Stack Developer at Aliyev Space on masapay, a real-time bill-splitting and payment platform for restaurants, using Java 21, Spring Boot 3, PostgreSQL, Redis and WebSocket. I completed the Full Stack MERN programme at Jet Academy and I'm in backend training (Java, Spring Boot) at TexnoEra Academy. I care about clean REST APIs, tests and clear documentation.",
   },
   // seed.ts; English CV header "Baku, Azerbaijan"
   location: { az: "Bakı, Azərbaycan", en: "Baku, Azerbaijan" },

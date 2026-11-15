@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { locale as rootLocale } from "next/root-params";
 import { getTranslations } from "next-intl/server";
 import { AboutJsonLd } from "@/components/seo/json-ld";
@@ -8,6 +9,7 @@ import { formatDate } from "@/lib/date";
 import { buildFaq } from "@/lib/faq";
 import { NoTr, withNames } from "@/components/ui/no-translate";
 import { ALT_NAME, ALT_NAME_INLINE, NAME_SPELLINGS } from "@/lib/identity";
+import photo from "@/components/hero/antiqa.jpg";
 
 /**
  * Plain-facts profile for AI answer engines and link previews: server-rendered text only,
@@ -46,9 +48,10 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const h2 = "display mt-14 text-3xl sm:text-4xl";
+// section titles carry a small pastel marker: a hand-made touch on a text-only page
+const h2 = "display mt-16 flex items-center gap-3 text-3xl font-bold sm:text-4xl before:size-3 before:shrink-0 before:rotate-45 before:rounded-[3px] before:bg-rose";
 // inline-block + py-3: standalone links get a ≥ 44 px tall touch target without changing the text layout
-const link = "inline-block min-w-11 py-3 underline decoration-line underline-offset-4 transition-colors hover:text-rose";
+const link = "inline-block min-w-11 py-3 font-medium underline decoration-rose/40 decoration-2 underline-offset-4 transition-colors hover:text-rose";
 
 export default async function AboutPage() {
   const locale = await currentLocale();
@@ -71,15 +74,22 @@ export default async function AboutPage() {
   const tr = (s: string) => withNames(s, names);
 
   return (
-    <article className="mx-auto max-w-3xl px-4 pt-32 pb-24 sm:px-8 sm:pt-40">
+    <article className="mx-auto max-w-4xl px-4 pt-28 pb-24 sm:px-8 sm:pt-36">
       <AboutJsonLd profile={profile} locale={locale} name={t("metaTitle")} faq={faq} />
-      <header>
-        <p className="kicker">{t("kicker")}</p>
-        <h1 className="display mt-4 text-[clamp(2.4rem,8vw,4.5rem)] [overflow-wrap:anywhere]">
+      <header className="relative overflow-hidden rounded-[2.5rem] bg-pink-soft p-6 sm:p-10">
+        <div aria-hidden className="absolute -top-16 -right-16 size-56 rounded-full bg-lilac-soft" />
+        <Image
+          src={photo}
+          alt={t("photoAlt", { name: profile.name })}
+          sizes="112px"
+          className="relative mb-6 size-24 rounded-full bg-[#ffd9e3] object-cover object-top ring-4 ring-surface sm:float-right sm:mb-0 sm:ml-6 sm:size-28"
+        />
+        <p className="kicker relative bg-surface">{t("kicker")}</p>
+        <h1 className="display relative mt-4 text-[clamp(2.4rem,8vw,4.5rem)] font-bold [overflow-wrap:anywhere]">
           <NoTr>{profile.name}</NoTr>
         </h1>
-        <p className="mt-3 text-xl text-muted">{tr(profile.roles[locale].join(" · "))}</p>
-        <dl className="mt-8 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2">
+        <p className="relative mt-3 text-xl text-muted">{tr(profile.roles[locale].join(" · "))}</p>
+        <dl className="relative mt-8 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2">
           <dt className="text-muted">{t("location")}</dt>
           <dd>{profile.location[locale]}</dd>
           {profile.openToWork && (
@@ -105,7 +115,7 @@ export default async function AboutPage() {
         </h2>
         <ul translate="no" lang="en" className="notranslate mt-4 flex flex-wrap gap-2">
           {profile.skills.map((s) => (
-            <li key={s} className="rounded-full border border-line px-3 py-1 text-sm">
+            <li key={s} className="rounded-full border border-line bg-surface px-3 py-1 text-[0.8125rem] font-medium">
               {s}
             </li>
           ))}

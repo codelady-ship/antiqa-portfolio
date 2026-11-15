@@ -1,73 +1,26 @@
-"use client";
+const TINTS = ["bg-pink-soft", "bg-lilac-soft", "bg-mint-soft", "bg-peach-soft", "bg-butter-soft"];
 
-import { useEffect, useRef } from "react";
-
-/** Two kinetic rows of display type; scrolling speeds them up and skews them (editorial feel). */
+/**
+ * One slim, slowly sliding row of the tools she uses (#32: small, calm type instead of two
+ * rows of giant outlined words). Pure CSS; it pauses on hover and stops for reduced motion.
+ */
 export function Marquee({ items, label }: { items: string[]; label: string }) {
-  const rows = useRef<(HTMLDivElement | null)[]>([]);
-
-  useEffect(() => {
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    let x = 0,
-      vel = 0,
-      last = scrollY,
-      raf = 0,
-      running = false;
-    const host = rows.current[0]?.parentElement?.parentElement;
-    const tick = () => {
-      const dy = scrollY - last;
-      last = scrollY;
-      vel += (dy * 0.25 - vel) * 0.1;
-      x -= 0.6 + Math.abs(vel);
-      rows.current.forEach((row, i) => {
-        if (!row) return;
-        const w = row.scrollWidth / 2;
-        const off = ((x % w) + w) % w;
-        const dir = i % 2 ? 1 : -1;
-        row.style.transform = `translate3d(${dir < 0 ? -off : off - w}px,0,0) skewX(${Math.max(-12, Math.min(12, -vel * 0.8))}deg)`;
-      });
-      if (running) raf = requestAnimationFrame(tick);
-    };
-    const io = new IntersectionObserver(([e]) => {
-      running = e.isIntersecting;
-      cancelAnimationFrame(raf);
-      if (running) raf = requestAnimationFrame(tick);
-    });
-    if (host) io.observe(host);
-    return () => {
-      running = false;
-      cancelAnimationFrame(raf);
-      io.disconnect();
-    };
-  }, []);
-
-  const line = (outline: boolean) =>
-    [...items, ...items].map((s, i) => (
-      <span key={i} className={`display flex items-center gap-[0.5em] pr-[0.5em] ${outline ? "outline-text" : ""}`}>
-        {s}
-        <span className="text-[0.4em] text-rose" aria-hidden>
-          ✦
-        </span>
-      </span>
-    ));
+  const row = [...items, ...items].map((s, i) => (
+    <li key={i} className={`mr-3 flex shrink-0 items-center gap-2 rounded-full px-4 py-2 font-semibold whitespace-nowrap ${TINTS[i % TINTS.length]}`}>
+      {s}
+    </li>
+  ));
 
   return (
     // tech names are brand names: translate="no" (Chrome rendered "React" as a verb, #21), lang="en"
-    <section aria-label={label} className="type-marquee overflow-hidden border-y border-line py-6 sm:py-8">
+    <section aria-label={label} data-shot="skills" className="marquee-host type-marquee overflow-hidden border-y border-line bg-surface py-4">
       <ul className="sr-only notranslate" translate="no" lang="en">
         {items.map((s) => (
           <li key={s}>{s}</li>
         ))}
       </ul>
-      <div aria-hidden translate="no" lang="en" className="notranslate">
-        <div ref={(el) => void (rows.current[0] = el)} className="marquee">
-          {line(false)}
-        </div>
-      </div>
-      <div className="notranslate mt-1" translate="no" lang="en">
-        <div ref={(el) => void (rows.current[1] = el)} className="marquee" aria-hidden>
-          {line(true)}
-        </div>
+      <div aria-hidden translate="no" lang="en" className="notranslate [mask-image:linear-gradient(90deg,transparent,#000_6%,#000_94%,transparent)]">
+        <ul className="marquee">{row}</ul>
       </div>
     </section>
   );

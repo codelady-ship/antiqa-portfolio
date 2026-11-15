@@ -21,7 +21,10 @@
     "available": "Open to new opportunities",
     "scroll": "Scroll down",
     "cta": "See my work",
-    "cv": "Download CV"
+    "cv": "Download CV",
+    "hello": "Hi, I’m",
+    "me": "that’s me!",
+    "photoAlt": "{name} — portrait photo"
   },
   "About": {
     "kicker": "01 — About",
@@ -73,7 +76,9 @@
     "loading": "Loading…",
     "noReadme": "This project has no README.",
     "empty": "No projects for this filter.",
-    "frameNote": "If the site does not load here, open it in a new tab."
+    "frameNote": "If the site does not load here, open it in a new tab.",
+    "more": "{n} more — see details",
+    "featured": "Featured"
   },
   "Contact": {
     "kicker": "03 — Contact",
@@ -136,7 +141,8 @@
     "cv": "CV",
     "home": "Interactive portfolio",
     "plain": "Plain-text version (llms.txt)",
-    "plainFull": "Full facts (llms-full.txt)"
+    "plainFull": "Full facts (llms-full.txt)",
+    "photoAlt": "{name} — portrait photo"
   },
   "Admin": {
     "title": "Admin panel",

@@ -2,35 +2,55 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ---------- design tokens ---------- */
+/* ---------- design tokens (#32: bright, warm, light by default) ----------
+ * Text colours are AA on --bg, --bg-2 and white (ratios in the PR); the *-soft colours are
+ * fills only, text on them is --ink (≥ 11:1). Token names stay the same so every section,
+ * the work cards and the modal pick the palette up without their own colours.
+ */
 :root {
-  --bg: #f6f1ec;
-  --bg-2: #ede5de;
-  --surface: rgb(255 255 255 / 0.62);
-  --ink: #17121a;
-  --muted: #6c6170;
-  --line: rgb(23 18 26 / 0.12);
-  --violet: #6b3fd4;
-  --rose: #c2457d;
-  --gold: #a87a22;
-  --accent: var(--violet);
-  --grad: linear-gradient(100deg, #6b3fd4, #c2457d 50%, #c99227);
-  --shadow: 0 30px 60px -30px rgb(60 30 80 / 0.35);
+  --bg: #fffaf5; /* cream */
+  --bg-2: #fdf0e8; /* peach cream */
+  --surface: #ffffff;
+  --ink: #2b1d2f; /* plum ink 15.3:1 */
+  --muted: #6e5a70; /* 6.0:1 */
+  --line: rgb(43 29 47 / 0.12);
+  --rose: #b42d63; /* pink text 5.8:1 */
+  --violet: #7048c4; /* lilac text 5.9:1 */
+  --gold: #a3511c; /* peach/amber text 5.4:1 */
+  --mint: #1c7a57; /* mint text 5.1:1 */
+  --accent: #c8365f; /* button fill, white text 5.1:1 */
+  --on-accent: #ffffff;
+  --pink-soft: #ffe1ea;
+  --peach-soft: #ffe3d2;
+  --lilac-soft: #ece4ff;
+  --mint-soft: #d5f2e4;
+  --butter-soft: #fff0c2;
+  --grad: linear-gradient(125deg, #f7a8c0, #c9b0ff 55%, #ffc6a3);
+  --shadow: 0 18px 40px -24px rgb(120 60 90 / 0.35);
+  --shadow-pop: 6px 6px 0 0 var(--ink);
   color-scheme: light;
 }
 .dark {
-  --bg: #0b0910;
-  --bg-2: #141019;
-  --surface: rgb(255 255 255 / 0.04);
-  --ink: #f4eef4;
-  --muted: #a99fae;
-  --line: rgb(255 240 255 / 0.1);
-  --violet: #a78bfa;
-  --rose: #f0a3c4;
-  --gold: #f6c86b;
-  --accent: var(--violet);
-  --grad: linear-gradient(100deg, #a78bfa, #f0a3c4 50%, #f6c86b);
-  --shadow: 0 30px 60px -30px rgb(0 0 0 / 0.8);
+  --bg: #1c1420;
+  --bg-2: #251a2a;
+  --surface: #2a1f2f;
+  --ink: #fbeff3;
+  --muted: #c9b4c6; /* 9.3:1 */
+  --line: rgb(251 239 243 / 0.13);
+  --rose: #ff8fb3;
+  --violet: #c6a9ff;
+  --gold: #ffc48a;
+  --mint: #8fe0c0;
+  --accent: #ff8fb3;
+  --on-accent: #1c1420; /* 8.4:1 */
+  --pink-soft: #3d2334;
+  --peach-soft: #3c2a26;
+  --lilac-soft: #30264a;
+  --mint-soft: #1d3a30;
+  --butter-soft: #3a3222;
+  --grad: linear-gradient(125deg, #b9577c, #7d62c4 55%, #c4805a);
+  --shadow: 0 18px 40px -24px rgb(0 0 0 / 0.7);
+  --shadow-pop: 6px 6px 0 0 #000;
   color-scheme: dark;
 }
 
@@ -44,9 +64,17 @@
   --color-violet: var(--violet);
   --color-rose: var(--rose);
   --color-gold: var(--gold);
-  --font-display: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
-  --font-serif: var(--font-serif-it), Georgia, serif;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --color-mint: var(--mint);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-pink-soft: var(--pink-soft);
+  --color-peach-soft: var(--peach-soft);
+  --color-lilac-soft: var(--lilac-soft);
+  --color-mint-soft: var(--mint-soft);
+  --color-butter-soft: var(--butter-soft);
+  --font-display: var(--font-display-face), Georgia, serif;
+  --font-hand: var(--font-hand-face), "Segoe Print", cursive;
+  --font-sans: var(--font-sans-face), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
 html {
@@ -60,8 +88,8 @@ body {
   overflow-x: clip;
 }
 ::selection {
-  background: var(--violet);
-  color: #fff;
+  background: var(--pink-soft);
+  color: var(--ink);
 }
 :focus-visible {
   outline: 2px solid var(--rose);
@@ -69,89 +97,112 @@ body {
   border-radius: 6px;
 }
 
-/* ---------- type helpers ---------- */
-.display {
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: -0.028em;
-  /* 1, not tighter: Azerbaijani capitals carry marks (İ dot, Ş/Ç cedilla, Ə) that would touch the next line */
-  line-height: 1;
-  text-transform: uppercase;
-}
-/*
- * Type scale (#22): one ratio from hero to section titles to the marquee, so the page reads as
- * one system. Fluid between 360 px and 1920 px; use together with .display.
- */
-.type-hero {
-  font-size: clamp(3.25rem, 1.6rem + 7.4vw, 9.5rem);
-}
-.type-section {
-  font-size: clamp(2.25rem, 1.35rem + 4vw, 5.5rem);
-}
-.type-marquee {
-  font-size: clamp(1.75rem, 1.15rem + 2.6vw, 4rem);
-}
-/* tech names keep their own casing (JavaScript, Next.js): no all-caps, no Turkic İ */
-.type-marquee .display {
-  text-transform: none;
-  letter-spacing: -0.015em;
-  line-height: 1.1;
-}
-.serif-it {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  text-transform: none;
-}
-.grad-text {
-  background: var(--grad);
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  animation: shine 8s linear infinite;
-}
-.outline-text {
-  color: transparent;
-  -webkit-text-stroke: 1px var(--ink);
-}
-.kicker {
-  font-size: 0.75rem;
-  letter-spacing: 0.24em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-@keyframes shine {
-  to {
-    background-position: 200% center;
+/* helpers live in the components layer, so a utility class on the same element still wins */
+@layer components {
+  /* ---------- layout ---------- */
+  /* one container for every section: 1320 px (1600 px from 1600 px wide), 16 px gutters on phones, 32 → 48 px on desktop */
+  .wrap {
+    width: 100%;
+    max-width: 1320px;
+    margin-inline: auto;
+    padding-inline: 1rem;
   }
-}
+  @media (min-width: 640px) {
+    .wrap {
+      padding-inline: 2rem;
+    }
+  }
+  @media (min-width: 1280px) {
+    .wrap {
+      padding-inline: 3rem;
+    }
+  }
+  /* wide screens: fill the width instead of two empty side strips (#35 review) */
+  @media (min-width: 1600px) {
+    .wrap {
+      max-width: 1600px;
+    }
+  }
 
-/* ---------- grain + grid backdrop (editorial feel) ---------- */
-.backdrop-grid {
-  background-image:
-    linear-gradient(var(--line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--line) 1px, transparent 1px);
-  background-size: 96px 96px;
-  mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+  /* ---------- type helpers ---------- */
+  .display {
+    font-family: var(--font-display);
+    font-weight: 650;
+    font-variation-settings: "SOFT" 100;
+    letter-spacing: -0.02em;
+    /* room for İ dots and Ş/Ç cedillas between lines */
+    line-height: 1.05;
+  }
+  .type-hero {
+    font-size: clamp(3rem, 1.2rem + 4.2vw, 6.25rem);
+  }
+  .type-section {
+    font-size: clamp(2rem, 1.45rem + 2.3vw, 3.6rem);
+  }
+  /* tech names keep their own casing (JavaScript, Next.js) */
+  .type-marquee {
+    font-size: clamp(0.8125rem, 0.76rem + 0.25vw, 0.9375rem);
+  }
+  .hand {
+    font-family: var(--font-hand);
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+  /* kept for the work section / modal: now the handwritten face, not an italic serif */
+  .serif-it {
+    font-family: var(--font-hand);
+    font-weight: 600;
+    font-style: normal;
+    font-size: 1.15em;
+  }
+  .outline-text {
+    color: transparent;
+    -webkit-text-stroke: 1.5px color-mix(in srgb, var(--rose) 55%, transparent);
+  }
+  /* section label: a small tinted tag, sentence case (no tracked caps) */
+  .kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: fit-content;
+    border-radius: 999px;
+    background: var(--pink-soft);
+    padding: 0.3rem 0.85rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  h3.kicker,
+  .kicker-plain {
+    background: none;
+    padding: 0;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  /* hand-drawn underline under a word */
+  .squiggle {
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 12' preserveAspectRatio='none'%3E%3Cpath d='M2 8c12-6 22-6 30 0s20 6 30 0 20-6 30 0 18 5 26 0' fill='none' stroke='%23f29bb6' stroke-width='3.5' stroke-linecap='round'/%3E%3C/svg%3E")
+      bottom / 100% 0.28em no-repeat;
+    padding-bottom: 0.12em;
+  }
+  .dark .squiggle {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 12' preserveAspectRatio='none'%3E%3Cpath d='M2 8c12-6 22-6 30 0s20 6 30 0 20-6 30 0 18 5 26 0' fill='none' stroke='%23b9577c' stroke-width='3.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  }
 }
 
 /* ---------- reveal on scroll ---------- */
 [data-reveal="hidden"] {
   opacity: 0;
-  transform: translateY(28px);
-  filter: blur(6px);
+  transform: translateY(18px);
 }
 [data-reveal="shown"] {
   opacity: 1;
   transform: none;
-  filter: none;
   transition:
-    opacity 0.9s cubic-bezier(0.2, 0.7, 0.2, 1),
-    transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1),
-    filter 0.9s;
-  transition-delay: calc(var(--reveal-index, 0) * 80ms);
+    opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: calc(var(--reveal-index, 0) * 70ms);
 }
 
 /* split words that rise one by one */
@@ -178,7 +229,27 @@ body {
 .marquee {
   display: flex;
   width: max-content;
-  will-change: transform;
+  animation: marquee 48s linear infinite;
+}
+.marquee-host:hover .marquee,
+.marquee-host:focus-within .marquee {
+  animation-play-state: paused;
+}
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ---------- hero photo: soft confetti float ---------- */
+@keyframes bob {
+  50% {
+    transform: translateY(-6px) rotate(var(--r, 0deg));
+  }
+}
+.bob {
+  transform: rotate(var(--r, 0deg));
+  animation: bob 5s ease-in-out infinite;
 }
 
 /* ---------- theme switch: circular reveal (View Transitions) ---------- */
