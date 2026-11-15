@@ -2,7 +2,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Reveal, SplitWords } from "@/components/motion/reveal";
 import { CountUp } from "@/components/motion/count-up";
 import { withNames } from "@/components/ui/no-translate";
-import { NAME_SPELLINGS } from "@/lib/identity";
+import { EXPERIENCE_YEARS, NAME_SPELLINGS } from "@/lib/identity";
 import type { Profile, Project } from "@/lib/types";
 
 // stat tiles: three tints, three tilts, so the row reads hand-placed rather than generated
@@ -17,9 +17,6 @@ export async function About({ profile, projects }: { profile: Profile; projects:
   const t = await getTranslations("About");
   const locale = (await getLocale()) as "az" | "en";
   const techs = new Set(projects.flatMap((p) => p.languages.map((l) => l.name)).concat(profile.skills));
-  // years between the first repo and the latest push (no "now" → page stays static)
-  const yrs = projects.flatMap((p) => [p.createdAt, p.pushedAt]).filter(Boolean).map((d) => new Date(d!).getFullYear());
-  const yearCount = yrs.length ? Math.max(...yrs) - Math.min(...yrs) + 1 : 1;
 
   return (
     <section id="about" className="wrap relative scroll-mt-24 py-24 sm:py-32">
@@ -39,7 +36,7 @@ export async function About({ profile, projects }: { profile: Profile; projects:
             {[
               [projects.length, t("projects")],
               [techs.size, t("languages")],
-              [yearCount, t("years")],
+              [EXPERIENCE_YEARS, t("years")],
             ].map(([n, label], i) => (
               <Reveal key={String(label)} index={i} className={`flex flex-col-reverse rounded-3xl p-4 sm:p-6 ${TILES[i]}`}>
                 <dt className="mt-1 text-xs leading-snug font-medium break-words text-muted sm:text-sm">{label}</dt>

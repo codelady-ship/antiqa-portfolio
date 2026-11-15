@@ -52,7 +52,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     authors: [{ name: "Antiqa Cəlilova", url: SITE_URL }],
     creator: "Antiqa Cəlilova",
-    keywords: ["Antiqa Cəlilova", ...NAME_SPELLINGS, "Frontend Developer", "Full Stack Developer", "MERN", "React", "Next.js", "Node.js", "Baku", "Azerbaijan", "portfolio"],
+    keywords: ["Antiqa Cəlilova", ...NAME_SPELLINGS, "Full Stack Developer", "Backend Developer", "Java", "Spring Boot", "MERN", "React", "Next.js", "Node.js", "Baku", "Azerbaijan", "portfolio"],
     verification: process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : undefined,
     other: { "darkreader-lock": "true" },
   };

@@ -8,7 +8,7 @@ export async function GET() {
   const lines = [
     `# ${p.name}`,
     "",
-    `> ${JOB_TITLE} (${p.roles.en.join(", ")}) based in ${p.location.en}. ${p.openToWork ? "Open to new opportunities." : ""}`,
+    `> ${JOB_TITLE} (${p.roles.en.join(", ")}) based in ${p.location.en}.${p.openToWork ? " Open to new opportunities." : ""}`,
     "",
     `Also written as: ${NAME_SPELLINGS.filter((n) => n !== p.name).join(", ")}.`,
     "",

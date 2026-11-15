@@ -92,8 +92,12 @@ export default async function AboutPage() {
         <dl className="relative mt-8 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2">
           <dt className="text-muted">{t("location")}</dt>
           <dd>{profile.location[locale]}</dd>
-          <dt className="text-muted">{t("status")}</dt>
-          <dd>{profile.openToWork ? t("openToWork") : t("notLooking")}</dd>
+          {profile.openToWork && (
+            <>
+              <dt className="text-muted">{t("status")}</dt>
+              <dd>{t("openToWork")}</dd>
+            </>
+          )}
         </dl>
       </header>
 
