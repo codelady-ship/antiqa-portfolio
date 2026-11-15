@@ -4,7 +4,7 @@ import { SITE_URL } from "./data";
  * Other ways her name is written (passport/LinkedIn "Entiqə/Entiqe", ASCII without ə, handles).
  * Used in Person JSON-LD, llms*.txt and once in visible text so name searches find the site.
  */
-export const NAME_SPELLINGS = ["Entiqə Cəlilova", "Entiqe Celilova", "Antiqa Celilova", "Antiqa", "antiqacode", "codelady"];
+export const NAME_SPELLINGS = ["Entiqə Cəlilova", "Entiqe Celilova", "Antiqa Celilova", "Antiqa Jalilova", "Antiqa", "antiqacode", "codelady"];
 
 /** Visible alternate spelling, shown in the footer and on /about. */
 export const ALT_NAME = "Entiqə (Entiqe) Cəlilova";
