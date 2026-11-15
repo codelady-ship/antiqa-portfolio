@@ -1,8 +1,8 @@
 {
   "Meta": {
-    "title": "Antiqa Cəlilova — Frontend / Full Stack Developer",
-    "description": "Antiqa (Entiqə) Cəlilova — Bakıda yaşayan Frontend / Full Stack developer (React, Next.js, MERN). Layihələr, canlı demolar, CV və əlaqə.",
-    "ogAlt": "Antiqa Cəlilova — Frontend / Full Stack Developer, Bakı",
+    "title": "Antiqa Cəlilova — Full Stack Developer (Java · Spring Boot · React/Next.js)",
+    "description": "Antiqa (Entiqə) Cəlilova — Bakıda yaşayan Full Stack developer (Java, Spring Boot, React, Next.js). Layihələr, canlı demolar, CV və əlaqə.",
+    "ogAlt": "Antiqa Cəlilova — Full Stack Developer (Java · Spring Boot · React/Next.js), Bakı",
     "skip": "Əsas məzmuna keç"
   },
   "Nav": {
@@ -95,16 +95,16 @@
     "made": "<tech>Next.js</tech>, <tech>Express</tech> və <tech>MongoDB</tech> ilə hazırlanıb",
     "top": "Yuxarı",
     "about": "Sadə mətnlə profil",
-    "role": "Frontend / Full Stack developer, {location}",
+    "role": "Full Stack developer (Java, Spring Boot, React/Next.js), {location}",
     "aka": "Digər yazılışı: <name>{alt}</name>"
   },
   "AboutPage": {
     "metaTitle": "Haqqımda — profil, bacarıqlar və layihələr",
-    "metaDescription": "{name} ({alt}) haqqında faktlar: Frontend / Full Stack (MERN, Next.js) developer, {location}. Bacarıqlar, təhsil, canlı demolu layihələr, suallar və əlaqə.",
-    "ogAlt": "{name} — Frontend / Full Stack Developer",
+    "metaDescription": "{name} ({alt}) haqqında faktlar: Full Stack (Java, Spring Boot, React, Next.js) developer, {location}. Bacarıqlar, təhsil, canlı demolu layihələr, suallar və əlaqə.",
+    "ogAlt": "{name} — Full Stack Developer (Java · Spring Boot · React/Next.js)",
     "faq": "Tez-tez verilən suallar",
     "faqWhoQ": "{name} kimdir?",
-    "faqWhoA": "{name} React, Next.js, Node.js və MongoDB ilə veb tətbiqlər quran Frontend / Full Stack developerdir, yaşadığı yer: {location}; adı {alt} kimi də yazılır.",
+    "faqWhoA": "{name} backend-də Java və Spring Boot, frontend-də React və Next.js ilə veb tətbiqlər quran Full Stack developerdir, yaşadığı yer: {location}; adı {alt} kimi də yazılır.",
     "faqBuildQ": "{name} nə hazırlayır?",
     "faqBuildA": "Responsiv saytlar və full-stack veb tətbiqlər hazırlayır (React və Next.js ilə interfeyslər, Node.js və Express ilə REST API-lər); bu portfolioda onun {count} layihəsi var.",
     "faqStackQ": "{name} hansı texnologiyalardan istifadə edir?",

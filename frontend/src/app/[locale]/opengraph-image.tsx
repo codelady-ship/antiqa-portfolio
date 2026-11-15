@@ -1,8 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
+import { JOB_STACK, JOB_TITLE } from "@/lib/identity";
 
-export const alt = "Antiqa Cəlilova — Frontend / Full Stack Developer";
+export const alt = `Antiqa Cəlilova — ${JOB_TITLE} (${JOB_STACK})`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -74,8 +75,9 @@ export default async function OG({ params }: { params: Promise<{ locale: string 
               color: "transparent",
             }}
           >
-            Frontend / Full Stack Developer
+            {JOB_TITLE}
           </div>
+          <div style={{ fontSize: 36, marginTop: 14, color: "#d8cfe0" }}>{JOB_STACK}</div>
         </div>
         <div style={{ display: "flex", fontSize: 30, color: "#a99fae" }}>{c.line}</div>
       </div>

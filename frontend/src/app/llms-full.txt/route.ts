@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { getProfile, getProjects, SITE_URL } from "@/lib/data";
 import { buildFaq } from "@/lib/faq";
-import { ALT_NAME, JOB_TITLE, NAME_SPELLINGS } from "@/lib/identity";
+import { ALT_NAME, EXPERIENCE_YEARS, JOB_TITLE, NAME_SPELLINGS } from "@/lib/identity";
 
 /**
  * Full plain-text facts for AI answer engines (llms-full.txt convention): every project and
@@ -26,6 +26,7 @@ export async function GET() {
     "## Role",
     `- Job title: ${JOB_TITLE}`,
     `- Roles: ${p.roles.en.join(", ")}`,
+    `- Experience: ${EXPERIENCE_YEARS}+ years`,
     `- Location: ${p.location.en}`,
     `- Status: ${p.openToWork ? "open to new job offers and collaborations" : "not looking for work right now"}`,
     `- Languages of this site: Azerbaijani, English`,
