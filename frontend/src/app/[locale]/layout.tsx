@@ -10,7 +10,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { routing } from "@/i18n/routing";
 import { getProfile, SITE_URL } from "@/lib/data";
 import { NAME_SPELLINGS } from "@/lib/identity";
-import { grotesk, serif } from "../fonts";
+import { fontVars } from "../fonts";
 import "../globals.css";
 
 export function generateStaticParams() {
@@ -18,10 +18,8 @@ export function generateStaticParams() {
 }
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f1ec" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b0910" },
-  ],
+  // light is the default for everyone (#32); the dark theme is an opt-in toggle
+  themeColor: "#fffaf5",
 };
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -72,7 +70,7 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
   const clientMessages = { Nav: messages.Nav, Work: messages.Work, Contact: messages.Contact, Hero: messages.Hero };
 
   return (
-    <html lang={locale} className={`${grotesk.variable} ${serif.variable} antialiased`} suppressHydrationWarning>
+    <html lang={locale} className={`${fontVars} antialiased`} suppressHydrationWarning>
       <body className="min-h-dvh">
         <a
           href="#main"
@@ -82,7 +80,7 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
         </a>
         <IntlProvider locale={locale} messages={clientMessages}>
           <ThemeProvider>
-            <SiteNav initials={profile.initials || "AC"} />
+            <SiteNav />
             <main id="main" tabIndex={-1} className="outline-none">
               {children}
             </main>

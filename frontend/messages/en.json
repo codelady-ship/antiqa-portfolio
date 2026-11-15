@@ -21,7 +21,10 @@
     "available": "Open to new opportunities",
     "scroll": "Scroll down",
     "cta": "See my work",
-    "cv": "Download CV"
+    "cv": "Download CV",
+    "hello": "Hi, I’m",
+    "me": "that’s me!",
+    "photoAlt": "{name} — portrait photo"
   },
   "About": {
     "kicker": "01 — About",
@@ -137,7 +140,8 @@
     "cv": "CV",
     "home": "Interactive portfolio",
     "plain": "Plain-text version (llms.txt)",
-    "plainFull": "Full facts (llms-full.txt)"
+    "plainFull": "Full facts (llms-full.txt)",
+    "photoAlt": "{name} — portrait photo"
   },
   "Admin": {
     "title": "Admin panel",

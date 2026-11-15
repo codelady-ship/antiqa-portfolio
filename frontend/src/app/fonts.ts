@@ -1,18 +1,31 @@
-import { Cormorant_Garamond, Inter_Tight } from "next/font/google";
+import { Caveat, Fraunces, Plus_Jakarta_Sans } from "next/font/google";
 
-export const grotesk = Inter_Tight({
-  variable: "--font-grotesk",
+/*
+ * Type (#32): all three families carry the full Azerbaijani set (Ə ə Ğ ğ İ ı Ö ö Ş ş Ç ç Ü ü),
+ * checked glyph by glyph; Bricolage, Manrope, Outfit and Figtree were rejected because ə falls back.
+ *  - Fraunces (soft, warm serif) for headings and her name,
+ *  - Plus Jakarta Sans for body text,
+ *  - Caveat for two or three handwritten notes (not preloaded).
+ */
+export const display = Fraunces({
+  variable: "--font-display-face",
   subsets: ["latin", "latin-ext"],
-  // one cut keeps the payload small; 600 reads as display type without the slab-heavy look (#22)
-  weight: ["600"],
+  axes: ["SOFT"],
   display: "swap",
 });
 
-export const serif = Cormorant_Garamond({
-  variable: "--font-serif-it",
+export const sans = Plus_Jakarta_Sans({
+  variable: "--font-sans-face",
   subsets: ["latin", "latin-ext"],
-  weight: ["500"],
-  style: ["italic"],
+  display: "swap",
+});
+
+export const hand = Caveat({
+  variable: "--font-hand-face",
+  subsets: ["latin", "latin-ext"],
+  weight: ["600"],
   display: "swap",
   preload: false,
 });
+
+export const fontVars = `${display.variable} ${sans.variable} ${hand.variable}`;

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { NotFoundView, notFoundCta } from "@/components/layout/not-found-view";
 import az from "../../messages/az.json";
 import en from "../../messages/en.json";
-import { grotesk, serif } from "./fonts";
+import { fontVars } from "./fonts";
 import "./globals.css";
 
 /**
@@ -12,12 +12,12 @@ import "./globals.css";
  */
 export const metadata: Metadata = { title: `404 — ${az.NotFound.title} / ${en.NotFound.title}` };
 
-// next-themes is not mounted on this page: apply the saved theme (default dark) before paint
-const THEME = `try{var t=localStorage.getItem("pf-theme");var d=t?t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches):true;document.documentElement.classList.toggle("dark",d)}catch(e){document.documentElement.classList.add("dark")}`;
+// next-themes is not mounted on this page: apply the saved theme (default light) before paint
+const THEME = `try{var t=localStorage.getItem("pf-theme");var d=t==="dark"||(t==="system"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d)}catch(e){}`;
 
 export default function GlobalNotFound() {
   return (
-    <html lang="az" className={`${grotesk.variable} ${serif.variable} dark antialiased`} suppressHydrationWarning>
+    <html lang="az" className={`${fontVars} antialiased`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME }} />
       </head>
