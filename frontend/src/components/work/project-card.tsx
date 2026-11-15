@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useRef, useState, type CSSProperties } from "react";
 import { Reveal } from "@/components/motion/reveal";
+import { withNames } from "@/components/ui/no-translate";
 import { formatDate } from "@/lib/date";
 import { shot } from "@/lib/shot";
 import type { Project } from "@/lib/types";
@@ -21,6 +22,8 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
   const timer = useRef<number>(0);
   const [live, setLive] = useState(false);
   const summary = p.summary?.[locale] || p.description;
+  // tech names inside the summary stay as written when the page is machine-translated (#21)
+  const names = [...p.languages.map((l) => l.name), p.title];
 
   const enter = (e: React.PointerEvent) => {
     if (e.pointerType !== "mouse" || !p.demoUrl || !isSafeFrame(p.demoUrl)) return;
@@ -58,7 +61,7 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
           className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
           style={{ background: "radial-gradient(500px circle at var(--mx,50%) var(--my,50%), color-mix(in srgb, var(--violet) 14%, transparent), transparent 60%)" } as CSSProperties}
         />
-        <div className={`relative overflow-hidden bg-bg-2 ${p.featured ? "aspect-[16/8]" : "aspect-[16/10]"}`}>
+        <div className="relative aspect-[16/10] overflow-hidden bg-bg-2">
           {p.demoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- remote screenshot service, sized by CSS
             <img
@@ -99,17 +102,24 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
         <div className="relative z-20 flex flex-1 flex-col gap-3 p-5 sm:p-6">
           <div className="flex items-center justify-between text-[11px] tracking-[0.16em] text-muted uppercase">
             <span>{p.createdAt ? new Date(p.createdAt).getUTCFullYear() : ""}</span>
-            <span>{p.languages[0]?.name}</span>
+            {/* lang="en": CSS uppercase under lang="az" would print "JAVASCRİPT" */}
+            <span translate="no" lang="en" className="notranslate">
+              {p.languages[0]?.name}
+            </span>
           </div>
-          <h3 className="display text-2xl leading-none sm:text-3xl">{p.title}</h3>
-          {summary && <p className="line-clamp-3 text-sm text-muted">{summary}</p>}
+          <h3 translate="no" lang="en" className="display notranslate text-2xl leading-none sm:text-3xl">
+            {p.title}
+          </h3>
+          {summary && <p className="line-clamp-3 text-sm text-muted">{withNames(summary, names)}</p>}
           {p.topics.length > 0 && (
-            <ul className="flex flex-wrap gap-1.5">
-              {p.topics.slice(0, 5).map((tp) => (
-                <li key={tp} className="rounded-full bg-violet/10 px-2.5 py-0.5 text-[11px] text-violet">
+            // one line on every card (all topics are listed in the modal details)
+            <ul translate="no" className="notranslate flex gap-1.5 overflow-hidden">
+              {p.topics.slice(0, 2).map((tp) => (
+                <li key={tp} className="min-w-0 truncate rounded-full bg-violet/10 px-2.5 py-0.5 text-[11px] text-violet">
                   {tp}
                 </li>
               ))}
+              {p.topics.length > 2 && <li className="shrink-0 rounded-full bg-violet/10 px-2.5 py-0.5 text-[11px] text-violet">+{p.topics.length - 2}</li>}
             </ul>
           )}
           {p.languages.length > 0 && (
@@ -119,7 +129,7 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
                   <i key={l.name} style={{ width: `${l.percent}%`, background: langColor(l.name) }} />
                 ))}
               </div>
-              <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
+              <ul translate="no" className="notranslate mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted">
                 {p.languages.slice(0, 4).map((l) => (
                   <li key={l.name} className="flex items-center gap-1.5">
                     <span className="size-2 rounded-full" style={{ background: langColor(l.name) }} />
@@ -145,6 +155,23 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
               )}
             </span>
           </div>
+          {!!p.links?.length && (
+            // one line: the first link + "+N" (every link is listed in the modal details)
+            <ul aria-label={t("links")} className="-mt-2 -ml-1.5 flex items-center gap-x-1">
+              <li className="min-w-0">
+                <a
+                  href={p.links[0].url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  translate="no"
+                  className="notranslate flex min-h-11 items-center px-1.5 text-xs text-violet underline-offset-4 transition-colors hover:text-ink hover:underline"
+                >
+                  <span className="truncate">{p.links[0].label}</span>&nbsp;↗
+                </a>
+              </li>
+              {p.links.length > 1 && <li className="shrink-0 text-xs text-muted">+{p.links.length - 1}</li>}
+            </ul>
+          )}
           <button
             type="button"
             onClick={onOpen}

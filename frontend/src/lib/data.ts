@@ -54,7 +54,7 @@ function staticSeed(): Project[] {
     return {
       id: `${owner}/${name}`, owner, name, title: s.title || name, summary: { az: "", en: "" }, description: "",
       repoUrl: s.url, backendUrl: s.backend ?? null, demoUrl: s.demo ?? null, createdAt: null, pushedAt: null,
-      stars: 0, forks: 0, topics: [], license: null, languages: [], featured: !!s.featured, order: 0,
+      stars: 0, forks: 0, topics: [], license: null, languages: [], featured: !!s.featured, order: 0, links: s.links,
     };
   });
 }
@@ -94,6 +94,7 @@ async function fromGithub(): Promise<Project[]> {
             .sort((a, b) => b.percent - a.percent),
           featured: !!s.featured,
           order: 0,
+          links: s.links,
         };
       } catch {
         return null;

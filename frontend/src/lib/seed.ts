@@ -41,7 +41,19 @@ export const SEED_PROFILE: Profile = {
   cv: { az: "/cv-az.pdf" },
 };
 
-export const SEED_REPOS: { url: string; featured?: boolean; backend?: string; title?: string; demo?: string }[] = [
+export const SEED_REPOS: { url: string; featured?: boolean; backend?: string; title?: string; demo?: string; links?: { label: string; url: string }[] }[] = [
+  { url: "https://github.com/codelady-ship/hypedomino", featured: true, title: "HypeDomino" },
+  { url: "https://github.com/codelady-ship/masapay", featured: true, title: "MasaPay" },
+  {
+    url: "https://github.com/codelady-ship/scholarship-visa-scam-checker",
+    featured: true,
+    title: "Claude AI Skills",
+    links: [
+      { label: "Scholarship & Visa Scam Checker", url: "https://github.com/codelady-ship/scholarship-visa-scam-checker" },
+      { label: "Azerbaijani Voiceover Studio", url: "https://github.com/codelady-ship/azerbaijani-voiceover-studio" },
+      { label: "Photoshop Design Coach", url: "https://github.com/codelady-ship/photoshop-design-coach" },
+    ],
+  },
   { url: "https://github.com/codelady-ship/planera", featured: true, title: "Planera — Randevum", demo: "https://randevum-seven.vercel.app" },
   { url: "https://github.com/codelady-ship/Ecommerse-app", featured: true, title: "E-Commerce App", demo: "https://codelady-ship.github.io/Ecommerse-app/" },
   { url: "https://github.com/codelady-ship/my-portfolio", title: "Portfolio v1 (React + Three.js)", demo: "https://my-portfolio-eta-mocha-32.vercel.app", backend: "https://github.com/codelady-ship/backend-for-my-portfolio" },
