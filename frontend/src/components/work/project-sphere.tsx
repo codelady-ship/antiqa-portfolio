@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type CSSProperties } from "react";
+import { hasThumb } from "@/lib/seed";
 import { shot } from "@/lib/shot";
 import type { Project } from "@/lib/types";
 
@@ -302,12 +303,12 @@ export function ProjectSphere({
                 style={{ transform: `rotateY(${lon}deg) rotateX(${lat}deg) translateZ(clamp(120px, 36cqi, 240px))` }}
               >
                 <span className="block overflow-hidden rounded-lg border border-line bg-surface shadow-[var(--shadow)] transition-transform duration-300 group-hover:scale-110 group-focus-visible:scale-110 group-focus-visible:ring-2 group-focus-visible:ring-rose group-focus-visible:ring-offset-2 group-focus-visible:ring-offset-bg sm:rounded-xl">
-                  {p.demoUrl ? (
+                  {p.demoUrl && hasThumb(p.repoUrl) ? (
                     // decorative: the button already shows (and is named by) the project title
                     // eslint-disable-next-line @next/next/no-img-element -- remote screenshot, tiny
                     <img src={shot(p.demoUrl, 400)} alt="" loading="lazy" decoding="async" className="aspect-[16/10] w-full object-cover object-top" />
                   ) : (
-                    <span aria-hidden className="display grid aspect-[16/10] place-items-center text-3xl" style={{ background: "var(--grad)", color: "var(--bg)" }}>
+                    <span aria-hidden className="display grid aspect-[16/10] place-items-center bg-pink-soft text-3xl font-bold text-rose">
                       {p.title.charAt(0)}
                     </span>
                   )}

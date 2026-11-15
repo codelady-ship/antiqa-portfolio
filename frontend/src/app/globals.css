@@ -100,7 +100,7 @@ body {
 /* helpers live in the components layer, so a utility class on the same element still wins */
 @layer components {
   /* ---------- layout ---------- */
-  /* one container for every section: 1320 px max, 16 px gutters on phones, 32 → 48 px on desktop */
+  /* one container for every section: 1320 px (1600 px from 1600 px wide), 16 px gutters on phones, 32 → 48 px on desktop */
   .wrap {
     width: 100%;
     max-width: 1320px;
@@ -117,6 +117,12 @@ body {
       padding-inline: 3rem;
     }
   }
+  /* wide screens: fill the width instead of two empty side strips (#35 review) */
+  @media (min-width: 1600px) {
+    .wrap {
+      max-width: 1600px;
+    }
+  }
 
   /* ---------- type helpers ---------- */
   .display {
@@ -128,7 +134,7 @@ body {
     line-height: 1.05;
   }
   .type-hero {
-    font-size: clamp(3.75rem, 0.6rem + 6.6vw, 9rem);
+    font-size: clamp(3rem, 1.2rem + 4.2vw, 6.25rem);
   }
   .type-section {
     font-size: clamp(2rem, 1.45rem + 2.3vw, 3.6rem);

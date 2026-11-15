@@ -5,6 +5,7 @@ import { useRef, useState } from "react";
 import { Reveal } from "@/components/motion/reveal";
 import { withNames } from "@/components/ui/no-translate";
 import { formatDate } from "@/lib/date";
+import { hasThumb } from "@/lib/seed";
 import { shot } from "@/lib/shot";
 import type { Project } from "@/lib/types";
 import { isSafeFrame } from "./frame";
@@ -27,6 +28,10 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
   const [live, setLive] = useState(false);
   const summary = p.summary?.[locale] || p.description;
   const mat = p.featured ? "bg-pink-soft" : MATS[index % MATS.length];
+  // no screenshot (no demo, a known-blank site, or the screenshot failed): a pastel initial tile
+  const [broken, setBroken] = useState(false);
+  const thumb = !!p.demoUrl && hasThumb(p.repoUrl) && !broken;
+  const tile = MATS[(index + 1) % MATS.length];
   // tech names inside the summary stay as written when the page is machine-translated (#21)
   const names = [...p.languages.map((l) => l.name), p.title];
 
@@ -52,18 +57,19 @@ export function ProjectCard({ project: p, index, locale, onOpen }: Props) {
         {/* the screenshot sits on a pastel mat, like a print on coloured card */}
         <div className={`px-3 pt-3 ${mat}`}>
           <div className="relative aspect-[16/10] overflow-hidden rounded-t-2xl bg-bg-2">
-          {p.demoUrl ? (
+          {thumb ? (
             // eslint-disable-next-line @next/next/no-img-element -- remote screenshot service, sized by CSS
             <img
-              src={shot(p.demoUrl, p.featured ? 960 : 640)}
+              src={shot(p.demoUrl!, p.featured ? 960 : 640)}
               alt={t("shotAlt", { title: p.title })}
               loading="lazy"
               decoding="async"
+              onError={() => setBroken(true)}
               className="absolute inset-0 size-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.04]"
             />
           ) : (
-            <span aria-hidden className="display absolute inset-0 grid place-items-center bg-surface text-7xl font-bold text-rose">
-              {p.title.charAt(0)}
+            <span aria-hidden className={`display absolute inset-0 grid place-items-center text-7xl font-bold text-rose ${tile}`}>
+              <span className="grid size-28 place-items-center rounded-full bg-surface shadow-[var(--shadow)]">{p.title.charAt(0)}</span>
             </span>
           )}
           {live && p.demoUrl && (

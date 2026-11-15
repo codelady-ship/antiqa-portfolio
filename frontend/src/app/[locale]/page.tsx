@@ -7,6 +7,7 @@ import { Marquee } from "@/components/sections/marquee";
 import { JsonLd } from "@/components/seo/json-ld";
 import { Work } from "@/components/work/work";
 import { getProfile, getProjects } from "@/lib/data";
+import { JOB_STACK, JOB_TITLE } from "@/lib/identity";
 
 export default async function Home() {
   const locale = ((await rootLocale()) === "en" ? "en" : "az") as "az" | "en";
@@ -22,7 +23,8 @@ export default async function Home() {
       <Hero
         first={first}
         last={rest.join(" ")}
-        roles={profile.roles[locale]}
+        title={JOB_TITLE}
+        stack={JOB_STACK}
         tagline={profile.tagline[locale]}
         location={profile.location[locale]}
         stickers={stickers}

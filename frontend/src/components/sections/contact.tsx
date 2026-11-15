@@ -71,9 +71,10 @@ export function Contact({ profile }: { profile: Profile }) {
             )}
           </div>
 
-          <ul className="grid gap-3 sm:grid-cols-2">
+          {/* one pill per row: a phone number or handle is never cut off */}
+          <ul className="grid grid-cols-2 gap-3">
             {links.map((l, i) => (
-              <Reveal as="li" key={l.k} index={i} className="max-w-full">
+              <Reveal as="li" key={l.k} index={i} className="col-span-2 max-w-full">
                 <a
                   href={l.href}
                   target={l.href.startsWith("http") ? "_blank" : undefined}
@@ -102,7 +103,7 @@ export function Contact({ profile }: { profile: Profile }) {
             {(["az", "en"] as const).map(
               (lang, i) =>
                 profile.cv[lang] && (
-                  <Reveal as="li" key={lang} index={links.length + i}>
+                  <Reveal as="li" key={lang} index={links.length + i} className="mt-1">
                     <a
                       href={profile.cv[lang]}
                       download

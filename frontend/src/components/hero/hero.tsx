@@ -2,13 +2,15 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useRef, type CSSProperties } from "react";
 import photo from "./antiqa.jpg";
 
 type Props = {
   first: string;
   last: string;
-  roles: string[];
+  /** static job title + stack (identity.ts), shown under the name */
+  title: string;
+  stack: string;
   tagline: string;
   location: string;
   stickers: string[];
@@ -22,19 +24,10 @@ type Props = {
  * period and only while the hero is on screen. Phones and tablets get a round avatar instead
  * of the arch and no WebGL at all.
  */
-export function Hero({ first, last, roles, tagline, location, stickers, cvHref }: Props) {
+export function Hero({ first, last, title, stack, tagline, location, stickers, cvHref }: Props) {
   const t = useTranslations("Hero");
   const host = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
-  const [role, setRole] = useState(0);
-
-  // rotate roles
-  useEffect(() => {
-    if (roles.length < 2 || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const id = setInterval(() => setRole((r) => (r + 1) % roles.length), 2600);
-    return () => clearInterval(id);
-  }, [roles.length]);
-
   useEffect(() => {
     const el = host.current!;
     const cv = canvas.current!;
@@ -132,27 +125,28 @@ export function Hero({ first, last, roles, tagline, location, stickers, cvHref }
               sizes="64px"
               className="mb-4 size-16 rounded-full bg-[#ffd9e3] object-cover object-top ring-4 ring-pink-soft lg:hidden"
             />
-          {/* "Hi, I'm" + her name: one text block, the LCP element (bigger than the photo at every
-              width, painted on the server, never faded in); the name is never machine-translated (#21) */}
-          <h1 id="hero-name" className="display type-hero font-[700] break-words">
-            <span className="hand mb-2 block w-fit -rotate-2 text-[max(0.3em,1.5rem)] leading-none font-semibold text-rose">{t("hello")}</span>
-            <span translate="no" className="notranslate">
+          {/* "Hi, I'm" + her name + her job title: one text block, the LCP element (bigger than the photo
+              at every width, painted on the server, never faded in). The lines are inline (<br>), so they
+              stay one block for LCP; the name and the title are never machine-translated (#21). */}
+          <h1 id="hero-name" className="break-words">
+            <span className="hand mb-2 block w-fit -rotate-2 text-[1.5rem] leading-none font-semibold text-rose sm:text-[1.75rem] xl:text-[2rem]">{t("hello")}</span>
+            <span translate="no" className="notranslate display type-hero font-[700]">
               {first}
               <br />
               <span className="squiggle text-rose">{last}</span>
             </span>
+            <br />
+            {/* tall line box = the gap below the squiggle */}
+            <span translate="no" className="notranslate text-xl leading-[2.6] font-bold sm:text-2xl xl:text-[1.75rem]">
+              {title}
+            </span>
+            <br />
+            <span translate="no" className="notranslate text-base leading-snug font-semibold text-violet sm:text-lg xl:text-xl">
+              {stack}
+            </span>
           </h1>
 
-          <div className="mt-7 flex flex-wrap items-center gap-x-3 gap-y-2 text-lg sm:text-xl">
-            {/* roles are tech job titles ("React & Next.js"): kept as written */}
-            <p translate="no" className="notranslate sr-only">
-              {roles.join(", ")}
-            </p>
-            <p translate="no" className="notranslate h-10 overflow-hidden rounded-full bg-lilac-soft px-4 font-semibold" aria-hidden>
-              <span key={role} className="block leading-10 animate-[roleIn_.6s_cubic-bezier(.2,.8,.2,1)]">
-                {roles[role]}
-              </span>
-            </p>
+          <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2">
             <p className="flex items-center gap-1.5 text-base text-muted">
               <svg viewBox="0 0 24 24" className="size-4 shrink-0 text-rose" fill="currentColor" aria-hidden>
                 <path d="M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5Z" />
@@ -222,9 +216,6 @@ export function Hero({ first, last, roles, tagline, location, stickers, cvHref }
           </ul>
         </div>
       </div>
-      <style>{`
-        @keyframes roleIn { from { transform: translateY(100%); opacity: 0 } to { transform: none; opacity: 1 } }
-      `}</style>
     </section>
   );
 }
