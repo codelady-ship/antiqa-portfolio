@@ -18,8 +18,8 @@ import { JOB_STACK, JOB_TITLE } from "@/lib/identity";
  * into the middle of the project ring and stands there. The contact block has its own sticky stage.
  * Phones and tablets get the plain one-column page (no slots, no travelling figure).
  */
-// centred like .wrap (1320 px, 1600 px from 1600 px wide), so the text lines up with the header and the work section
-const GROUP = "mx-auto max-w-[1320px] min-[1600px]:max-w-[1600px] lg:grid lg:grid-cols-[minmax(0,1fr)_clamp(19rem,28vw,30rem)]";
+// centred like .wrap (1320 px, 1680 px from 1600 px wide), so the text lines up with the header and the work section
+const GROUP = "mx-auto max-w-[1320px] min-[1600px]:max-w-[1680px] lg:grid lg:grid-cols-[minmax(0,1fr)_clamp(19rem,30vw,36rem)]";
 
 export default async function Home() {
   const locale = ((await rootLocale()) === "en" ? "en" : "az") as "az" | "en";
@@ -45,15 +45,16 @@ export default async function Home() {
           <div className="min-w-0" data-persona="hero">
             <Hero first={first} last={rest.join(" ")} title={JOB_TITLE} stack={JOB_STACK} tagline={profile.tagline[locale]} location={profile.location[locale]} cvHref={cv} />
           </div>
-          <div aria-hidden className="hidden items-center justify-center pt-24 lg:flex">
-            <PersonaSlot id="hero" wave bubble={tp("hero")} className="w-[66%]" />
+          {/* she stands at the start of her column, close to the text (no empty middle) */}
+          <div aria-hidden className="hidden items-center justify-start pt-24 lg:flex">
+            <PersonaSlot id="hero" wave bubble={tp("hero")} className="ml-[4%] w-[78%] 2xl:-ml-[4vw] 2xl:w-[82%]" />
           </div>
           <div className="min-w-0" data-persona="skills">
             <Marquee items={profile.skills.slice(0, 10)} label={t("skills")} />
             <About profile={profile} projects={projects} />
           </div>
           <div aria-hidden className="hidden lg:block">
-            <PersonaSlot id="about" pose="left" bubble={tp("skills")} chips={chips} className="sticky top-32 mx-auto mt-28 w-[66%]" />
+            <PersonaSlot id="about" pose="left" bubble={tp("skills")} chips={chips} className="sticky top-32 mt-28 ml-[4%] w-[78%] 2xl:ml-[12%] 2xl:w-[74%]" />
           </div>
         </div>
         <Work projects={projects} alt="" />

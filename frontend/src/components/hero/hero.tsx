@@ -67,7 +67,7 @@ export function Hero({ first, last, title, stack, tagline, location, cvHref }: P
               {location}
             </p>
           </div>
-          <p className="mt-5 max-w-xl text-base leading-relaxed text-pretty text-muted sm:text-lg">{tagline}</p>
+          <p className="mt-5 max-w-xl text-base 2xl:max-w-2xl leading-relaxed text-pretty text-muted sm:text-lg">{tagline}</p>
 
           <div className="mt-9 flex flex-wrap gap-3 max-sm:[&>a]:flex-1 max-sm:[&>a]:text-center">
             <a

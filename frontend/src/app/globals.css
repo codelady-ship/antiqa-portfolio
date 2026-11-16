@@ -117,10 +117,11 @@ body {
       padding-inline: 3rem;
     }
   }
-  /* wide screens: fill the width instead of two empty side strips (#35 review) */
+  /* wide screens: fill the width instead of two empty side strips (#35 review; owner 2026-11-16:
+     less empty space left and right) */
   @media (min-width: 1600px) {
     .wrap {
-      max-width: 1600px;
+      max-width: 1680px;
     }
   }
 
@@ -134,7 +135,7 @@ body {
     line-height: 1.05;
   }
   .type-hero {
-    font-size: clamp(3rem, 1.2rem + 4.2vw, 6.25rem);
+    font-size: clamp(3rem, 1.2rem + 4.6vw, 7rem);
   }
   .type-section {
     font-size: clamp(2rem, 1.45rem + 2.3vw, 3.6rem);
@@ -401,9 +402,17 @@ html {
   visibility: hidden;
 }
 .persona-live[data-landed="hero"] [data-persona-slot="hero"] .persona-static,
-.persona-live[data-landed="about"] [data-persona-slot="about"] .persona-static,
-.persona-live[data-landed="work"] [data-persona-slot="work"] .persona-static {
+.persona-live[data-landed="about"] [data-persona-slot="about"] .persona-static {
   visibility: visible;
+}
+/* the ring's own figure (below the cards) drops in over the last part of the way down
+   (Tailwind's translate utilities use the `translate` property, so `transform` is free here) */
+.persona-live [data-persona-slot="work"] {
+  transform: translateY(calc((1 - var(--ring-in, 0)) * -18%));
+}
+.persona-live [data-persona-slot="work"] .persona-static {
+  visibility: visible;
+  opacity: var(--ring-in, 0);
 }
 .persona-live[data-landed] .persona-traveler {
   visibility: hidden;
