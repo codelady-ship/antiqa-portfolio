@@ -1,5 +1,20 @@
 "use client";
 
+/* Third-party (21st.dev) imperative animation component: the belt runs in requestAnimationFrame and
+   keeps its live state in refs on purpose (no re-render per frame). The React Compiler rules below
+   flag that pattern, and the plates are remote / transparent images sized by the belt geometry. */
+/* eslint-disable react-hooks/refs, react-hooks/immutability, react-hooks/set-state-in-effect, react-hooks/exhaustive-deps, @next/next/no-img-element */
+
+/**
+ * SushiConveyorMenu — a stadium-loop conveyor belt (21st.dev component pasted by the owner,
+ * 2026-11-16). Adapted for the portfolio:
+ * - shadcn tokens mapped to the site palette (globals.css: ink/bg/muted/line/surface, rose…);
+ * - price is optional; plates can be a round-cut screenshot (`cover`) or a pastel initial;
+ * - `centerpiece` stands on the island in the middle (depth-sorted between the lanes);
+ * - `renderActions` replaces the price + "Add to order" row in the dialog;
+ * - `technicalDetails` marks the detail chips as tech names (translate="no").
+ */
+
 import * as React from "react";
 import { createPortal } from "react-dom";
 
@@ -11,12 +26,16 @@ export interface ConveyorDish {
   name: string;
   /** One or two sentences for the caption and the dialog. */
   description?: string;
-  /** Price text such as "$4.20", shown on the chip, the caption and the dialog. */
-  price: string;
+  /** Price text such as "$4.20", shown on the chip, the caption and the dialog (optional). */
+  price?: string;
   /** Price tier 1–5. Kaiten plates are colour-coded by price, so the tier is drawn as the plate ring in chart colour 1–5. */
   tier?: DishTier;
-  /** Top-down photo of the plate, centred on a transparent square canvas. */
-  image: string;
+  /** Top-down photo of the plate, centred on a transparent square canvas; or, with `cover`, any picture cut round. */
+  image?: string;
+  /** Cut `image` to the round plate (object-cover), e.g. a website screenshot. */
+  cover?: boolean;
+  /** Letter drawn on a pastel plate when there is no image. */
+  initial?: string;
   /** Short facts such as the piece count or allergens, listed as chips in the dialog. */
   details?: string[];
 }
@@ -56,6 +75,24 @@ export interface SushiConveyorMenuProps extends React.ComponentProps<"section"> 
   /** Price label per tier for the legend. Derived from the items when omitted. */
   legend?: { [tier: number]: string };
   labels?: SushiConveyorMenuLabels;
+  /** Stands on the island in the middle of the belt: in front of the back lane, behind the front lane. */
+  centerpiece?: React.ReactNode;
+  /** Width of the centerpiece box as a multiple of the plate diameter. */
+  centerWidth?: number;
+  /** Dialog buttons instead of the price and the add button. `close` animates the plate back. */
+  renderActions?: (item: ConveyorDish, close: () => void) => React.ReactNode;
+  /** The detail chips are tech names: never machine-translated. */
+  technicalDetails?: boolean;
+  /** Replaces the eyebrow / heading / legend block (e.g. the site's own section heading). */
+  header?: React.ReactNode;
+  /** Accessible name of the belt when there is no `heading`. */
+  beltLabel?: string;
+  /** Gap between plates as a multiple of the default (a few plates on a longer belt). */
+  spacing?: number;
+  /** Radius of the belt's ends as a multiple of the default (a deeper island for the centerpiece). */
+  curve?: number;
+  /** Smallest plate diameter in px on narrow screens. */
+  minPlate?: number;
 }
 
 const SPACING = 1.35;
@@ -73,20 +110,21 @@ const RUN = 0;
 const SEEK = 1;
 const DRAG = 2;
 const DEFAULT_LABELS: SushiConveyorMenuLabels = { add: "Add to order", close: "Close", previous: "Previous plate", next: "Next plate", pause: "Pause belt" };
+// plate rings in the site's palette (globals.css) instead of shadcn's chart colours
 const TIERS = [
-  { ring: "border-chart-1", dot: "bg-chart-1" },
-  { ring: "border-chart-2", dot: "bg-chart-2" },
-  { ring: "border-chart-3", dot: "bg-chart-3" },
-  { ring: "border-chart-4", dot: "bg-chart-4" },
-  { ring: "border-chart-5", dot: "bg-chart-5" },
+  { ring: "border-rose", dot: "bg-rose" },
+  { ring: "border-violet", dot: "bg-violet" },
+  { ring: "border-mint", dot: "bg-mint" },
+  { ring: "border-gold", dot: "bg-gold" },
+  { ring: "border-accent", dot: "bg-accent" },
 ] as const;
 const THEME =
-  "[--belt:color-mix(in_oklab,var(--color-foreground)_78%,var(--color-background))] dark:[--belt:color-mix(in_oklab,var(--color-foreground)_16%,var(--color-background))] " +
-  "[--belt-side:color-mix(in_oklab,var(--color-foreground)_92%,var(--color-background))] dark:[--belt-side:color-mix(in_oklab,var(--color-foreground)_7%,var(--color-background))] " +
-  "[--rail:color-mix(in_oklab,var(--color-muted-foreground)_45%,white)] dark:[--rail:color-mix(in_oklab,var(--color-muted-foreground)_72%,var(--color-background))] " +
-  "[--island:color-mix(in_oklab,var(--color-muted-foreground)_16%,var(--color-background))] dark:[--island:color-mix(in_oklab,var(--color-foreground)_13%,var(--color-background))] " +
-  "[--island-low:color-mix(in_oklab,var(--color-muted-foreground)_27%,var(--color-background))] dark:[--island-low:color-mix(in_oklab,var(--color-foreground)_8%,var(--color-background))] " +
-  "[--island-wall:color-mix(in_oklab,var(--color-muted-foreground)_42%,var(--color-background))] dark:[--island-wall:color-mix(in_oklab,var(--color-foreground)_5%,var(--color-background))]";
+  "[--belt:color-mix(in_oklab,var(--ink)_78%,var(--bg))] dark:[--belt:color-mix(in_oklab,var(--ink)_16%,var(--bg))] " +
+  "[--belt-side:color-mix(in_oklab,var(--ink)_92%,var(--bg))] dark:[--belt-side:color-mix(in_oklab,var(--ink)_7%,var(--bg))] " +
+  "[--rail:color-mix(in_oklab,var(--muted)_45%,white)] dark:[--rail:color-mix(in_oklab,var(--muted)_72%,var(--bg))] " +
+  "[--island:color-mix(in_oklab,var(--muted)_16%,var(--bg))] dark:[--island:color-mix(in_oklab,var(--ink)_13%,var(--bg))] " +
+  "[--island-low:color-mix(in_oklab,var(--muted)_27%,var(--bg))] dark:[--island-low:color-mix(in_oklab,var(--ink)_8%,var(--bg))] " +
+  "[--island-wall:color-mix(in_oklab,var(--muted)_42%,var(--bg))] dark:[--island-wall:color-mix(in_oklab,var(--ink)_5%,var(--bg))]";
 
 type Geo = {
   width: number; height: number; d: number; r: number; s: number; l: number; pitch: number; n: number;
@@ -140,9 +178,9 @@ function project(g: Geo, x: number, z: number) {
   return { x: g.cx + x * k, y: g.ym + TILT * (g.a * z + (g.b * z * z) / 2), k };
 }
 
-function makeGeo(width: number, n: number, d: number, kb: number): Geo {
-  const l = Math.max(1, n) * SPACING * d;
-  const r = Math.min(CURVE * d, l / (2 * Math.PI));
+function makeGeo(width: number, n: number, d: number, kb: number, spacing = 1, curve = 1): Geo {
+  const l = Math.max(1, n) * SPACING * spacing * d;
+  const r = Math.min(CURVE * curve * d, l / (2 * Math.PI));
   const s = Math.max(0, (l - 2 * Math.PI * r) / 2);
   const g: Geo = { width, height: 0, d, r, s, l, pitch: l / Math.max(1, n), n: Math.max(1, n), kb, cx: width / 2, ym: 0, a: (1 + kb) / 2, b: (1 - kb) / (2 * r), band: BAND * d, slats: Math.max(10, Math.round(l / (SLAT * d))), side: Math.max(3, d * 0.07), edgeTop: 0 };
   let top = Infinity;
@@ -241,6 +279,15 @@ export function SushiConveyorMenu({
   onAdd,
   legend,
   labels = DEFAULT_LABELS,
+  centerpiece,
+  centerWidth = 1.25,
+  renderActions,
+  technicalDetails = false,
+  header: headerProp,
+  beltLabel,
+  spacing = 1,
+  curve = 1,
+  minPlate = 96,
   className,
   ref,
   ...rest
@@ -282,11 +329,11 @@ export function SushiConveyorMenu({
 
   const geo = React.useMemo(() => {
     if (!size.stage || count === 0) return null;
-    const span = halfSpan(makeGeo(1000, count, 100, kb)) / 100;
+    const span = halfSpan(makeGeo(1000, count, 100, kb, spacing, curve)) / 100;
     const cap = wide ? 150 : clamp(size.section * 0.143, 96, 150);
     const fit = (size.stage - 8) / (2 * span);
-    return makeGeo(size.stage, count, Math.round(clamp(fit, Math.min(96, cap), cap)), kb);
-  }, [size.stage, size.section, count, kb, wide]);
+    return makeGeo(size.stage, count, Math.round(clamp(fit, Math.min(minPlate, cap), cap)), kb, spacing, curve);
+  }, [size.stage, size.section, count, kb, wide, spacing, curve, minPlate]);
 
   const live = React.useRef({
     geo: null as Geo | null, active: null as number | null, paused: false, reduced: false, open: false, count: 0, speed: 26,
@@ -728,14 +775,14 @@ export function SushiConveyorMenu({
   const roving = active ?? center;
   const tiers = legendEntries(items, legend);
   const g = geo;
-  const control = "inline-flex size-8 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-sm outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none";
+  const control = "inline-flex size-8 items-center justify-center rounded-full border border-line bg-surface text-muted shadow-sm outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-rose motion-reduce:transition-none";
 
-  const header = (eyebrow || heading || tiers.length > 0) && (
+  const header = headerProp ?? ((eyebrow || heading || tiers.length > 0) && (
     <div className={wide ? "flex flex-col items-start gap-4 text-left" : "flex flex-col items-center gap-2 px-2 text-center"}>
-      {eyebrow && <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-muted-foreground">{eyebrow}</p>}
+      {eyebrow && <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-muted">{eyebrow}</p>}
       {heading && <h2 className={`text-balance font-medium tracking-tight ${wide ? "text-4xl leading-[1.1] xl:text-[2.75rem]" : "text-2xl md:text-3xl"}`}>{heading}</h2>}
       {tiers.length > 0 && (
-        <ul aria-hidden="true" data-legend className={`mt-1 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-[11px] tabular-nums text-muted-foreground ${wide ? "justify-start" : "justify-center"} ${narrow ? "max-w-[15rem]" : ""}`}>
+        <ul aria-hidden="true" data-legend className={`mt-1 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-[11px] tabular-nums text-muted ${wide ? "justify-start" : "justify-center"} ${narrow ? "max-w-[15rem]" : ""}`}>
           {tiers.map((entry) => (
             <li key={entry.tier} className="inline-flex items-center gap-1.5">
               <span className={`size-2.5 rounded-full border-2 bg-transparent ${tierStyle(entry.tier).ring}`} />
@@ -745,14 +792,14 @@ export function SushiConveyorMenu({
         </ul>
       )}
     </div>
-  );
+  ));
 
   const captionNode = (
     <div id={`${uid}-caption`} aria-live="polite" data-caption className={wide ? "min-h-[3.25rem]" : `mx-auto mt-2 max-w-md px-2 text-center ${narrow ? "min-h-[3.75rem]" : "min-h-[2.75rem]"}`}>
-      <p className={`text-sm ${current ? "font-medium text-foreground" : "text-muted-foreground"}`}>
-        {current ? <>{current.name} <span className="font-normal tabular-nums text-muted-foreground">· {current.price}</span></> : caption}
+      <p className={`text-sm ${current ? "font-medium text-ink" : "text-muted"}`}>
+        {current ? <>{current.name}{current.price && <span className="font-normal tabular-nums text-muted"> · {current.price}</span>}</> : caption}
       </p>
-      {current?.description && <p className="mt-0.5 text-[13px] leading-snug text-muted-foreground">{current.description}</p>}
+      {current?.description && <p className="mt-0.5 text-[13px] leading-snug text-muted">{current.description}</p>}
     </div>
   );
 
@@ -777,7 +824,7 @@ export function SushiConveyorMenu({
       ref={stageRef}
       data-stage
       role="group"
-      aria-label={heading ?? "Sushi conveyor belt"}
+      aria-label={heading ?? beltLabel ?? "Sushi conveyor belt"}
       aria-roledescription="conveyor belt"
       className="relative w-full touch-pan-y select-none"
       style={{ height: g ? g.height : 260, overflowX: "clip" }}
@@ -802,7 +849,7 @@ export function SushiConveyorMenu({
       onKeyDown={onKeyDown}
     >
       {g && (
-        <div aria-hidden="true" data-counter className="pointer-events-none absolute inset-x-0" style={{ top: Math.max(0, g.edgeTop - g.d * 0.34), height: g.ym - Math.max(0, g.edgeTop - g.d * 0.34), background: "linear-gradient(to bottom, color-mix(in oklab, var(--color-foreground) 9%, transparent) 0 1px, transparent 1px, color-mix(in oklab, var(--color-foreground) 5%, transparent) 40%, transparent)", WebkitMaskImage: "linear-gradient(to right, transparent, black 18%, black 82%, transparent)", maskImage: "linear-gradient(to right, transparent, black 18%, black 82%, transparent)" }} />
+        <div aria-hidden="true" data-counter className="pointer-events-none absolute inset-x-0" style={{ top: Math.max(0, g.edgeTop - g.d * 0.34), height: g.ym - Math.max(0, g.edgeTop - g.d * 0.34), background: "linear-gradient(to bottom, color-mix(in oklab, var(--ink) 9%, transparent) 0 1px, transparent 1px, color-mix(in oklab, var(--ink) 5%, transparent) 40%, transparent)", WebkitMaskImage: "linear-gradient(to right, transparent, black 18%, black 82%, transparent)", maskImage: "linear-gradient(to right, transparent, black 18%, black 82%, transparent)" }} />
       )}
       <div ref={beltRef} data-belt aria-hidden="true" className="pointer-events-none absolute inset-0">
         {g && paths && (
@@ -831,11 +878,22 @@ export function SushiConveyorMenu({
           </svg>
         )}
       </div>
+      {g && centerpiece && (
+        <div
+          aria-hidden="true"
+          data-centerpiece
+          className="pointer-events-none absolute"
+          style={{ left: g.cx, top: g.ym + g.d * 0.3, width: g.d * centerWidth, transform: "translate(-50%, -100%)", zIndex: 100 + Math.round(g.ym) }}
+        >
+          {centerpiece}
+        </div>
+      )}
       {g && items.map((item, i) => {
         const tier = tierStyle(item.tier);
         const isActive = active === i;
-        const broken = !!failed[item.id];
+        const broken = !!failed[item.id] || !item.image;
         const mask = `url("${item.image}") 0 0 / 100% 100% no-repeat`;
+        const round = !broken && !!item.cover;
         return (
           <button
             key={item.id}
@@ -844,11 +902,11 @@ export function SushiConveyorMenu({
             data-dish={i}
             data-active={isActive || undefined}
             tabIndex={i === roving ? 0 : -1}
-            aria-label={`${item.name}, ${item.price}`}
+            aria-label={item.price ? `${item.name}, ${item.price}` : item.name}
             aria-describedby={`${uid}-caption`}
             aria-haspopup="dialog"
             aria-current={isActive || undefined}
-            className="absolute left-0 top-0 cursor-pointer rounded-[50%] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+            className="absolute left-0 top-0 cursor-pointer rounded-[50%] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rose"
             style={{ width: g.d, height: g.d * TILT, visibility: lifted === i ? "hidden" : undefined }}
             onFocus={() => { if (pointer.current.id < 0) { stop(); setActive(i); } }}
             onClick={(event) => { const pending = pendingOpen.current; pendingOpen.current = -1; if (event.detail === 0 || pending === i) open(i); }}
@@ -857,10 +915,30 @@ export function SushiConveyorMenu({
               <span ref={(node) => { shadows.current[i] = node; }} className="absolute inset-x-[5%] bottom-[-9%] top-[16%] rounded-[50%] bg-black" style={{ filter: `blur(${Math.max(2, g.d * 0.045).toFixed(1)}px)` }} />
             </span>
             <span ref={(node) => { lifts.current[i] = node; }} data-lift className="absolute inset-0">
-              <span aria-hidden="true" data-placeholder className={`absolute rounded-[50%] border border-border bg-card ${broken ? "inset-[3%] shadow-sm" : "inset-[6%]"}`}>
-                <span className="absolute inset-[30%] rounded-[50%] bg-muted-foreground/20" />
+              <span aria-hidden="true" data-placeholder className={`absolute rounded-[50%] border border-line bg-surface ${broken || round ? "inset-[3%] shadow-sm" : "inset-[6%]"}`}>
+                {broken && item.initial ? (
+                  <span className="display absolute inset-[9%] grid place-items-center rounded-[50%] bg-pink-soft leading-none font-[750] text-rose" style={{ fontSize: g.d * 0.34 }}>
+                    {item.initial}
+                  </span>
+                ) : (
+                  !round && <span className="absolute inset-[30%] rounded-[50%] bg-muted/20" />
+                )}
               </span>
-              {!broken && (
+              {round && (
+                <span aria-hidden="true" className="pointer-events-none absolute inset-[9%] overflow-hidden rounded-[50%] bg-bg-2">
+                  <img
+                    src={item.image}
+                    alt=""
+                    draggable={false}
+                    loading="lazy"
+                    decoding="async"
+                    onError={() => setFailed((old) => (old[item.id] ? old : { ...old, [item.id]: true }))}
+                    className="size-full select-none object-cover object-top"
+                  />
+                  <span ref={(node) => { shades.current[i] = node; }} className="absolute inset-0 bg-black" style={{ opacity: 0 }} />
+                </span>
+              )}
+              {!broken && !round && (
                 <img
                   src={item.image}
                   alt=""
@@ -869,13 +947,13 @@ export function SushiConveyorMenu({
                   className="pointer-events-none absolute inset-0 size-full select-none object-fill"
                 />
               )}
-              {!broken && <span ref={(node) => { shades.current[i] = node; }} aria-hidden="true" className="pointer-events-none absolute inset-0 bg-black" style={{ opacity: 0, WebkitMask: mask, mask }} />}
+              {!broken && !round && <span ref={(node) => { shades.current[i] = node; }} aria-hidden="true" className="pointer-events-none absolute inset-0 bg-black" style={{ opacity: 0, WebkitMask: mask, mask }} />}
               <span aria-hidden="true" data-ring className={`pointer-events-none absolute -inset-[2%] rounded-[50%] border-2 ${tier.ring}`} />
               <span ref={(node) => { anchors.current[i] = node; }} aria-hidden="true" className="pointer-events-none absolute left-1/2 top-0 size-0">
-                <span data-chip className={`absolute bottom-[7px] left-0 flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-card py-1 pl-2 pr-2.5 text-[11px] font-medium leading-none text-card-foreground shadow-[0_6px_16px_-6px_color-mix(in_oklab,var(--color-foreground)_40%,transparent)] transition-[opacity,translate] duration-300 motion-reduce:transition-none ${isActive && lifted !== i ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"}`}>
+                <span data-chip className={`absolute bottom-[7px] left-0 flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-surface py-1 pl-2 pr-2.5 text-[11px] font-medium leading-none text-ink shadow-[0_6px_16px_-6px_color-mix(in_oklab,var(--ink)_40%,transparent)] transition-[opacity,translate] duration-300 motion-reduce:transition-none ${isActive && lifted !== i ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"}`}>
                   <span className={`size-1.5 rounded-full ${tier.dot}`} />
                   {item.name}
-                  <span className="tabular-nums text-muted-foreground">{item.price}</span>
+                  {item.price && <span className="tabular-nums text-muted">{item.price}</span>}
                 </span>
               </span>
             </span>
@@ -895,9 +973,9 @@ export function SushiConveyorMenu({
       data-open={openIndex ?? ""}
       data-paused={paused || undefined}
       data-center={center}
-      className={`relative isolate w-full overflow-hidden bg-background text-foreground ${THEME} ${className ?? ""}`}
+      className={`relative isolate w-full overflow-hidden text-ink ${THEME} ${className ?? ""}`}
     >
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10" style={{ background: "radial-gradient(64% 52% at 50% 56%, color-mix(in oklab, var(--color-foreground) 5%, transparent), transparent 72%)" }} />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10" style={{ background: "radial-gradient(64% 52% at 50% 56%, color-mix(in oklab, var(--ink) 5%, transparent), transparent 72%)" }} />
       {wide ? (
         <div className="mx-auto grid w-full max-w-7xl grid-cols-[minmax(0,24rem)_minmax(0,1fr)] items-center gap-12 px-10 py-14">
           <div className="flex flex-col items-start gap-6">
@@ -927,7 +1005,9 @@ export function SushiConveyorMenu({
           total={count}
           labels={labels}
           reduced={reduced}
-          broken={!!failed[items[openIndex].id]}
+          broken={!!failed[items[openIndex].id] || !items[openIndex].image}
+          renderActions={renderActions}
+          technicalDetails={technicalDetails}
           source={openSource}
           onLift={onLift}
           onAdd={onDialogAdd}
@@ -938,7 +1018,7 @@ export function SushiConveyorMenu({
   );
 }
 
-function DishDialog({ uid, item, index, total, labels, reduced, broken, source, onLift, onAdd, onClose }: {
+function DishDialog({ uid, item, index, total, labels, reduced, broken, source, onLift, onAdd, onClose, renderActions, technicalDetails }: {
   uid: string;
   item: ConveyorDish;
   index: number;
@@ -950,6 +1030,8 @@ function DishDialog({ uid, item, index, total, labels, reduced, broken, source, 
   onLift: (lifted: boolean) => void;
   onAdd: () => void;
   onClose: () => void;
+  renderActions?: (item: ConveyorDish, close: () => void) => React.ReactNode;
+  technicalDetails?: boolean;
 }) {
   const dialogRef = React.useRef(null as HTMLDivElement | null);
   const figureRef = React.useRef(null as HTMLDivElement | null);
@@ -1045,46 +1127,52 @@ function DishDialog({ uid, item, index, total, labels, reduced, broken, source, 
   };
 
   return createPortal(
-    <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} data-dish-dialog className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4 text-foreground sm:p-8" onKeyDown={onKeyDown}>
-      <div aria-hidden="true" className={`absolute inset-0 bg-background/80 backdrop-blur-md transition-opacity duration-300 motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`} onClick={dismiss} />
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} data-dish-dialog className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4 text-ink sm:p-8" onKeyDown={onKeyDown}>
+      <div aria-hidden="true" className={`absolute inset-0 bg-bg/80 backdrop-blur-md transition-opacity duration-300 motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`} onClick={dismiss} />
       <div className="relative grid w-full max-w-[52rem] items-center gap-6 p-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,19rem)] sm:gap-10 sm:p-8">
-        <div aria-hidden="true" className={`absolute inset-0 rounded-[2rem] border border-border bg-card shadow-2xl transition-[opacity,scale] duration-300 motion-reduce:transition-none ${shown ? "scale-100 opacity-100" : "scale-[0.97] opacity-0"}`} />
-        <button ref={closeRef} type="button" onClick={dismiss} className={`absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-muted-foreground outline-none transition-[opacity,color] duration-300 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`}>
+        <div aria-hidden="true" className={`absolute inset-0 rounded-[2rem] border border-line bg-surface shadow-2xl transition-[opacity,scale] duration-300 motion-reduce:transition-none ${shown ? "scale-100 opacity-100" : "scale-[0.97] opacity-0"}`} />
+        <button ref={closeRef} type="button" onClick={dismiss} className={`absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-muted outline-none transition-[opacity,color] duration-300 hover:text-ink focus-visible:ring-2 focus-visible:ring-rose motion-reduce:transition-none ${shown ? "opacity-100" : "opacity-0"}`}>
           {labels.close}
           <svg aria-hidden="true" viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" /></svg>
         </button>
-        <div ref={figureRef} data-dish-figure className="relative mx-auto aspect-square w-full max-w-[min(42vh,22rem)]">
+        <div ref={figureRef} data-dish-figure className={`relative mx-auto w-full ${item.cover && !broken ? "aspect-[16/10] max-w-[min(52vh,26rem)]" : "aspect-square max-w-[min(42vh,22rem)]"}`}>
           <span aria-hidden="true" className="absolute inset-x-[8%] bottom-[-4%] top-[14%] rounded-full bg-black opacity-25 blur-2xl dark:opacity-70" />
           {broken ? (
-            <span aria-hidden="true" className="absolute inset-[3%] rounded-full border border-border bg-muted">
-              <span className="absolute inset-[30%] rounded-full bg-muted-foreground/25" />
+            <span aria-hidden="true" className="absolute inset-[3%] grid place-items-center rounded-full border border-line bg-pink-soft">
+              {item.initial ? <span className="display text-[7rem] leading-none font-[750] text-rose">{item.initial}</span> : <span className="absolute inset-[30%] rounded-full bg-muted/25" />}
             </span>
+          ) : item.cover ? (
+            <img src={item.image} alt={item.name} draggable={false} className="relative size-full select-none rounded-[1.4rem] border border-line object-cover object-top shadow-xl" />
           ) : (
             <img src={item.image} alt={item.name} draggable={false} className="relative size-full select-none object-contain" />
           )}
-          <span aria-hidden="true" className={`absolute -inset-[1.5%] rounded-full border-[3px] ${tier.ring}`} />
+          <span aria-hidden="true" className={`absolute -inset-[1.5%] border-[3px] ${item.cover && !broken ? "rounded-[1.6rem]" : "rounded-full"} ${tier.ring}`} />
         </div>
         <div className={`relative flex flex-col gap-3 text-center transition-[opacity,translate] delay-150 duration-500 motion-reduce:transition-none sm:text-left ${shown ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"}`}>
-          <p className="flex items-center justify-center gap-2 font-mono text-[11px] tracking-[0.2em] text-muted-foreground sm:justify-start">
+          <p className="flex items-center justify-center gap-2 font-mono text-[11px] tracking-[0.2em] text-muted sm:justify-start">
             <span aria-hidden="true" className={`size-2 rounded-full ${tier.dot}`} />
             {pad(index + 1)} / {pad(total)}
           </p>
           <h3 id={titleId} className="text-2xl font-medium tracking-tight sm:text-3xl">{item.name}</h3>
-          {item.description && <p className="text-sm leading-relaxed text-muted-foreground">{item.description}</p>}
+          {item.description && <p className="text-sm leading-relaxed text-muted">{item.description}</p>}
           {item.details && item.details.length > 0 && (
-            <ul className="flex flex-wrap justify-center gap-2 sm:justify-start">
-              {item.details.map((detail) => <li key={detail} className="rounded-full border border-border px-3 py-1 text-xs text-muted-foreground">{detail}</li>)}
+            <ul translate={technicalDetails ? "no" : undefined} lang={technicalDetails ? "en" : undefined} className={`flex flex-wrap justify-center gap-2 sm:justify-start ${technicalDetails ? "notranslate" : ""}`}>
+              {item.details.map((detail) => <li key={detail} className="rounded-full border border-line px-3 py-1 text-xs text-muted">{detail}</li>)}
             </ul>
           )}
+          {renderActions ? (
+            <div className="mt-2 flex flex-wrap items-center justify-center gap-3 sm:justify-start">{renderActions(item, dismiss)}</div>
+          ) : (
           <div className="mt-2 flex flex-wrap items-center justify-center gap-4 sm:justify-start">
-            <p className="text-2xl font-semibold tabular-nums tracking-tight">{item.price}</p>
-            <button type="button" data-add onClick={add} className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background shadow-sm outline-none transition-[translate,box-shadow] hover:-translate-y-px hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-reduce:transition-none">
+            {item.price && <p className="text-2xl font-semibold tabular-nums tracking-tight">{item.price}</p>}
+            <button type="button" data-add onClick={add} className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-bg shadow-sm outline-none transition-[translate,box-shadow] hover:-translate-y-px hover:shadow-md focus-visible:ring-2 focus-visible:ring-rose focus-visible:ring-offset-2 focus-visible:ring-offset-bg motion-reduce:transition-none">
               {added
                 ? <svg aria-hidden="true" viewBox="0 0 16 16" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7" /></svg>
                 : <svg aria-hidden="true" viewBox="0 0 16 16" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M8 3.5v9M3.5 8h9" /></svg>}
               {labels.add}
             </button>
           </div>
+          )}
         </div>
       </div>
     </div>,

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { Project } from "@/lib/types";
 import { GithubImport } from "./github-import";
 import { api, Area, Button, Card, Field, Input, refreshSite } from "./ui";
+import { onBelt } from "@/components/work/project-conveyor";
 
 type AdminProject = Project & { hidden: boolean; order: number; syncError?: string | null; titleRaw?: string; demoOverride?: string; demoOff?: boolean };
 type SeedRepo = { url: string; featured?: boolean; backend?: string; title?: string; demo?: string };
@@ -109,7 +110,7 @@ function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => void }) 
   });
   const [err, setErr] = useState("");
 
-  const patch = async (body: Partial<typeof f> & { comingSoon?: boolean; demoOff?: boolean }) => {
+  const patch = async (body: Partial<typeof f> & { comingSoon?: boolean; demoOff?: boolean; fullStack?: boolean }) => {
     setErr("");
     try {
       await api(`/api/projects/${p.id}`, { method: "PATCH", body: JSON.stringify(body) });
@@ -150,6 +151,10 @@ function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => void }) 
         </label>
       </div>
       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 pl-7 text-xs text-muted">
+        <label className="flex items-center gap-1.5">
+          <input type="checkbox" checked={!!(p.fullStack ?? onBelt({ ...p, hidden: false }))} onChange={(e) => patch({ fullStack: e.target.checked })} />
+          {t("fullStack")}
+        </label>
         <label className="flex items-center gap-1.5">
           <input type="checkbox" checked={!!p.comingSoon} onChange={(e) => patch({ comingSoon: e.target.checked })} />
           {t("comingSoon")}

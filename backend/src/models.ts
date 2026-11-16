@@ -41,6 +41,9 @@ const ProjectSchema = new Schema(
     backendUrl: { type: String, default: "" },
     featured: { type: Boolean, default: false },
     hidden: { type: Boolean, default: false },
+    // shown on the project belt of the home page (a real full-stack project, not a practice task);
+    // no default: unset = the site decides from its own list until the seed script has run
+    fullStack: { type: Boolean },
     order: { type: Number, default: 0 },
     // "coming soon" badge instead of a live link (a project that is not deployed yet)
     comingSoon: { type: Boolean, default: false },

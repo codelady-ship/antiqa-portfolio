@@ -51,4 +51,7 @@ export type Project = {
   comingSoon?: boolean;
   /** private repo: repoUrl is "" (no code link, no README) */
   privateRepo?: boolean;
+  /** a full-stack project: shown on the home page belt. Unset = the site's own list decides */
+  fullStack?: boolean;
+  hidden?: boolean;
 };

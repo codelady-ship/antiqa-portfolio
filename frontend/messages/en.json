@@ -83,7 +83,17 @@
     "ringHint": "Drag or scroll to spin",
     "ringIdle": "Hover a card and I'll tell you about it",
     "ringIdleTouch": "Tap a card and I'll tell you about it",
-    "count": "{n} projects"
+    "count": "{n} projects",
+    "beltLabel": "Project belt",
+    "beltCaption": "Hover a plate and the belt stops. Click to open the project.",
+    "allOnGithub": "All projects on GitHub",
+    "previous": "Previous project",
+    "next": "Next project",
+    "pause": "Pause the belt",
+    "legendLive": "live demo",
+    "legendCode": "code",
+    "legendSoon": "coming soon",
+    "beltNote": "My full-stack projects: frontend + backend"
   },
   "Contact": {
     "kicker": "03 — Contact",
@@ -247,6 +257,7 @@
     "privateNote": "This repo is private: the site shows no code link and no README.",
     "allowPrivate": "Private repo — show without a code link",
     "comingSoon": "Coming soon badge (not deployed yet)",
+    "fullStack": "Show on the belt (full-stack project)",
     "demoOff": "Demo is broken — show as code only",
     "exists": "This repo is already on the site.",
     "save2": "Add to the site",
