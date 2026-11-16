@@ -1,6 +1,6 @@
 import Image from "next/image";
 import type { Ref } from "react";
-import photo from "@/components/hero/antiqa.jpg";
+import photo from "@/../public/persona/antiqa.webp";
 
 /**
  * The figure itself. Placeholder (no AI asset yet): her photo in a pastel arch, the same
@@ -36,7 +36,7 @@ export function PersonaFigure({
             sizes={sizes}
             placeholder="blur"
             loading={eager ? "eager" : "lazy"}
-            className="absolute inset-0 size-full object-cover object-top mix-blend-multiply"
+            className="absolute inset-0 size-full object-cover object-top"
           />
         </div>
       )}

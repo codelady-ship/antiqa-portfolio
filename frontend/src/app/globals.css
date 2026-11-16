@@ -141,9 +141,6 @@ body {
     font-size: clamp(2rem, 1.45rem + 2.3vw, 3.6rem);
   }
   /* tech names keep their own casing (JavaScript, Next.js) */
-  .type-marquee {
-    font-size: clamp(0.8125rem, 0.76rem + 0.25vw, 0.9375rem);
-  }
   .hand {
     font-family: var(--font-hand);
     font-weight: 600;
@@ -206,6 +203,47 @@ body {
   transition-delay: calc(var(--reveal-index, 0) * 70ms);
 }
 
+/* About (owner, 2026-11-16 #3): the texts slide in from the right, one after the other */
+.reveal-from-right [data-reveal="hidden"] {
+  transform: translateX(72px);
+}
+.reveal-from-right [data-reveal="shown"] {
+  transition-duration: 0.9s;
+  transition-delay: calc(var(--reveal-index, 0) * 120ms);
+}
+
+/* hero: the text block pops in on load, line by line. The name (h1, the LCP element) only
+   moves and scales, it is never transparent */
+.hero-pop > * {
+  animation: hero-pop 0.8s cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
+}
+.hero-pop > h1 {
+  animation-name: hero-pop-lcp;
+}
+.hero-pop > :nth-child(2) {
+  animation-delay: 0.05s;
+}
+.hero-pop > :nth-child(3) {
+  animation-delay: 0.25s;
+}
+.hero-pop > :nth-child(4) {
+  animation-delay: 0.38s;
+}
+.hero-pop > :nth-child(5) {
+  animation-delay: 0.5s;
+}
+@keyframes hero-pop {
+  from {
+    opacity: 0;
+    transform: translateY(26px) scale(0.96);
+  }
+}
+@keyframes hero-pop-lcp {
+  from {
+    transform: translateY(18px) scale(0.97);
+  }
+}
+
 /* split words that rise one by one */
 .split-word {
   display: inline-block;
@@ -224,22 +262,6 @@ body {
 [data-reveal="shown"] .split-word > span,
 .split-in .split-word > span {
   transform: none;
-}
-
-/* ---------- marquee ---------- */
-.marquee {
-  display: flex;
-  width: max-content;
-  animation: marquee 48s linear infinite;
-}
-.marquee-host:hover .marquee,
-.marquee-host:focus-within .marquee {
-  animation-play-state: paused;
-}
-@keyframes marquee {
-  to {
-    transform: translateX(-50%);
-  }
 }
 
 /* ---------- theme switch: circular reveal (View Transitions) ---------- */
@@ -274,10 +296,14 @@ html {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  [data-reveal="hidden"] {
+  [data-reveal="hidden"],
+  .reveal-from-right [data-reveal="hidden"] {
     opacity: 1;
     transform: none;
     filter: none;
+  }
+  .hero-pop > * {
+    animation: none;
   }
   .split-word > span {
     transform: none;
@@ -415,6 +441,11 @@ html {
   opacity: var(--ring-in, 0);
 }
 .persona-live[data-landed] .persona-traveler {
+  visibility: hidden;
+}
+/* a frame sequence is drawing on the canvas: hide the photo / pose stills under it */
+.persona-traveler[data-frames] [data-fig],
+.persona-traveler[data-frames] [data-pose-img] {
   visibility: hidden;
 }
 
