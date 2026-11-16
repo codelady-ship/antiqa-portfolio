@@ -14,16 +14,17 @@ const TILES = [
 const CHIP_DOTS = ["bg-rose", "bg-violet", "bg-mint", "bg-gold"];
 
 /**
- * Institution on the left (may wrap), period on the right of the same row (never wraps, top-aligned),
+ * Institution on the left (may wrap), period on the right of the same row (never wraps, top-aligned);
+ * on phones the period goes under the place, so short names like "Aliyev Space" never wrap.
  * so a long university name never pushes the dates onto a line of their own.
  */
 function Row({ place, period }: { place: string; period: string }) {
   return (
-    <span className="mt-0.5 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 text-sm text-muted">
+    <span className="mt-0.5 grid items-start gap-x-3 text-sm text-muted sm:grid-cols-[minmax(0,1fr)_auto]">
       <span translate="no" className="notranslate min-w-0">
         {place}
       </span>
-      <span className="text-right whitespace-nowrap tabular-nums">{period}</span>
+      <span className="whitespace-nowrap tabular-nums sm:text-right">{period}</span>
     </span>
   );
 }
@@ -69,7 +70,7 @@ export async function About({ profile, projects }: { profile: Profile; projects:
           </dl>
         </div>
 
-        <div className="grid content-start gap-6 md:grid-cols-2 2xl:col-span-5 2xl:grid-cols-1 2xl:pt-14">
+        <div className="grid content-start gap-6 xl:grid-cols-2 2xl:col-span-5 2xl:grid-cols-1 2xl:pt-14">
           {profile.experience?.length > 0 && (
             <Reveal className="rounded-[2rem] border border-line bg-surface p-6 shadow-[var(--shadow)] sm:p-8">
               <h3 className="kicker mb-4">{t("experience")}</h3>
@@ -116,7 +117,7 @@ export async function About({ profile, projects }: { profile: Profile; projects:
             </Reveal>
           )}
 
-          <Reveal className="rounded-[2rem] bg-bg-2 p-6 sm:p-8 md:col-span-2 2xl:col-span-1">
+          <Reveal className="rounded-[2rem] bg-bg-2 p-6 sm:p-8 xl:col-span-2 2xl:col-span-1">
             <h3 className="kicker mb-4">{t("skills")}</h3>
             <ul translate="no" lang="en" className="notranslate flex flex-wrap gap-2">
               {profile.skills.map((s, i) => (

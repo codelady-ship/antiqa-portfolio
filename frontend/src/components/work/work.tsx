@@ -14,8 +14,8 @@ const uses = (p: Project, lang: string) => p.languages.some((l) => l.name === la
 
 /**
  * Work (#38): the figure in the middle, every project as a small card around her (ProjectRing),
- * a language filter above. The chips list every language that makes up ≥ 5 % of at least one
- * project, most used first; a chip keeps exactly the projects it counts, so none is ever empty.
+ * a language filter above. The chips list every language that makes up ≥ 5 % of at least two
+ * projects, most used first; a chip keeps exactly the projects it counts, so none is ever empty.
  */
 export function Work({ projects, alt }: { projects: Project[]; alt: string }) {
   const t = useTranslations("Work");
@@ -26,7 +26,8 @@ export function Work({ projects, alt }: { projects: Project[]; alt: string }) {
   const langs = useMemo(() => {
     const count = new Map<string, number>();
     projects.forEach((p) => p.languages.forEach((l) => l.percent >= MIN_PERCENT && count.set(l.name, (count.get(l.name) ?? 0) + 1)));
-    return [...count.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([n, c]) => ({ n, c }));
+    // a language used by a single project is noise as a filter (PowerShell, Go, C# …): those stay in the cards
+    return [...count.entries()].filter(([, c]) => c > 1).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([n, c]) => ({ n, c }));
   }, [projects]);
 
   const list = useMemo(() => sortProjects(projects.filter((p) => !filter || uses(p, filter)), "recommended"), [projects, filter]);

@@ -67,12 +67,30 @@ function Thumb({ p, featured }: { p: Project; featured: boolean }) {
 }
 
 /** What she says about the active project (or an invitation when none is active). */
-function Bubble({ p, locale, idle, onOpen, touch }: { p: Project | null; locale: "az" | "en"; idle: string; onOpen: (p: Project) => void; touch: boolean }) {
+function Bubble({
+  p,
+  locale,
+  idle,
+  onOpen,
+  touch,
+  id,
+  compact = false,
+}: {
+  p: Project | null;
+  locale: "az" | "en";
+  idle: string;
+  onOpen: (p: Project) => void;
+  touch: boolean;
+  id?: string;
+  /** phones: two lines of text and the open button beside them, so the sticky bar stays short */
+  compact?: boolean;
+}) {
   const t = useTranslations("Work");
   return (
-    <div aria-live="polite" className="text-sm leading-snug">
+    <div id={id} aria-live="polite" className={`min-w-0 flex-1 text-sm leading-snug ${compact && p ? "flex items-center gap-3" : ""}`}>
       {p ? (
         <>
+          <div className="min-w-0 flex-1">
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <strong translate="no" className="notranslate display text-base">
               {p.title}
@@ -81,10 +99,16 @@ function Bubble({ p, locale, idle, onOpen, touch }: { p: Project | null; locale:
               {p.comingSoon ? t("comingSoon") : p.demoUrl ? t("live") : t("code")}
             </span>
           </p>
-          <p className="mt-1 text-muted @max-4xl:line-clamp-4">{blurb(p, locale)}</p>
+          <p className={`mt-1 text-muted ${compact ? "line-clamp-2" : "@max-4xl:line-clamp-4"}`}>{blurb(p, locale)}</p>
+          </div>
           {touch && (
-            <button type="button" onClick={() => onOpen(p)} className="mt-2 min-h-11 rounded-full border-2 border-ink bg-accent px-4 text-sm font-semibold text-on-accent">
-              {t("openProject")} →
+            <button
+              type="button"
+              onClick={() => onOpen(p)}
+              className={`min-h-11 shrink-0 rounded-full border-2 border-ink bg-accent text-sm font-semibold text-on-accent ${compact ? "min-w-11 px-3" : "mt-2 px-4"}`}
+            >
+              {compact ? <span aria-hidden>→</span> : <>{t("openProject")} →</>}
+              {compact && <span className="sr-only">{t("openProject")}: {p.title}</span>}
             </button>
           )}
         </>
@@ -295,7 +319,8 @@ export function ProjectRing({ projects, locale, onOpen, alt }: Props) {
   const poses = PERSONA.poses;
   const idle = touch ? t("ringIdleTouch") : t("ringIdle");
 
-  const button = (p: Project, extra = "") => (
+  // bubbleId: the bubble shown at this size (the ring and the phone grid each have their own)
+  const button = (p: Project, bubbleId: string, extra = "") => (
     <button
       type="button"
       onClick={() => click(p)}
@@ -308,7 +333,7 @@ export function ProjectRing({ projects, locale, onOpen, alt }: Props) {
       onBlur={leave}
       data-active={active?.id === p.id ? "" : undefined}
       data-open-project={p.id}
-      aria-describedby={active?.id === p.id ? "ring-bubble" : undefined}
+      aria-describedby={active?.id === p.id ? bubbleId : undefined}
       className={`group block w-full text-left focus-visible:outline-none [&:focus-visible>span]:ring-2 [&:focus-visible>span]:ring-rose [&:focus-visible>span]:ring-offset-2 [&:focus-visible>span]:ring-offset-bg ${extra}`}
     >
       <Thumb p={p} featured={p.featured} />
@@ -320,11 +345,11 @@ export function ProjectRing({ projects, locale, onOpen, alt }: Props) {
 
   return (
     <>
-      {/* ≥ 768 px: the ring */}
+      {/* ≥ 1024 px: the ring (narrower rings crowd the cards) */}
       <div
         ref={stage}
         data-pose="idle"
-        className="ring-stage @container relative mx-auto hidden aspect-[1/0.72] w-full max-w-[min(100%,74rem,calc(100svh*1.3))] touch-pan-y select-none md:block"
+        className="ring-stage @container relative mx-auto hidden aspect-[1/0.72] w-full max-w-[min(100%,74rem,calc(100svh*1.3))] touch-pan-y select-none lg:block"
       >
         <div aria-hidden className="pointer-events-none absolute inset-[16%] rounded-full bg-peach-soft opacity-70" />
         <div aria-hidden className="pointer-events-none absolute inset-[9%] rounded-full border-2 border-dashed border-line" />
@@ -333,7 +358,7 @@ export function ProjectRing({ projects, locale, onOpen, alt }: Props) {
         {/* no z-index: the figure stays below the cards (z 10–30) */}
         <div className="absolute top-1/2 left-1/2 w-[19cqi] -translate-x-1/2 -translate-y-[52%]">
           <div className="ring-figure">
-            <PersonaFigure alt={alt} sizes="(min-width: 1024px) 240px, 180px" src={poses.idle} />
+            <PersonaFigure alt="" sizes="(min-width: 1536px) 240px, 200px" src={poses.idle} />
             {/* real poses: one image per direction, cross-faded by data-pose (CSS) */}
             {(["up", "down", "left", "right"] as const).map(
               (k) =>
@@ -362,7 +387,7 @@ export function ProjectRing({ projects, locale, onOpen, alt }: Props) {
         <ul aria-label={t("title")} className="absolute inset-0">
           {projects.map((p) => (
             <li key={p.id} data-ring-id={p.id} className="ring-card absolute top-0 left-0 w-[clamp(76px,9.6cqi,120px)]">
-              {button(p)}
+              {button(p, "ring-bubble")}
             </li>
           ))}
         </ul>
@@ -371,15 +396,15 @@ export function ProjectRing({ projects, locale, onOpen, alt }: Props) {
         </p>
       </div>
 
-      {/* < 768 px: a small sticky figure with the bubble, then a plain grid */}
-      <div className="md:hidden">
+      {/* < 1024 px: a small sticky figure with the bubble, then a plain grid */}
+      <div className="lg:hidden">
         <div className="sticky top-16 z-20 -mx-1 mb-4 flex items-start gap-3 rounded-[1.4rem] border-2 border-ink bg-surface p-3 shadow-[4px_4px_0_var(--ink)]">
           <PersonaFigure alt="" sizes="56px" src={poses.idle} className="w-14 shrink-0" />
-          <Bubble p={shownActive} locale={locale} idle={t("ringIdleTouch")} onOpen={onOpen} touch />
+          <Bubble id="ring-bubble-m" compact p={shownActive} locale={locale} idle={t("ringIdleTouch")} onOpen={onOpen} touch />
         </div>
         <ul aria-label={t("title")} className="grid grid-cols-2 gap-3">
           {projects.map((p) => (
-            <li key={p.id}>{button(p)}</li>
+            <li key={p.id}>{button(p, "ring-bubble-m", "[&>span]:!scale-100")}</li>
           ))}
         </ul>
       </div>

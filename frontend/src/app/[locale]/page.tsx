@@ -15,20 +15,20 @@ import { JOB_STACK, JOB_TITLE } from "@/lib/identity";
  * two-column group with a sticky stage on the right (desktop); in the work section she stands
  * in the middle of the project ring. Phones and tablets get the plain one-column page.
  */
-const GROUP = "lg:grid lg:grid-cols-[minmax(0,1fr)_clamp(19rem,30vw,34rem)]";
+// centred like .wrap (1320 px, 1600 px from 1600 px wide), so the text lines up with the header and the work section
+const GROUP = "mx-auto max-w-[1320px] min-[1600px]:max-w-[1600px] lg:grid lg:grid-cols-[minmax(0,1fr)_clamp(19rem,28vw,30rem)]";
 
 export default async function Home() {
   const locale = ((await rootLocale()) === "en" ? "en" : "az") as "az" | "en";
-  const [profile, projects, t, tp, th] = await Promise.all([
+  const [profile, projects, t, tp] = await Promise.all([
     getProfile(),
     getProjects(),
     getTranslations({ locale, namespace: "About" }),
     getTranslations({ locale, namespace: "Persona" }),
-    getTranslations({ locale, namespace: "Hero" }),
   ]);
   const [first, ...rest] = profile.name.split(" ");
   const cv = profile.cv[locale] ?? profile.cv.az ?? profile.cv.en ?? null;
-  const alt = th("photoAlt", { name: profile.name });
+  // the stage and ring figures are decorative (alt=""): the photo is not announced again and again
   // her main stack first, then whatever else she lists
   const chips = [...new Set(["Java", "Spring Boot", "React", "Next.js", "TypeScript", "PostgreSQL"].filter((x) => profile.skills.includes(x)).concat(profile.skills))];
 
@@ -45,14 +45,14 @@ export default async function Home() {
             <About profile={profile} projects={projects} />
           </div>
         </div>
-        <PersonaStage chapters={["hero", "skills"]} bubbles={{ hero: tp("hero"), skills: tp("skills") }} chips={chips} alt={alt} />
+        <PersonaStage chapters={["hero", "skills"]} bubbles={{ hero: tp("hero"), skills: tp("skills") }} chips={chips} alt="" />
       </div>
-      <Work projects={projects} alt={alt} />
+      <Work projects={projects} alt="" />
       <div className={GROUP}>
         <div className="min-w-0" data-persona="contact">
           <Contact profile={profile} />
         </div>
-        <PersonaStage chapters={["contact"]} bubbles={{ contact: tp("contact") }} alt={alt} />
+        <PersonaStage chapters={["contact"]} bubbles={{ contact: tp("contact") }} alt="" />
       </div>
     </>
   );

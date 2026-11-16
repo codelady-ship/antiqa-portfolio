@@ -20,7 +20,7 @@ const POSE: Record<Exclude<Chapter, "work">, { x: number; y: number; r: number; 
   skills: { x: -6, y: 3, r: -3, s: 0.94 },
   contact: { x: 3, y: 0, r: 2.5, s: 1 },
 };
-const CHIP_SPOTS = ["-left-[18%] top-[14%]", "-right-[16%] top-[26%]", "-left-[22%] top-[52%]", "-right-[20%] top-[62%]", "left-[4%] -bottom-[4%]", "right-[2%] top-[2%]"];
+const CHIP_SPOTS = ["-left-[18%] top-[14%]", "-right-[16%] top-[26%]", "-left-[22%] top-[52%]", "-right-[20%] top-[62%]", "left-[4%] -bottom-[4%]", "-left-[6%] -top-[6%]"];
 const CHIP_TINTS = ["bg-pink-soft", "bg-lilac-soft", "bg-mint-soft", "bg-peach-soft", "bg-butter-soft", "bg-pink-soft"];
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -196,7 +196,7 @@ export function PersonaStage({ chapters, bubbles, chips = [], alt }: Props) {
           {chapters.map((c, k) => (
             <div key={c} data-for={k} aria-hidden className="pointer-events-none absolute inset-0" style={{ opacity: k === 0 ? 1 : 0 } as CSSProperties}>
               {bubbles[c] && (
-                <p className="persona-bubble hand absolute top-[6%] -right-[12%] max-w-[13rem] -rotate-3 rounded-[1.4rem] border-2 border-ink bg-surface px-4 py-2.5 text-[1.35rem] leading-tight text-ink shadow-[4px_4px_0_var(--ink)] 2xl:-right-[18%]">
+                <p className="persona-bubble hand absolute top-[6%] -right-[8%] max-w-[12rem] -rotate-3 rounded-[1.4rem] border-2 border-ink bg-surface px-4 py-2.5 text-[1.35rem] leading-tight text-ink shadow-[4px_4px_0_var(--ink)]">
                   {bubbles[c]}
                 </p>
               )}
