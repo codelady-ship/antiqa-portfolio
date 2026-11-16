@@ -12,6 +12,8 @@
  *                      --key none keeps the background (then use a cream video only in light theme)
  *   --similarity 0.12  how close to --key a pixel must be to become transparent
  *   --idle             also write the last frame as public/persona/poses/idle.webp (the ring pose)
+ *   --force            replace frames that are already in public/persona/frames/ (without it the
+ *                      script stops and lists them, so a good set is never deleted by accident)
  *
  * Needs ffmpeg + ffprobe on PATH (or FFMPEG / FFPROBE env vars). Nothing is installed in the project.
  * Windows: `winget install Gyan.FFmpeg`, macOS: `brew install ffmpeg`, Linux: `apt install ffmpeg`.
@@ -28,13 +30,16 @@ const FFMPEG = process.env.FFMPEG || "ffmpeg";
 const FFPROBE = process.env.FFPROBE || "ffprobe";
 
 const args = process.argv.slice(2);
-const input = args.find((a) => !a.startsWith("--") && !/^\d|^[0-9a-f]{6}$|^none$/i.test(a) && existsSync(a));
+// flags without a value; every other --option takes the next argument as its value
+const FLAGS = new Set(["--idle", "--force"]);
+// the one positional argument: any name, also one that starts with a digit (e.g. "2026-11-16 flow.mp4")
+const input = args.filter((a, i) => !a.startsWith("--") && !(i > 0 && args[i - 1].startsWith("--") && !FLAGS.has(args[i - 1])))[0];
 const opt = (name, def) => {
   const i = args.indexOf(`--${name}`);
   return i < 0 ? def : args[i + 1];
 };
 if (!input || !existsSync(input)) {
-  console.error("usage: node scripts/persona-frames.mjs <video.mp4> [--frames 72] [--width 720] [--quality 78] [--key FBF3EC|none] [--similarity 0.12] [--idle]");
+  console.error("usage: node scripts/persona-frames.mjs <video.mp4> [--frames 72] [--width 720] [--quality 78] [--key FBF3EC|none] [--similarity 0.12] [--idle] [--force]");
   process.exit(1);
 }
 const frames = Math.max(2, Number(opt("frames", 72)));
@@ -55,9 +60,15 @@ try {
 }
 if (!(duration > 0)) throw new Error(`could not read the duration of ${input}`);
 
-// fresh output folder (keeps .gitkeep)
+// fresh output folder (keeps .gitkeep); old frames only go with --force
 mkdirSync(OUT, { recursive: true });
-for (const f of readdirSync(OUT)) if (f.endsWith(".webp")) rmSync(join(OUT, f));
+const old = readdirSync(OUT).filter((f) => f.endsWith(".webp"));
+if (old.length && !args.includes("--force")) {
+  console.error(`public/persona/frames/ already has ${old.length} frames (${old[0]} … ${old.at(-1)}).
+Run again with --force to replace them, or move them away first.`);
+  process.exit(1);
+}
+for (const f of old) rmSync(join(OUT, f));
 
 const filters = [`fps=${(frames / duration).toFixed(5)}`, `scale=${width}:-2:flags=lanczos`];
 if (key !== "none") filters.push(`colorkey=0x${key}:${similarity}:0.08`, "format=yuva420p");

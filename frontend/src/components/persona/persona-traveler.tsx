@@ -41,9 +41,14 @@ const mix = (a: Box, b: Box, t: number): Box => ({ x: lerp(a.x, b.x, t), y: lerp
  * Runs only ≥ 1024 px without prefers-reduced-motion. Otherwise nothing moves: the static figure
  * in each slot stays (the class `persona-live` on the track hides those while this one runs).
  * The layer is absolutely positioned and pointer-events:none: no layout shift, no clicks taken.
+ * It sits BELOW the page content (z-index -10 inside the isolated track, review #41/#42): she stays
+ * fully visible while she travels, and headings, text, buttons, chips and cards always paint on
+ * top of her, readable and clickable (text gets a soft halo in the page colour, globals.css).
  */
 /** share of the frame sequence used between the hero and About (the rest: About → the ring) */
 const ABOUT_AT = 0.45;
+/** how much of her own way down (px of document) a sideways crossing takes */
+const CROSS = 420;
 
 export function PersonaTraveler({ heroBubble, aboutBubble }: { heroBubble: string; aboutBubble: string }) {
   const layer = useRef<HTMLDivElement>(null);
@@ -112,9 +117,14 @@ export function PersonaTraveler({ heroBubble, aboutBubble }: { heroBubble: strin
       const t1 = snap(clamp(y / B)),
         t2 = snap(clamp((y - C) / (D - C)));
       const p = mix(mix(h, a, ease(t1)), w, ease(t2));
-      // hero (right) → About (left): she crosses sideways early, in the empty band between the two
-      // sections, instead of drifting over the About heading as it comes in
-      p.x = lerp(lerp(h.x, a.x, ease(clamp(t1 / 0.65))), w.x, ease(t2));
+      // sideways moves happen while her middle passes the empty band between two sections
+      // (hero → About: above the About kicker; About → ring: above the Projects kicker), so she
+      // falls straight down in her own column before and after, and crosses mostly empty space
+      const mid = t.top + scrollY + p.y + (p.w * 800) / 677 / 2; // her centre, document y
+      const cross = (gapY: number) => smooth(clamp((mid - gapY + CROSS / 2) / CROSS));
+      const c1 = Math.max(cross(docTop(about) + 30), smooth(clamp((t1 - 0.85) / 0.15)));
+      const c2 = t2 > 0 ? Math.max(cross(docTop(work) + 20), smooth(clamp((t2 - 0.85) / 0.15))) : 0;
+      p.x = lerp(lerp(h.x, a.x, c1), w.x, c2);
       const fall = Math.max(Math.sin(t1 * Math.PI) * (1 - t2), Math.sin(t2 * Math.PI)); // 0 resting … 1 mid-air
 
       fig.style.width = `${p.w}px`;
@@ -205,7 +215,7 @@ export function PersonaTraveler({ heroBubble, aboutBubble }: { heroBubble: strin
 
   const poses = PERSONA.poses;
   return (
-    <div ref={layer} aria-hidden className="persona-layer pointer-events-none absolute inset-0 z-30 hidden overflow-x-clip">
+    <div ref={layer} aria-hidden className="persona-layer pointer-events-none absolute inset-0 -z-10 hidden overflow-x-clip">
       <div data-traveler data-pose="idle" className="persona-traveler absolute top-0 left-0 aspect-[677/800] will-change-transform">
         <div data-tilt className="size-full origin-bottom">
           <div className="ring-figure size-full">

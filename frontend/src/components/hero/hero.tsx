@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import photo from "@/../public/persona/antiqa.webp";
+import photo from "@/components/persona/antiqa.webp";
 
 type Props = {
   first: string;

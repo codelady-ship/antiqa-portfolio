@@ -1,6 +1,7 @@
 # Persona assets (the figure of Antiqa that follows the scroll)
 
-`antiqa.webp` is her photo (677 × 800). It is the figure until real assets exist, and the small round
+Her photo is `src/components/persona/antiqa.webp` (677 × 800, a static import, so it is served
+once as a hashed file). It is the figure until real assets exist, and the small round
 photo on phones. After adding frames or poses, switch them on in
 `frontend/src/components/persona/config.ts` (`PERSONA.frames` / `PERSONA.poses`).
 Prompts for Google Flow and the frame script: `docs/FLOW-PERSONA-PROMPTS.md`.
