@@ -13,7 +13,7 @@ export function Marquee({ items, label }: { items: string[]; label: string }) {
 
   return (
     // tech names are brand names: translate="no" (Chrome rendered "React" as a verb, #21), lang="en"
-    <section aria-label={label} data-shot="skills" className="marquee-host type-marquee overflow-hidden border-y border-line bg-surface py-4">
+    <section aria-label={label} data-shot="skills" className="marquee-host type-marquee overflow-hidden py-4">
       <ul className="sr-only notranslate" translate="no" lang="en">
         {items.map((s) => (
           <li key={s}>{s}</li>

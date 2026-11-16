@@ -21,6 +21,8 @@ export type GithubSnapshot = {
   defaultBranch: string;
   languages: { name: string; percent: number }[];
   readmeHtml: string;
+  /** private repo (read with GITHUB_TOKEN): its URL and README never reach the site */
+  private: boolean;
 };
 
 const API = "https://api.github.com";
@@ -96,14 +98,20 @@ type RepoJson = {
   private: boolean;
 };
 
-export async function fetchSnapshot(ref: RepoRef): Promise<GithubSnapshot> {
+/**
+ * Private repos are refused unless `allowPrivate` (the owner ticked "private / coming soon"):
+ * then only the metadata is read; the README is never fetched, so it can never reach the site.
+ */
+export async function fetchSnapshot(ref: RepoRef, { allowPrivate = false } = {}): Promise<GithubSnapshot> {
   const repo = await get<RepoJson>(`/repos/${ref.owner}/${ref.name}`);
-  if (repo.private) throw new GithubError(403, "Private repositories are not shown");
+  if (repo.private && !allowPrivate) throw new GithubError(403, "Private repository: tick “private / coming soon” to add it without a code link");
   const [langs, readme] = await Promise.all([
     get<Record<string, number>>(`/repos/${ref.owner}/${ref.name}/languages`),
-    fetch(`${API}/repos/${ref.owner}/${ref.name}/readme`, { headers: headers("application/vnd.github.html+json") })
-      .then((r) => (r.ok ? r.text() : ""))
-      .catch(() => ""),
+    repo.private
+      ? ""
+      : fetch(`${API}/repos/${ref.owner}/${ref.name}/readme`, { headers: headers("application/vnd.github.html+json") })
+          .then((r) => (r.ok ? r.text() : ""))
+          .catch(() => ""),
   ]);
   const real = { owner: repo.owner.login, name: repo.name };
   return {
@@ -121,5 +129,67 @@ export async function fetchSnapshot(ref: RepoRef): Promise<GithubSnapshot> {
     defaultBranch: repo.default_branch,
     languages: toPercentages(langs),
     readmeHtml: readme ? absolutizeReadme(readme, real, repo.default_branch) : "",
+    private: repo.private,
   };
+}
+
+/** First prose paragraph of a README (markdown), for the admin "description" suggestion. */
+export function readmeExcerpt(md: string, max = 320) {
+  const block = md
+    .replace(/```[\s\S]*?```/g, "")
+    .replace(/<[^>]+>/g, "")
+    .split(/\n\s*\n/)
+    .map((b) => b.trim())
+    .find((b) => b && !/^(#|!\[|\||-{3,}|>|\[!\[)/.test(b));
+  if (!block) return "";
+  const clean = block
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/[*_`]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return clean.length > max ? `${clean.slice(0, max - 1).trimEnd()}…` : clean;
+}
+
+/** Raw README markdown ("" when missing). Admin preview only (private repos included, never stored). */
+export async function fetchReadmeText(ref: RepoRef) {
+  const r = await fetch(`${API}/repos/${ref.owner}/${ref.name}/readme`, { headers: headers("application/vnd.github.raw") }).catch(() => null);
+  return r?.ok ? r.text() : "";
+}
+
+export type RepoListItem = {
+  name: string;
+  url: string;
+  description: string;
+  homepage: string | null;
+  language: string | null;
+  stars: number;
+  pushedAt: string;
+  private: boolean;
+  fork: boolean;
+};
+
+/**
+ * The owner's repos, newest push first. With a token that belongs to the owner, private repos
+ * are included (they can be added as "coming soon" cards); otherwise only public ones.
+ */
+export async function listRepos(owner: string): Promise<RepoListItem[]> {
+  type R = RepoJson & { fork: boolean; language: string | null };
+  let list: R[] = [];
+  if (process.env.GITHUB_TOKEN) {
+    list = await get<R[]>("/user/repos?affiliation=owner&per_page=100&sort=pushed").catch(() => [] as R[]);
+    list = list.filter((r) => r.owner.login.toLowerCase() === owner.toLowerCase());
+  }
+  if (!list.length) list = await get<R[]>(`/users/${encodeURIComponent(owner)}/repos?per_page=100&sort=pushed`);
+  return list.map((r) => ({
+    name: r.name,
+    url: r.html_url,
+    description: r.description ?? "",
+    homepage: r.homepage || null,
+    language: r.language,
+    stars: r.stargazers_count,
+    pushedAt: r.pushed_at,
+    private: r.private,
+    fork: r.fork,
+  }));
 }

@@ -122,6 +122,22 @@ export default async function AboutPage() {
         </ul>
       </section>
 
+      {profile.experience?.length > 0 && (
+        <section aria-labelledby="experience">
+          <h2 id="experience" className={h2}>
+            {t("experience")}
+          </h2>
+          <ul className="mt-4 space-y-3">
+            {profile.experience.map((e) => (
+              <li key={`${e.place}-${e.period.en}`}>
+                <strong className="font-medium">{tr(e.title[locale])}</strong>, <NoTr>{e.place}</NoTr> <span className="text-muted">({e.period[locale]})</span>
+                {e.summary[locale] && <> — {tr(e.summary[locale])}</>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {profile.education.length > 0 && (
         <section aria-labelledby="education">
           <h2 id="education" className={h2}>
@@ -175,9 +191,11 @@ export default async function AboutPage() {
                       {t("demo")}
                     </a>
                   )}
-                  <a href={p.repoUrl} className={link} rel="noopener">
-                    {t("code")}
-                  </a>
+                  {p.repoUrl && (
+                    <a href={p.repoUrl} className={link} rel="noopener">
+                      {t("code")}
+                    </a>
+                  )}
                   {p.backendUrl && (
                     <a href={p.backendUrl} className={link} rel="noopener">
                       {t("backend")}

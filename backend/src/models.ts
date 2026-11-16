@@ -14,6 +14,8 @@ const ProfileSchema = new Schema(
     openToWork: { type: Boolean, default: true },
     skills: [String],
     education: [{ title: localized, place: String, period: String }],
+    // work experience, newest first (shown above education; JSON-LD worksFor / hasOccupation)
+    experience: [{ _id: false, title: localized, place: String, period: localized, summary: localized }],
     contacts: {
       email: { type: String, default: "" },
       phone: { type: String, default: "" },
@@ -40,6 +42,12 @@ const ProjectSchema = new Schema(
     featured: { type: Boolean, default: false },
     hidden: { type: Boolean, default: false },
     order: { type: Number, default: 0 },
+    // "coming soon" badge instead of a live link (a project that is not deployed yet)
+    comingSoon: { type: Boolean, default: false },
+    // the live link is dead: show the project as code-only (no demo button, no preview)
+    demoOff: { type: Boolean, default: false },
+    // set by sync from GitHub: a private repo never shows its code link or README on the site
+    privateRepo: { type: Boolean, default: false },
     // extra links shown on the card (e.g. related repos)
     links: { type: [{ _id: false, label: { type: String, default: "" }, url: { type: String, default: "" } }], default: [] },
     // GitHub snapshot

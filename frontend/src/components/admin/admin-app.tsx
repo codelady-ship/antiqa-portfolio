@@ -10,7 +10,7 @@ import { ProjectsPanel } from "./projects-panel";
 import { api, Button, Card, Field, Input } from "./ui";
 
 type SeedRepo = { url: string; featured?: boolean; backend?: string; title?: string; demo?: string };
-const TABS = ["projects", "profile", "cv"] as const;
+const TABS = ["projects", "cv", "profile"] as const;
 type Tab = (typeof TABS)[number];
 
 export function AdminApp({ seedProfile, seedRepos, hasApi }: { seedProfile: Profile; seedRepos: SeedRepo[]; hasApi: boolean }) {
@@ -56,6 +56,36 @@ export function AdminApp({ seedProfile, seedRepos, hasApi }: { seedProfile: Prof
         <Login onDone={() => setAdmin(true)} />
       ) : (
         <>
+          {/* quick start: the three things she comes here for, one click each */}
+          <section aria-labelledby="quick" className="mb-8">
+            <h2 id="quick" className="kicker-plain mb-3">
+              {t("quickTitle")}
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {(
+                [
+                  ["projects", "quickProjects", "quickProjectsText", "bg-pink-soft"],
+                  ["cv", "quickCv", "quickCvText", "bg-butter-soft"],
+                  ["profile", "quickProfile", "quickProfileText", "bg-mint-soft"],
+                ] as const
+              ).map(([k, title, text, tint]) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => {
+                    setTab(k);
+                    document.getElementById("admin-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  aria-pressed={tab === k}
+                  className={`rounded-3xl border-2 p-5 text-left transition-transform hover:-translate-y-0.5 ${tint} ${tab === k ? "border-ink shadow-[4px_4px_0_var(--ink)]" : "border-transparent"}`}
+                >
+                  <span className="display block text-lg leading-tight">{t(title)}</span>
+                  <span className="mt-1.5 block text-sm text-muted">{t(text)}</span>
+                </button>
+              ))}
+            </div>
+            <p className="mt-3 text-xs text-muted">🔖 {t("bookmark")}</p>
+          </section>
           <div
             role="tablist"
             aria-label={t("title")}
@@ -84,7 +114,7 @@ export function AdminApp({ seedProfile, seedRepos, hasApi }: { seedProfile: Prof
               </button>
             ))}
           </div>
-          <div id="admin-panel" role="tabpanel" aria-labelledby={`admin-tab-${tab}`}>
+          <div id="admin-panel" role="tabpanel" className="scroll-mt-24" aria-labelledby={`admin-tab-${tab}`}>
             {tab === "projects" && <ProjectsPanel seedRepos={seedRepos} />}
             {tab === "profile" && <ProfileForm seed={seedProfile} />}
             {tab === "cv" && <CvPanel />}

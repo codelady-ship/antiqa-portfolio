@@ -65,6 +65,18 @@ describe("validation", () => {
     expect(present({ ...base, links: [{ label: "A", url: "https://a.dev" }] }).links).toEqual([{ label: "A", url: "https://a.dev" }]);
     expect(present(base).links).toEqual([]);
   });
+  it("hides the code link of a private repo and the live link of a coming-soon project", async () => {
+    const { present } = await import("./app.js");
+    const base = { _id: "1", owner: "o", name: "app", repoUrl: "https://github.com/o/app", gh: { url: "https://github.com/o/app", homepage: "https://app.dev" } };
+    expect(present(base)).toMatchObject({ repoUrl: "https://github.com/o/app", demoUrl: "https://app.dev", privateRepo: false, comingSoon: false });
+    expect(present({ ...base, privateRepo: true, comingSoon: true })).toMatchObject({ repoUrl: "", demoUrl: null, privateRepo: true, comingSoon: true });
+    expect(present({ ...base, demoOff: true })).toMatchObject({ repoUrl: "https://github.com/o/app", demoUrl: null, comingSoon: false });
+  });
+  it("admin GitHub helpers need the admin cookie", async () => {
+    const app = createApp();
+    expect((await request(app).get("/api/github/repos")).status).toBe(401);
+    expect((await request(app).get("/api/github/preview?url=https://github.com/a/b")).status).toBe(401);
+  });
   it("logout without a body is not rejected as non-JSON", async () => {
     const r = await request(createApp()).post("/api/auth/logout");
     expect(r.status).toBe(200);

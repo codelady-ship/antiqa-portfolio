@@ -33,13 +33,12 @@
     "languages": "texnologiya",
     "years": "il təcrübə",
     "education": "Təhsil",
-    "skills": "Bacarıqlar"
+    "skills": "Bacarıqlar",
+    "experience": "İş təcrübəsi"
   },
   "Work": {
     "kicker": "02 — Seçilmiş işlər",
     "title": "Layihələr",
-    "sphereHint": "Sürüşdürün və ya dartın — kartlar fırlanır",
-    "sphereWord": "İşlər",
     "links": "Əlaqəli repozitoriyalar",
     "filter": "Dilə görə filtr",
     "view": "Görünüş",
@@ -78,7 +77,13 @@
     "empty": "Bu filtrdə layihə yoxdur.",
     "frameNote": "Sayt pəncərədə açılmırsa, yeni tabda açın.",
     "more": "daha {n} — hamısı ətraflı məlumatda",
-    "featured": "Seçilmiş"
+    "featured": "Seçilmiş",
+    "comingSoon": "Tezliklə",
+    "openProject": "Layihəyə bax",
+    "ringHint": "Sürüşdür və fırlat",
+    "ringIdle": "Kartın üstünə gəl — sənə danışım",
+    "ringIdleTouch": "Karta toxun — sənə danışım",
+    "count": "{n} layihə"
   },
   "Contact": {
     "kicker": "03 — Əlaqə",
@@ -142,7 +147,8 @@
     "home": "İnteraktiv portfolio",
     "plain": "Sadə mətn versiyası (llms.txt)",
     "plainFull": "Tam faktlar (llms-full.txt)",
-    "photoAlt": "{name} — portret fotosu"
+    "photoAlt": "{name} — portret fotosu",
+    "experience": "İş təcrübəsi"
   },
   "Admin": {
     "title": "Admin panel",
@@ -214,6 +220,54 @@
     "loading": "Yüklənir…",
     "hasDemo": "demo var",
     "noDemo": "demo yoxdur",
-    "openPdf": "PDF-i aç"
+    "openPdf": "PDF-i aç",
+    "quickTitle": "Buradan nə edə bilərsiniz?",
+    "quickProjects": "GitHub-dan layihə əlavə et",
+    "quickProjectsText": "Repo seçin və ya linkini yapışdırın: ad, təsvir, dillər, ulduzlar, tarixlər və canlı link özü doldurulur.",
+    "quickCv": "CV yüklə (AZ / EN)",
+    "quickCvText": "PDF faylı seçin — saytdakı “CV yüklə” düymələri dərhal yenilənir.",
+    "quickProfile": "Profil və təcrübə",
+    "quickProfileText": "Ad, haqqımda, iş təcrübəsi, təhsil və əlaqə məlumatları.",
+    "bookmark": "Bu səhifənin ünvanını yadda saxlayın: saytda admin linki yoxdur.",
+    "pickRepo": "Repolarımdan seç",
+    "loadingRepos": "Repolar yüklənir…",
+    "searchRepos": "Repo axtar…",
+    "added": "əlavə olunub",
+    "private": "gizli",
+    "preview": "GitHub-dan oxu",
+    "previewing": "Oxunur…",
+    "prefillTitle": "Yoxlayın və yadda saxlayın",
+    "liveLink": "Canlı link",
+    "liveFrom": "Mənbə",
+    "liveSource_homepage": "repo homepage",
+    "liveSource_vercel": "Vercel API",
+    "liveSource_vercel_probe": "<repo>.vercel.app (yoxlayın — başqasına aid ola bilər)",
+    "liveSource_pages": "GitHub Pages",
+    "liveNone": "Canlı link tapılmadı — boş qalsa, kart “Kod” kimi görünəcək.",
+    "privateNote": "Bu repo gizlidir: saytda kod linki və README göstərilmir.",
+    "allowPrivate": "Gizli repo — kod linki olmadan göstər",
+    "comingSoon": "Tezliklə nişanı (hələ yayımlanmayıb)",
+    "demoOff": "Demo işləmir — yalnız kod kimi göstər",
+    "exists": "Bu repo artıq saytdadır.",
+    "save2": "Sayta əlavə et",
+    "cancel": "Ləğv et",
+    "stars": "Ulduz",
+    "created": "Yaradılıb",
+    "updated": "Yenilənib",
+    "languages": "Dillər",
+    "description": "Təsvir",
+    "experience": "İş təcrübəsi",
+    "expTitleAz": "Vəzifə (AZ)",
+    "expTitleEn": "Vəzifə (EN)",
+    "expPlace": "Şirkət",
+    "expPeriodAz": "Müddət (AZ)",
+    "expPeriodEn": "Müddət (EN)",
+    "expSummaryAz": "Qısa təsvir (AZ)",
+    "expSummaryEn": "Qısa təsvir (EN)"
+  },
+  "Persona": {
+    "hero": "Salam, xoş gəldin!",
+    "skills": "Bu da alət çantam",
+    "contact": "Yaz, tez cavab verirəm!"
   }
 }

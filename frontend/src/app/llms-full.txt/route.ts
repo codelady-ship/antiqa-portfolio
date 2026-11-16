@@ -52,7 +52,7 @@ export async function GET() {
         x.languages.length > 0 && `- Stack: ${x.languages.map((l) => l.name).join(", ")}`,
         x.topics.length > 0 && `- Topics: ${x.topics.join(", ")}`,
         x.demoUrl && `- Live demo: ${x.demoUrl}`,
-        `- Source code: ${x.repoUrl}`,
+        x.repoUrl ? `- Source code: ${x.repoUrl}` : x.comingSoon && "- Status: in development (private, not deployed yet)",
         x.backendUrl && `- Backend code: ${x.backendUrl}`,
         x.createdAt && `- Created: ${x.createdAt.slice(0, 10)}`,
         x.pushedAt && `- Last update: ${x.pushedAt.slice(0, 10)}`,

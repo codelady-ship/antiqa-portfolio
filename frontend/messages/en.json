@@ -33,13 +33,12 @@
     "languages": "technologies",
     "years": "years building",
     "education": "Education",
-    "skills": "Skills"
+    "skills": "Skills",
+    "experience": "Experience"
   },
   "Work": {
     "kicker": "02 — Selected work",
     "title": "Projects",
-    "sphereHint": "Scroll or drag — the cards spin",
-    "sphereWord": "Work",
     "links": "Related repositories",
     "filter": "Filter by language",
     "view": "View",
@@ -78,7 +77,13 @@
     "empty": "No projects for this filter.",
     "frameNote": "If the site does not load here, open it in a new tab.",
     "more": "{n} more — see details",
-    "featured": "Featured"
+    "featured": "Featured",
+    "comingSoon": "Coming soon",
+    "openProject": "Open project",
+    "ringHint": "Drag or scroll to spin",
+    "ringIdle": "Hover a card and I'll tell you about it",
+    "ringIdleTouch": "Tap a card and I'll tell you about it",
+    "count": "{n} projects"
   },
   "Contact": {
     "kicker": "03 — Contact",
@@ -142,7 +147,8 @@
     "home": "Interactive portfolio",
     "plain": "Plain-text version (llms.txt)",
     "plainFull": "Full facts (llms-full.txt)",
-    "photoAlt": "{name} — portrait photo"
+    "photoAlt": "{name} — portrait photo",
+    "experience": "Experience"
   },
   "Admin": {
     "title": "Admin panel",
@@ -214,6 +220,54 @@
     "loading": "Loading…",
     "hasDemo": "has demo",
     "noDemo": "no demo",
-    "openPdf": "Open PDF"
+    "openPdf": "Open PDF",
+    "quickTitle": "What you can do here",
+    "quickProjects": "Add a project from GitHub",
+    "quickProjectsText": "Pick a repo or paste its link: title, description, languages, stars, dates and the live link fill in by themselves.",
+    "quickCv": "Upload CV (AZ / EN)",
+    "quickCvText": "Choose a PDF — the “Download CV” buttons on the site update right away.",
+    "quickProfile": "Profile and experience",
+    "quickProfileText": "Name, about text, work experience, education and contacts.",
+    "bookmark": "Bookmark this page: the site has no link to the admin panel.",
+    "pickRepo": "Pick from my repos",
+    "loadingRepos": "Loading repos…",
+    "searchRepos": "Search repos…",
+    "added": "added",
+    "private": "private",
+    "preview": "Read from GitHub",
+    "previewing": "Reading…",
+    "prefillTitle": "Check and save",
+    "liveLink": "Live link",
+    "liveFrom": "Source",
+    "liveSource_homepage": "repo homepage",
+    "liveSource_vercel": "Vercel API",
+    "liveSource_vercel_probe": "<repo>.vercel.app (check it — it may belong to someone else)",
+    "liveSource_pages": "GitHub Pages",
+    "liveNone": "No live link found — left empty, the card shows as “Code”.",
+    "privateNote": "This repo is private: the site shows no code link and no README.",
+    "allowPrivate": "Private repo — show without a code link",
+    "comingSoon": "Coming soon badge (not deployed yet)",
+    "demoOff": "Demo is broken — show as code only",
+    "exists": "This repo is already on the site.",
+    "save2": "Add to the site",
+    "cancel": "Cancel",
+    "stars": "Stars",
+    "created": "Created",
+    "updated": "Updated",
+    "languages": "Languages",
+    "description": "Description",
+    "experience": "Experience",
+    "expTitleAz": "Role (AZ)",
+    "expTitleEn": "Role (EN)",
+    "expPlace": "Company",
+    "expPeriodAz": "Period (AZ)",
+    "expPeriodEn": "Period (EN)",
+    "expSummaryAz": "Short summary (AZ)",
+    "expSummaryEn": "Short summary (EN)"
+  },
+  "Persona": {
+    "hero": "Hi, welcome!",
+    "skills": "Here's my toolbox",
+    "contact": "Write to me, I reply fast!"
   }
 }

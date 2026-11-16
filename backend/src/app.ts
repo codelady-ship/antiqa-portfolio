@@ -8,7 +8,8 @@ import { checkCredentials, COOKIE, deviceId, isAdmin, issueDevice, issueSession,
 import { type Limit, type LimitStore, reserveAll } from "./limiter.js";
 import { isValidObjectId } from "mongoose";
 import { connectDb, Cv, LoginAttempt, Profile, Project } from "./models.js";
-import { demoUrl, fetchSnapshot, GithubError, parseRepoUrl } from "./services/github.js";
+import { demoUrl, fetchReadmeText, fetchSnapshot, GithubError, listRepos, parseRepoUrl, readmeExcerpt } from "./services/github.js";
+import { resolveLive } from "./services/live.js";
 
 const wrap =
   (fn: (req: Request, res: Response) => Promise<unknown>) => (req: Request, res: Response, next: NextFunction) =>
@@ -29,6 +30,10 @@ export const ProfileInput = z.object({
   openToWork: z.boolean(),
   skills: z.array(z.string().max(40)).max(40),
   education: z.array(z.object({ title: loc, place: z.string().max(120), period: z.string().max(60) })).max(10).default([]),
+  experience: z
+    .array(z.object({ title: loc, place: z.string().max(120), period: loc, summary: loc }))
+    .max(10)
+    .default([]),
   contacts: z.object({
     email: z.union([z.literal(""), z.string().email()]),
     phone: z.string().max(30),
@@ -43,7 +48,6 @@ export const ProfileInput = z.object({
 // extra card links (e.g. related repos): https only, short labels, a handful per project
 export const ProjectLinks = z.array(z.object({ label: z.string().trim().min(1).max(60), url: httpsUrl })).max(6);
 
-const ProjectCreate = z.object({ repoUrl: z.string().max(300) });
 export const ProjectPatch = z.object({
   title: z.string().max(120).optional(),
   summary: loc.optional(),
@@ -53,7 +57,13 @@ export const ProjectPatch = z.object({
   hidden: z.boolean().optional(),
   order: z.number().int().min(-1000).max(1000).optional(),
   links: ProjectLinks.optional(),
+  comingSoon: z.boolean().optional(),
+  demoOff: z.boolean().optional(),
 });
+// POST /api/projects: the repo plus the fields the admin form pre-filled from GitHub.
+// allowPrivate = the owner ticked "private / coming soon" for a private repo.
+const ProjectCreate = ProjectPatch.extend({ repoUrl: z.string().max(300), allowPrivate: z.boolean().optional() });
+const PRIVATE_MSG = "Private repository: tick “private / coming soon” to add it without a code link";
 
 const README_ALLOWED: sanitizeHtml.IOptions = {
   allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img", "h1", "h2", "picture", "source", "details", "summary"]),
@@ -74,6 +84,7 @@ export const sanitizeReadme = (html: string) => sanitizeHtml(html, README_ALLOWE
 /** Public shape of a project (no internal fields). */
 export function present(p: any, admin = false) {
   const gh = p.gh ?? {};
+  const priv = !!p.privateRepo;
   return {
     id: String(p._id),
     owner: p.owner,
@@ -81,9 +92,10 @@ export function present(p: any, admin = false) {
     title: p.title || p.name.replace(/[-_.]+/g, " ").replace(/\s+/g, " ").trim(),
     summary: p.summary ?? { az: "", en: "" },
     description: gh.description ?? "",
-    repoUrl: gh.url || p.repoUrl,
+    // private repo: no code link anywhere on the site ("" = hidden)
+    repoUrl: priv ? "" : gh.url || p.repoUrl,
     backendUrl: p.backendUrl || null,
-    demoUrl: demoUrl({ owner: p.owner, name: p.name, homepage: gh.homepage ?? null, hasPages: !!gh.hasPages }, p.demoOverride),
+    demoUrl: p.comingSoon || p.demoOff ? null : demoUrl({ owner: p.owner, name: p.name, homepage: gh.homepage ?? null, hasPages: !!gh.hasPages }, p.demoOverride),
     createdAt: gh.createdAt ?? null,
     pushedAt: gh.pushedAt ?? null,
     stars: gh.stars ?? 0,
@@ -92,6 +104,9 @@ export function present(p: any, admin = false) {
     license: gh.license ?? null,
     languages: gh.languages ?? [],
     featured: !!p.featured,
+    comingSoon: !!p.comingSoon,
+    privateRepo: priv,
+    ...(admin && { demoOff: !!p.demoOff }),
     hidden: !!p.hidden,
     order: p.order ?? 0,
     links: (p.links ?? []).map((l: { label?: string; url?: string }) => ({ label: l.label ?? "", url: l.url ?? "" })),
@@ -104,8 +119,10 @@ export function present(p: any, admin = false) {
 /** Refreshes and saves a project's GitHub snapshot (POST /api/projects, sync, scripts). Never throws on GitHub errors: sets syncError. */
 export async function sync(p: any) {
   try {
-    const s = await fetchSnapshot({ owner: p.owner, name: p.name });
-    p.gh = { ...s, readmeHtml: sanitizeReadme(s.readmeHtml) };
+    // private repos are read too (metadata only, no README), so a repo that turns private loses its code link
+    const { private: priv, ...s } = await fetchSnapshot({ owner: p.owner, name: p.name }, { allowPrivate: true });
+    p.gh = { ...s, readmeHtml: priv ? "" : sanitizeReadme(s.readmeHtml) };
+    p.privateRepo = priv;
     p.owner = s.owner;
     p.name = s.name;
     p.syncError = "";
@@ -196,6 +213,9 @@ export function createApp() {
   });
   app.get("/api/auth/me", (req, res) => res.json({ admin: isAdmin(req) }));
 
+  // admin-only GitHub helpers: refuse before touching the database
+  app.use("/api/github", requireAdmin);
+
   app.use("/api", (_req, _res, next) => {
     connectDb().then(() => next(), next);
   });
@@ -267,7 +287,7 @@ export function createApp() {
   app.get(
     "/api/projects/:owner/:name/readme",
     wrap(async (req, res) => {
-      const p: any = await Project.findOne({ owner: req.params.owner, name: req.params.name, hidden: false }, { "gh.readmeHtml": 1 })
+      const p: any = await Project.findOne({ owner: req.params.owner, name: req.params.name, hidden: false, privateRepo: { $ne: true } }, { "gh.readmeHtml": 1 })
         .collation({ locale: "en", strength: 2 })
         .lean();
       if (!p) return res.status(404).json({ error: "not found" });
@@ -279,15 +299,17 @@ export function createApp() {
     "/api/projects",
     requireAdmin,
     wrap(async (req, res) => {
-      const ref = parseRepoUrl(ProjectCreate.parse(req.body).repoUrl);
+      const { repoUrl, allowPrivate, ...patch } = ProjectCreate.parse(req.body);
+      const ref = parseRepoUrl(repoUrl);
       if (!ref) return res.status(400).json({ error: "Not a GitHub repository URL" });
       const exists = await Project.findOne(ref).collation({ locale: "en", strength: 2 });
       if (exists) return res.status(409).json({ error: "Already added", project: present(exists, true) });
-      const p = new Project({ ...ref, repoUrl: `https://github.com/${ref.owner}/${ref.name}` });
+      const p = new Project({ ...ref, repoUrl: `https://github.com/${ref.owner}/${ref.name}`, ...patch });
       await sync(p);
-      if (p.syncError) {
+      const refuse = p.syncError || (p.privateRepo && !allowPrivate ? PRIVATE_MSG : "");
+      if (refuse) {
         await p.deleteOne();
-        return res.status(422).json({ error: p.syncError });
+        return res.status(422).json({ error: refuse });
       }
       res.status(201).json(present(p, true));
     }),
@@ -311,6 +333,55 @@ export function createApp() {
       res.status(204).end();
     }),
   );
+  /* ---------- admin: pick one of her repos / pre-fill the add form from GitHub ---------- */
+  const ghOwner = async () => {
+    if (process.env.GITHUB_OWNER) return process.env.GITHUB_OWNER;
+    const prof: any = await Profile.findById("main", { "contacts.github": 1 }).lean();
+    return String(prof?.contacts?.github ?? "").match(/github\.com\/([A-Za-z0-9-]{1,39})/)?.[1] ?? "codelady-ship";
+  };
+  app.get(
+    "/api/github/repos",
+    requireAdmin,
+    wrap(async (_req, res) => {
+      const owner = await ghOwner();
+      const [repos, added] = await Promise.all([listRepos(owner), Project.find({}, { owner: 1, name: 1 }).lean()]);
+      const have = new Set(added.map((p: any) => `${p.owner}/${p.name}`.toLowerCase()));
+      res.setHeader("Cache-Control", "private, no-store");
+      res.json({ owner, repos: repos.map((r) => ({ ...r, added: have.has(`${owner}/${r.name}`.toLowerCase()) })) });
+    }),
+  );
+  app.get(
+    "/api/github/preview",
+    requireAdmin,
+    wrap(async (req, res) => {
+      const ref = parseRepoUrl(z.string().max(300).parse(req.query.url ?? ""));
+      if (!ref) return res.status(400).json({ error: "Not a GitHub repository URL" });
+      const s = await fetchSnapshot(ref, { allowPrivate: true });
+      const [live, readme, exists] = await Promise.all([
+        resolveLive(s),
+        s.description ? "" : fetchReadmeText(ref),
+        Project.exists({ owner: s.owner, name: s.name }).collation({ locale: "en", strength: 2 }),
+      ]);
+      res.setHeader("Cache-Control", "private, no-store");
+      res.json({
+        owner: s.owner,
+        name: s.name,
+        repoUrl: s.url,
+        title: s.name.replace(/[-_.]+/g, " ").replace(/\s+/g, " ").trim(),
+        description: s.description || readmeExcerpt(readme),
+        languages: s.languages,
+        topics: s.topics,
+        stars: s.stars,
+        forks: s.forks,
+        createdAt: s.createdAt,
+        pushedAt: s.pushedAt,
+        private: s.private,
+        live,
+        exists: !!exists,
+      });
+    }),
+  );
+
   const syncAll = wrap(async (req, res) => {
       // admin, or Vercel Cron with CRON_SECRET
       const cron = process.env.CRON_SECRET && req.get("authorization") === `Bearer ${process.env.CRON_SECRET}`;

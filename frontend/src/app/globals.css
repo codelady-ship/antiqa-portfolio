@@ -241,17 +241,6 @@ body {
   }
 }
 
-/* ---------- hero photo: soft confetti float ---------- */
-@keyframes bob {
-  50% {
-    transform: translateY(-6px) rotate(var(--r, 0deg));
-  }
-}
-.bob {
-  transform: rotate(var(--r, 0deg));
-  animation: bob 5s ease-in-out infinite;
-}
-
 /* ---------- theme switch: circular reveal (View Transitions) ---------- */
 ::view-transition-old(root),
 ::view-transition-new(root) {
@@ -320,3 +309,100 @@ html {
 .readme :where(td, th) { border: 1px solid var(--line); padding: 0.4em 0.8em; }
 .readme blockquote { border-left: 3px solid var(--rose); padding-left: 1em; color: var(--muted); }
 .readme .anchor, .readme .octicon { display: none; }
+
+/* ---------- persona (#38) ---------- */
+/* the waving hand: a slow wave from the wrist */
+.persona-wave {
+  transform-origin: 30% 90%;
+  animation: persona-wave 2.4s ease-in-out infinite;
+}
+@keyframes persona-wave {
+  0%,
+  60%,
+  100% {
+    transform: rotate(0deg);
+  }
+  10%,
+  30% {
+    transform: rotate(16deg);
+  }
+  20%,
+  40% {
+    transform: rotate(-8deg);
+  }
+}
+/* a frame sequence is drawing: hide the photo placeholder underneath */
+.persona-stage[data-frames] .persona-placeholder {
+  visibility: hidden;
+}
+.persona-bubble {
+  transform-origin: 0 100%;
+}
+
+/* ---------- project ring (#38) ---------- */
+.ring-card {
+  animation: ring-in 0.5s ease-out both;
+}
+@keyframes ring-in {
+  from {
+    opacity: 0;
+  }
+}
+/* placeholder poses: she leans towards the hovered card, a drawn hand points at it */
+.ring-figure {
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.ring-stage[data-pose="left"] .ring-figure {
+  transform: translateX(-5%) rotate(-5deg);
+}
+.ring-stage[data-pose="right"] .ring-figure {
+  transform: translateX(5%) rotate(5deg);
+}
+.ring-stage[data-pose="up"] .ring-figure {
+  transform: translateY(-4%) scale(1.03);
+}
+.ring-stage[data-pose="down"] .ring-figure {
+  transform: translateY(3%) rotate(-2deg) scale(0.98);
+}
+.ring-hand {
+  opacity: 0;
+  transform: rotate(var(--aim, 0deg));
+  transition:
+    opacity 0.25s,
+    transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.ring-stage:not([data-pose="idle"]) .ring-hand {
+  opacity: 1;
+}
+/* real pose images (config.ts): cross-fade to the one for the current direction */
+.ring-figure [data-pose-img] {
+  transition: opacity 0.25s;
+}
+.ring-stage[data-pose="up"] [data-pose-img="up"],
+.ring-stage[data-pose="down"] [data-pose-img="down"],
+.ring-stage[data-pose="left"] [data-pose-img="left"],
+.ring-stage[data-pose="right"] [data-pose-img="right"] {
+  opacity: 1;
+}
+.ring-stage:not([data-pose="idle"]) .ring-figure:has([data-pose-img]) > [data-fig] {
+  opacity: 0;
+}
+.ring-stage:has([data-pose-img]) .ring-figure {
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .persona-wave,
+  .ring-card {
+    animation: none;
+  }
+  .ring-figure,
+  .ring-hand {
+    transition: none;
+    transform: none !important;
+  }
+  .ring-hand,
+  .ring-figure [data-pose-img] {
+    display: none;
+  }
+}

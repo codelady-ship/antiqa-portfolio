@@ -10,6 +10,8 @@ export type Profile = {
   openToWork: boolean;
   skills: string[];
   education: { title: L10n; place: string; period: string }[];
+  /** work experience, newest first */
+  experience: { title: L10n; place: string; period: L10n; summary: L10n }[];
   contacts: {
     email: string;
     phone: string;
@@ -29,6 +31,7 @@ export type Project = {
   title: string;
   summary: L10n;
   description: string;
+  /** "" for a private repo: never link to it */
   repoUrl: string;
   backendUrl: string | null;
   demoUrl: string | null;
@@ -44,4 +47,8 @@ export type Project = {
   links?: { label: string; url: string }[];
   /** admin order: higher comes first (after featured); 0 when not set */
   order?: number;
+  /** not deployed yet: a "coming soon" badge instead of a live link */
+  comingSoon?: boolean;
+  /** private repo: repoUrl is "" (no code link, no README) */
+  privateRepo?: boolean;
 };
