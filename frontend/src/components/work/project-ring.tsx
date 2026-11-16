@@ -354,10 +354,11 @@ export function ProjectRing({ projects, locale, onOpen, alt }: Props) {
         <div aria-hidden className="pointer-events-none absolute inset-[16%] rounded-full bg-peach-soft opacity-70" />
         <div aria-hidden className="pointer-events-none absolute inset-[9%] rounded-full border-2 border-dashed border-line" />
 
-        {/* her, in the middle */}
-        {/* no z-index: the figure stays below the cards (z 10–30) */}
-        <div className="absolute top-1/2 left-1/2 w-[19cqi] -translate-x-1/2 -translate-y-[52%]">
-          <div className="ring-figure">
+        {/* her, in the middle: the "work" slot of the travelling figure (persona-traveler.tsx).
+            The figure inside is the static one (reduced motion, no JS); the traveller lands on this box.
+            No z-index: the figure stays below the cards (z 10–30) */}
+        <div data-persona-slot="work" className="absolute top-1/2 left-1/2 aspect-[677/800] w-[19cqi] -translate-x-1/2 -translate-y-[52%]">
+          <div className="ring-figure persona-static">
             <PersonaFigure alt="" sizes="(min-width: 1536px) 240px, 200px" src={poses.idle} />
             {/* real poses: one image per direction, cross-faded by data-pose (CSS) */}
             {(["up", "down", "left", "right"] as const).map(

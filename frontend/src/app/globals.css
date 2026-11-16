@@ -352,16 +352,16 @@ html {
 .ring-figure {
   transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.ring-stage[data-pose="left"] .ring-figure {
+[data-pose="left"] .ring-figure {
   transform: translateX(-5%) rotate(-5deg);
 }
-.ring-stage[data-pose="right"] .ring-figure {
+[data-pose="right"] .ring-figure {
   transform: translateX(5%) rotate(5deg);
 }
-.ring-stage[data-pose="up"] .ring-figure {
+[data-pose="up"] .ring-figure {
   transform: translateY(-4%) scale(1.03);
 }
-.ring-stage[data-pose="down"] .ring-figure {
+[data-pose="down"] .ring-figure {
   transform: translateY(3%) rotate(-2deg) scale(0.98);
 }
 .ring-hand {
@@ -378,17 +378,35 @@ html {
 .ring-figure [data-pose-img] {
   transition: opacity 0.25s;
 }
-.ring-stage[data-pose="up"] [data-pose-img="up"],
-.ring-stage[data-pose="down"] [data-pose-img="down"],
-.ring-stage[data-pose="left"] [data-pose-img="left"],
-.ring-stage[data-pose="right"] [data-pose-img="right"] {
+[data-pose="up"] [data-pose-img="up"],
+[data-pose="down"] [data-pose-img="down"],
+[data-pose="left"] [data-pose-img="left"],
+[data-pose="right"] [data-pose-img="right"] {
   opacity: 1;
 }
-.ring-stage:not([data-pose="idle"]) .ring-figure:has([data-pose-img]) > [data-fig] {
+[data-pose]:not([data-pose="idle"]) .ring-figure:has([data-pose-img]) > [data-fig] {
   opacity: 0;
 }
-.ring-stage:has([data-pose-img]) .ring-figure {
+[data-pose]:has([data-pose-img]) .ring-figure {
   transform: none;
+}
+
+/* ---------- persona travel (persona-traveler.tsx) ---------- */
+/* while the travelling figure runs, the static ones in the slots hide; on a slot she has landed
+   on, the slot's own figure shows and the traveller hides (same box, same image: no jump) */
+.persona-live > .persona-layer {
+  display: block;
+}
+.persona-live .persona-static {
+  visibility: hidden;
+}
+.persona-live[data-landed="hero"] [data-persona-slot="hero"] .persona-static,
+.persona-live[data-landed="about"] [data-persona-slot="about"] .persona-static,
+.persona-live[data-landed="work"] [data-persona-slot="work"] .persona-static {
+  visibility: visible;
+}
+.persona-live[data-landed] .persona-traveler {
+  visibility: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {
