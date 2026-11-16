@@ -38,7 +38,7 @@ export async function About({ profile, projects }: { profile: Profile; projects:
   const techs = new Set(projects.flatMap((p) => p.languages.map((l) => l.name)).concat(profile.skills));
 
   return (
-    <section id="about" className="wrap relative scroll-mt-24 pt-24 pb-16 sm:pt-32 sm:pb-20">
+    <section id="about" className="reveal-from-right wrap relative scroll-mt-24 pt-24 pb-16 sm:pt-32 sm:pb-20">
       {/* this column shares the row with the persona stage on desktop: text beside the cards only from 2xl;
           below that the cards sit under the text, two per row from md */}
       <div className="grid gap-14 2xl:grid-cols-12 2xl:gap-10">
@@ -46,10 +46,10 @@ export async function About({ profile, projects }: { profile: Profile; projects:
           <Reveal as="p" className="kicker">
             {t("kicker")}
           </Reveal>
-          <Reveal as="h2" className="display type-section mt-5 max-w-3xl text-balance">
+          <Reveal as="h2" index={1} className="display type-section mt-5 max-w-3xl text-balance">
             <SplitWords text={t("title")} />
           </Reveal>
-          <Reveal as="p" className="mt-8 max-w-2xl text-lg leading-relaxed text-pretty sm:text-xl sm:leading-relaxed">
+          <Reveal as="p" index={2} className="mt-8 max-w-2xl text-lg leading-relaxed text-pretty sm:text-xl sm:leading-relaxed">
             {withNames(profile.about[locale], [...techs, profile.name, ...NAME_SPELLINGS])}
           </Reveal>
 
@@ -59,7 +59,7 @@ export async function About({ profile, projects }: { profile: Profile; projects:
               [techs.size, t("languages")],
               [EXPERIENCE_YEARS, t("years")],
             ].map(([n, label], i) => (
-              <Reveal key={String(label)} index={i} className={`flex flex-col-reverse rounded-3xl p-4 sm:p-6 ${TILES[i]}`}>
+              <Reveal key={String(label)} index={i + 1} className={`flex flex-col-reverse rounded-3xl p-4 sm:p-6 ${TILES[i]}`}>
                 <dt className="mt-1 text-xs leading-snug font-medium break-words text-muted sm:text-sm">{label}</dt>
                 <dd className="display text-4xl font-[750] sm:text-5xl">
                   <CountUp to={Number(n)} />
@@ -96,7 +96,7 @@ export async function About({ profile, projects }: { profile: Profile; projects:
             </Reveal>
           )}
           {profile.education.length > 0 && (
-            <Reveal className="rounded-[2rem] border border-line bg-surface p-6 shadow-[var(--shadow)] sm:p-8">
+            <Reveal index={1} className="rounded-[2rem] border border-line bg-surface p-6 shadow-[var(--shadow)] sm:p-8">
               <h3 className="kicker mb-4">{t("education")}</h3>
               <ul className="grid gap-4">
                 {profile.education.map((e) => (
@@ -117,7 +117,7 @@ export async function About({ profile, projects }: { profile: Profile; projects:
             </Reveal>
           )}
 
-          <Reveal className="rounded-[2rem] bg-bg-2 p-6 sm:p-8 xl:col-span-2 2xl:col-span-1">
+          <Reveal index={2} className="rounded-[2rem] bg-bg-2 p-6 sm:p-8 xl:col-span-2 2xl:col-span-1">
             <h3 className="kicker mb-4">{t("skills")}</h3>
             <ul translate="no" lang="en" className="notranslate flex flex-wrap gap-2">
               {profile.skills.map((s, i) => (

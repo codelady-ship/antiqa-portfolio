@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, type CSSProperties } from "react";
-import { PERSONA, frameUrl, type Chapter, type FrameSequence } from "./config";
+import { PERSONA, type Chapter, type FrameSequence } from "./config";
+import { loadFrame, nearestLoaded, preload } from "./frames";
 import { PersonaFigure, WaveHand } from "./figure";
 
 type Props = {
@@ -27,39 +28,6 @@ const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const smooth = (t: number) => t * t * (3 - 2 * t);
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-/* ---------- image-sequence player (shared by every stage on the page) ---------- */
-const cache = new Map<number, HTMLImageElement>();
-function loadFrame(i: number) {
-  let img = cache.get(i);
-  if (!img) {
-    img = new Image();
-    img.decoding = "async";
-    img.src = frameUrl(i);
-    cache.set(i, img);
-  }
-  return img;
-}
-/** Loads the frames of [first, last] coarse to fine (every 8th, then every 4th, …), 6 at a time. */
-async function preload(first: number, last: number, stop: () => boolean) {
-  const order: number[] = [];
-  const seen = new Set<number>();
-  for (const step of [8, 4, 2, 1])
-    for (let i = first; i <= last; i += step)
-      if (!seen.has(i)) {
-        seen.add(i);
-        order.push(i);
-      }
-  for (let k = 0; k < order.length && !stop(); k += 6)
-    await Promise.all(order.slice(k, k + 6).map((i) => loadFrame(i).decode().catch(() => {})));
-}
-function nearestLoaded(i: number, first: number, last: number) {
-  for (let d = 0; d <= last - first; d++)
-    for (const j of [i - d, i + d]) {
-      const img = j >= first && j <= last ? cache.get(j) : undefined;
-      if (img?.complete && img.naturalWidth) return img;
-    }
-  return null;
-}
 
 /**
  * Sticky stage beside the text (desktop, ≥ 1024 px): the figure plays through its chapters as

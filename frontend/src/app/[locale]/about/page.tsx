@@ -9,7 +9,7 @@ import { formatDate } from "@/lib/date";
 import { buildFaq } from "@/lib/faq";
 import { NoTr, withNames } from "@/components/ui/no-translate";
 import { ALT_NAME, ALT_NAME_INLINE, NAME_SPELLINGS } from "@/lib/identity";
-import photo from "@/components/hero/antiqa.jpg";
+import photo from "@/../public/persona/antiqa.webp";
 
 /**
  * Plain-facts profile for AI answer engines and link previews: server-rendered text only,

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import photo from "./antiqa.jpg";
+import photo from "@/../public/persona/antiqa.webp";
 
 type Props = {
   first: string;
@@ -28,7 +28,9 @@ export function Hero({ first, last, title, stack, tagline, location, cvHref }: P
       <div aria-hidden className="pointer-events-none absolute bottom-10 -left-24 size-56 rounded-full bg-mint-soft opacity-70 max-sm:hidden" />
 
       <div className="wrap relative flex items-center pt-28 pb-16 sm:pt-36 sm:pb-24 lg:min-h-[min(100svh,960px)] lg:pt-32 lg:pb-20">
-        <div>
+        {/* the text block pops in on load, line by line (CSS .hero-pop; the name only moves, it is
+            never transparent, so it stays the LCP element at first paint) */}
+        <div className="hero-pop">
           {/* phones / tablets: a small round photo above the greeting */}
             <Image
               src={photo}

@@ -1,10 +1,11 @@
 # Persona assets (the figure of Antiqa that follows the scroll)
 
-Nothing here yet: until these files exist, the site draws a placeholder from her photo
-(`frontend/src/components/hero/antiqa.jpg`). After adding files, switch them on in
+`antiqa.webp` is her photo (677 × 800). It is the figure until real assets exist, and the small round
+photo on phones. After adding frames or poses, switch them on in
 `frontend/src/components/persona/config.ts` (`PERSONA.frames` / `PERSONA.poses`).
+Prompts for Google Flow and the frame script: `docs/FLOW-PERSONA-PROMPTS.md`.
 
-## 1. Scroll sequence — `frames/` (hero, skills and contact chapters, desktop ≥ 1024 px)
+## 1. Scroll sequence — `frames/` (the travelling figure and the contact stage, desktop ≥ 1024 px)
 
 - One full-body cut-out of her per frame, **transparent WebP**, same size for every frame,
   portrait **677 × 800** (or any size with that ratio, ≤ 900 px tall). Aim for ≤ 25 KB per frame.
@@ -18,8 +19,8 @@ Nothing here yet: until these files exist, the site draws a placeholder from her
 - Frames are scrubbed by scroll position (not played in real time), loaded only after the page
   has loaded, coarse to fine (every 8th frame first), so the page never waits for them.
 
-Making them from an AI video: export the clip as PNGs (`ffmpeg -i persona.mp4 -vf fps=24 f%04d.png`),
-remove the background, then `cwebp -q 80 -alpha_q 90 f0001.png -o 0001.webp` (or `sharp`).
+Making them from an AI video: `node scripts/persona-frames.mjs persona.mp4 --frames 72 --idle`
+(ffmpeg; cuts the clip evenly, keys out the cream background, prints the config block).
 A scroll-scrubbed `<video>` is not used: seeking is unreliable on many browsers unless every
 frame is a keyframe, and transparent video is poorly supported.
 
