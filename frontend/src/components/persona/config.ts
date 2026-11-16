@@ -3,7 +3,7 @@
  * frontend/public/persona/ — see the README there for sizes and encoding.
  *
  * Until the real assets exist both entries stay empty and the components draw a placeholder
- * from her photo (public/persona/antiqa.webp) with scroll-linked CSS transforms.
+ * from her photo (src/components/persona/antiqa.webp, imported once, so Next serves one hashed copy) with scroll-linked CSS transforms.
  * Frames: scripts/persona-frames.mjs prints this block from a video (docs/FLOW-PERSONA-PROMPTS.md).
  */
 

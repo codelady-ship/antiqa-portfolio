@@ -2,7 +2,7 @@
 
 The site shows a figure of Antiqa that follows the scroll on desktop. In the hero she waves on the right. In About she stands on the left while the text slides in from the right. In Projects she stands in the middle of the ring.
 
-Until the Flow assets exist, the figure is her photo (`frontend/public/persona/antiqa.webp`).
+Until the Flow assets exist, the figure is her photo (`frontend/src/components/persona/antiqa.webp`).
 
 Use **her photo** as the reference ("Ingredient") image: navy suit, light-blue shirt. Make the images first, then the video.
 

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import type { Ref } from "react";
-import photo from "@/../public/persona/antiqa.webp";
+import photo from "@/components/persona/antiqa.webp";
 
 /**
  * The figure itself. Placeholder (no AI asset yet): her photo in a pastel arch, the same
