@@ -34,7 +34,7 @@ export function Work({ projects, alt }: { projects: Project[]; alt: string }) {
 
   return (
     <section id="work" data-persona="work" className="relative scroll-mt-24">
-      <div className="wrap pt-24 pb-20 sm:pt-32 sm:pb-28">
+      <div className="wrap pt-16 pb-20 sm:pt-20 sm:pb-28">
         <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
           <div>
             <Reveal as="p" className="kicker">

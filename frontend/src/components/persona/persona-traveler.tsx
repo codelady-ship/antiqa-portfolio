@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { PERSONA, type Pose } from "./config";
+import { PERSONA } from "./config";
 import { PersonaFigure } from "./figure";
 import { PersonaExtras } from "./slot";
 
@@ -18,9 +18,9 @@ const mix = (a: Box, b: Box, t: number): Box => ({ x: lerp(a.x, b.x, t), y: lerp
  *
  * Three landing boxes (`data-persona-slot`): beside the hero, beside the About text (CSS-sticky
  * there, so she stays in view while it is read) and the middle of the project ring. Each frame
- * the figure is placed on a blend of those boxes: while a section boundary passes the middle of
- * the viewport (a window of 0.6 × the viewport height) she "falls" from one box to the next,
- * tilting and looking down on the way.
+ * the figure is placed on a blend of those boxes driven by the scroll position itself (see draw):
+ * she starts to move on the first pixel of scroll and "falls" from one box to the next, tilting
+ * and looking down on the way.
  *
  * Poses: hero → idle, falling → down, About → left ("pose 2", turned towards the text),
  * projects → idle (standing). Real pose images come from PERSONA.poses; without them her photo
@@ -48,37 +48,57 @@ export function PersonaTraveler({ heroBubble, aboutBubble, chips }: { heroBubble
     const q = (sel: string) => track.querySelector<HTMLElement>(sel);
     let raf = 0;
 
+    // document y of an element's top (sections are not sticky, so this is stable)
+    const docTop = (e: Element) => e.getBoundingClientRect().top + scrollY;
+
     const draw = () => {
       raf = 0;
       const slots = [q('[data-persona-slot="hero"]'), q('[data-persona-slot="about"]'), q('[data-persona-slot="work"]')];
       const about = q('[data-persona="skills"]'),
-        work = q('[data-persona="work"]');
-      if (slots.some((s) => !s) || !about || !work) return;
+        work = q('[data-persona="work"]'),
+        ring = q(".ring-stage");
+      if (slots.some((s) => !s) || !about || !work || !ring) return;
       const t = track.getBoundingClientRect();
       const [h, a, w] = slots.map((s) => {
         const r = s!.getBoundingClientRect();
         return { x: r.left - t.left, y: r.top - t.top, w: r.width };
       });
 
-      // 0 → 1 while a section's top passes the middle of the viewport
-      const mid = innerHeight * 0.55,
-        win = innerHeight * 0.6;
-      const w1 = smooth(clamp((mid - about.getBoundingClientRect().top + win / 2) / win));
-      const w2 = smooth(clamp((mid - work.getBoundingClientRect().top + win / 2) / win));
-      const p = mix(mix(h, a, w1), w, w2);
-      const fall = Math.max(Math.sin(w1 * Math.PI) * (1 - w2), Math.sin(w2 * Math.PI)); // 0 resting … 1 mid-air
+      // scroll-linked from the very first pixel (owner, 2026-11-16 #2: "scroll etdikcə hərəkət etsin"):
+      //   0 … B   she travels from the hero to the About column (B: About's top near the top of the screen)
+      //   B … C   she stands in About, pose 2, while it is read (the slot is sticky)
+      //   C … D   she travels down into the ring (C: Projects enters from below, D: the ring is centred)
+      const vh = innerHeight,
+        y = scrollY;
+      const B = Math.max(1, docTop(about) - vh * 0.12);
+      const C = Math.max(B, docTop(work) - vh * 0.9);
+      const ringR = ring.getBoundingClientRect();
+      const D = Math.max(C + 1, ringR.top + y + ringR.height / 2 - vh / 2);
+      // mostly ease-in-out, with a linear share so she visibly moves on the first scroll
+      const ease = (v: number) => 0.35 * v + 0.65 * smooth(v);
+      // snap the last half pixel (scroll positions are rounded), so she always lands
+      const snap = (v: number) => (v > 0.995 ? 1 : v < 0.005 ? 0 : v);
+      const t1 = snap(clamp(y / B)),
+        t2 = snap(clamp((y - C) / (D - C)));
+      const p = mix(mix(h, a, ease(t1)), w, ease(t2));
+      const fall = Math.max(Math.sin(t1 * Math.PI) * (1 - t2), Math.sin(t2 * Math.PI)); // 0 resting … 1 mid-air
 
       fig.style.width = `${p.w}px`;
       fig.style.transform = `translate3d(${p.x}px, ${p.y}px, 0)`;
       tilt.style.transform = `rotate(${(fall * -8).toFixed(2)}deg)`;
-      const pose: Pose = fall > 0.6 ? "down" : w1 > 0.5 && w2 < 0.5 ? "left" : "idle";
-      fig.dataset.pose = pose;
-      const landed = w2 === 1 ? "work" : w1 === 0 ? "hero" : w1 === 1 && w2 === 0 ? "about" : "";
+      fig.dataset.pose = fall > 0.35 ? "down" : t1 > 0.5 && t2 < 0.5 ? "left" : "idle";
+      // the last part of the way into the ring: she fades out above the cards, then the ring's own
+      // figure (which sits below the cards) drops into the centre. One after the other, so there is
+      // never a double figure and she never covers the top cards while landing.
+      const ringIn = clamp((t2 - 0.6) / 0.4);
+      track.style.setProperty("--ring-in", smooth(ringIn).toFixed(3));
+      fig.style.opacity = (1 - clamp((t2 - 0.38) / 0.22)).toFixed(3);
+      const landed = t2 === 1 ? "work" : y <= 0 ? "hero" : t1 === 1 && t2 === 0 ? "about" : "";
       if (landed) track.dataset.landed = landed;
       else delete track.dataset.landed;
 
-      // bubbles / chips: only while resting in their section
-      const weight = { hero: (1 - w1) * (1 - fall), about: w1 * (1 - w2) * (1 - fall) } as Record<string, number>;
+      // bubbles / chips: only while she stands in their section
+      const weight = { hero: 1 - t1 / 0.15, about: (t1 - 0.85) / 0.15 - t2 / 0.15 } as Record<string, number>;
       for (const part of parts) {
         const v = clamp(weight[part.dataset.for!] ?? 0);
         part.style.opacity = v.toFixed(3);
@@ -119,6 +139,7 @@ export function PersonaTraveler({ heroBubble, aboutBubble, chips }: { heroBubble
       reduce.removeEventListener("change", sync);
       track.classList.remove("persona-live");
       delete track.dataset.landed;
+      track.style.removeProperty("--ring-in");
       removeEventListener("scroll", request);
       removeEventListener("resize", request);
     };

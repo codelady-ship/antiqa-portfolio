@@ -38,7 +38,7 @@ export async function About({ profile, projects }: { profile: Profile; projects:
   const techs = new Set(projects.flatMap((p) => p.languages.map((l) => l.name)).concat(profile.skills));
 
   return (
-    <section id="about" className="wrap relative scroll-mt-24 py-24 sm:py-32">
+    <section id="about" className="wrap relative scroll-mt-24 pt-24 pb-16 sm:pt-32 sm:pb-20">
       {/* this column shares the row with the persona stage on desktop: text beside the cards only from 2xl;
           below that the cards sit under the text, two per row from md */}
       <div className="grid gap-14 2xl:grid-cols-12 2xl:gap-10">
