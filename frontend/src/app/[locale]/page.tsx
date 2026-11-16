@@ -33,7 +33,8 @@ export default async function Home() {
     <>
       <JsonLd profile={profile} projects={projects} locale={locale} />
       {/* the "track" the travelling figure moves on: hero → About → the project ring */}
-      <div className="relative">
+      {/* isolate: the travelling figure (z -10) goes under the content of the track, not under the page */}
+      <div className="relative isolate">
         {/* desktop: hero text | her (right); then her (left, sticky) | About (owner, 2026-11-16 #3) */}
         <div className={GROUP}>
           <div className="min-w-0" data-persona="hero">

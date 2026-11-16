@@ -41,11 +41,14 @@ const mix = (a: Box, b: Box, t: number): Box => ({ x: lerp(a.x, b.x, t), y: lerp
  * Runs only ≥ 1024 px without prefers-reduced-motion. Otherwise nothing moves: the static figure
  * in each slot stays (the class `persona-live` on the track hides those while this one runs).
  * The layer is absolutely positioned and pointer-events:none: no layout shift, no clicks taken.
+ * It sits BELOW the page content (z-index -10 inside the isolated track, review #41/#42): she stays
+ * fully visible while she travels, and headings, text, buttons, chips and cards always paint on
+ * top of her, readable and clickable (text gets a soft halo in the page colour, globals.css).
  */
 /** share of the frame sequence used between the hero and About (the rest: About → the ring) */
 const ABOUT_AT = 0.45;
-/** where on the way (0–1) she fades out and back in; tuned with the overlap check (PR review #41) */
-const FADE = { out1: [0.12, 0.3], in1: [0.76, 0.94], out2: 0.2 } as const;
+/** how much of her own way down (px of document) a sideways crossing takes */
+const CROSS = 420;
 
 export function PersonaTraveler({ heroBubble, aboutBubble }: { heroBubble: string; aboutBubble: string }) {
   const layer = useRef<HTMLDivElement>(null);
@@ -114,9 +117,14 @@ export function PersonaTraveler({ heroBubble, aboutBubble }: { heroBubble: strin
       const t1 = snap(clamp(y / B)),
         t2 = snap(clamp((y - C) / (D - C)));
       const p = mix(mix(h, a, ease(t1)), w, ease(t2));
-      // hero (right) → About (left): she only crosses sideways while she is faded out (see FADE), so
-      // she never passes over the hero buttons or the About heading
-      p.x = lerp(lerp(h.x, a.x, smooth(clamp((t1 - FADE.out1[1]) / (FADE.in1[0] - FADE.out1[1])))), w.x, ease(t2));
+      // sideways moves happen while her middle passes the empty band between two sections
+      // (hero → About: above the About kicker; About → ring: above the Projects kicker), so she
+      // falls straight down in her own column before and after, and crosses mostly empty space
+      const mid = t.top + scrollY + p.y + (p.w * 800) / 677 / 2; // her centre, document y
+      const cross = (gapY: number) => smooth(clamp((mid - gapY + CROSS / 2) / CROSS));
+      const c1 = Math.max(cross(docTop(about) + 30), smooth(clamp((t1 - 0.85) / 0.15)));
+      const c2 = t2 > 0 ? Math.max(cross(docTop(work) + 20), smooth(clamp((t2 - 0.85) / 0.15))) : 0;
+      p.x = lerp(lerp(h.x, a.x, c1), w.x, c2);
       const fall = Math.max(Math.sin(t1 * Math.PI) * (1 - t2), Math.sin(t2 * Math.PI)); // 0 resting … 1 mid-air
 
       fig.style.width = `${p.w}px`;
@@ -130,17 +138,7 @@ export function PersonaTraveler({ heroBubble, aboutBubble }: { heroBubble: strin
       // never a double figure and she never covers the top cards while landing.
       const ringIn = clamp((t2 - 0.6) / 0.4);
       track.style.setProperty("--ring-in", smooth(ringIn).toFixed(3));
-      // she is only visible in her own column: she fades out as soon as she leaves the hero (before
-      // the About text reaches her) and fades back in just above the About slot; on the way to the
-      // ring she fades out before the Projects heading and the filter chips come up to her
-      // (review #41). In between, the ring's figure drops in below the cards.
-      const op =
-        t2 > 0
-          ? 1 - clamp(t2 / FADE.out2)
-          : t1 < 0.5
-            ? 1 - clamp((t1 - FADE.out1[0]) / (FADE.out1[1] - FADE.out1[0]))
-            : clamp((t1 - FADE.in1[0]) / (FADE.in1[1] - FADE.in1[0]));
-      fig.style.opacity = op.toFixed(3);
+      fig.style.opacity = (1 - clamp((t2 - 0.38) / 0.22)).toFixed(3);
       // with frames she stays the canvas in the hero and About (the stills there are not frames)
       const landed = t2 === 1 ? "work" : framesOn ? "" : y <= 0 ? "hero" : t1 === 1 && t2 === 0 ? "about" : "";
       if (landed) track.dataset.landed = landed;
@@ -217,7 +215,7 @@ export function PersonaTraveler({ heroBubble, aboutBubble }: { heroBubble: strin
 
   const poses = PERSONA.poses;
   return (
-    <div ref={layer} aria-hidden className="persona-layer pointer-events-none absolute inset-0 z-30 hidden overflow-x-clip">
+    <div ref={layer} aria-hidden className="persona-layer pointer-events-none absolute inset-0 -z-10 hidden overflow-x-clip">
       <div data-traveler data-pose="idle" className="persona-traveler absolute top-0 left-0 aspect-[677/800] will-change-transform">
         <div data-tilt className="size-full origin-bottom">
           <div className="ring-figure size-full">

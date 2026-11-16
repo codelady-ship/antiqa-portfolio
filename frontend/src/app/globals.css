@@ -443,6 +443,14 @@ html {
 .persona-live[data-landed] .persona-traveler {
   visibility: hidden;
 }
+/* she travels under the content: a soft halo in the page colour keeps text readable over her */
+.persona-live :is(#hero-name, #hero-name ~ div p, #hero-name ~ p, #about h2, #about p, #about dt, #about dd, #work h2, #work p) {
+  text-shadow:
+    0 0 2px var(--bg),
+    0 0 8px var(--bg),
+    0 0 16px var(--bg);
+}
+
 /* a frame sequence is drawing on the canvas: hide the photo / pose stills under it */
 .persona-traveler[data-frames] [data-fig],
 .persona-traveler[data-frames] [data-pose-img] {
