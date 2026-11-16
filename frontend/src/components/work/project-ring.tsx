@@ -23,7 +23,8 @@ const wrap = (d: number) => ((((d + 180) % 360) + 360) % 360) - 180;
 export function blurb(p: Project, locale: "az" | "en") {
   const text = (p.summary?.[locale] || p.description || "").trim();
   if (!text) return "";
-  const sentences = text.match(/[^.!?]+[.!?]+(\s|$)/g) ?? [text];
+  // a sentence ends at . ! ? followed by a space and a capital letter (not inside "Next.js" or "3.5")
+  const sentences = text.split(/(?<=[.!?])\s+(?=[A-ZƏÖÜÇŞİĞ“"(])/u);
   let out = sentences[0].trim();
   if (sentences[1] && out.length + sentences[1].length <= 180) out += ` ${sentences[1].trim()}`;
   return out.length > 180 ? `${out.slice(0, 177).trimEnd()}…` : out;
@@ -80,7 +81,7 @@ function Bubble({ p, locale, idle, onOpen, touch }: { p: Project | null; locale:
               {p.comingSoon ? t("comingSoon") : p.demoUrl ? t("live") : t("code")}
             </span>
           </p>
-          <p className="mt-1 text-muted">{blurb(p, locale)}</p>
+          <p className="mt-1 text-muted @max-4xl:line-clamp-4">{blurb(p, locale)}</p>
           {touch && (
             <button type="button" onClick={() => onOpen(p)} className="mt-2 min-h-11 rounded-full border-2 border-ink bg-accent px-4 text-sm font-semibold text-on-accent">
               {t("openProject")} →
@@ -329,7 +330,7 @@ export function ProjectRing({ projects, locale, onOpen, alt }: Props) {
         <div aria-hidden className="pointer-events-none absolute inset-[9%] rounded-full border-2 border-dashed border-line" />
 
         {/* her, in the middle */}
-        {/* no z-index here: the bubble inside must rise above the cards (z 10–30), the figure stays below them */}
+        {/* no z-index: the figure stays below the cards (z 10–30) */}
         <div className="absolute top-1/2 left-1/2 w-[19cqi] -translate-x-1/2 -translate-y-[52%]">
           <div className="ring-figure">
             <PersonaFigure alt={alt} sizes="(min-width: 1024px) 240px, 180px" src={poses.idle} />
@@ -348,13 +349,14 @@ export function ProjectRing({ projects, locale, onOpen, alt }: Props) {
               <PointHand className="absolute top-[-0.9cqi] left-[9cqi] w-[7cqi]" />
             </span>
           )}
-          {/* speech bubble: from her mouth, on her right */}
-          <div
-            id="ring-bubble"
-            className="ring-bubble absolute top-[2%] left-[80%] z-40 w-[min(19rem,30cqi)] rounded-[1.4rem] rounded-bl-md border-2 border-ink bg-surface p-3.5 shadow-[4px_4px_0_var(--ink)]"
-          >
-            <Bubble p={shownActive} locale={locale} idle={idle} onOpen={onOpen} touch={touch} />
-          </div>
+        </div>
+        {/* speech bubble: from her mouth, on her right. A sibling of the cards: the figure box is
+            transformed, so a z-index inside it could never rise above them */}
+        <div
+          id="ring-bubble"
+          className="ring-bubble absolute top-[calc(50%-11.2cqi)] left-[calc(50%+5.7cqi)] z-40 w-[min(19rem,30cqi)] rounded-[1.4rem] rounded-bl-md border-2 border-ink bg-surface p-3.5 shadow-[4px_4px_0_var(--ink)]"
+        >
+          <Bubble p={shownActive} locale={locale} idle={idle} onOpen={onOpen} touch={touch} />
         </div>
 
         <ul aria-label={t("title")} className="absolute inset-0">
