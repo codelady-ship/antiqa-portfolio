@@ -35,6 +35,27 @@ export const SEED_PROFILE: Profile = {
       period: "09.2024 – 05.2025",
     },
   ],
+  // same as backend/scripts/profile-data.ts (from the CVs)
+  experience: [
+    {
+      title: { az: "Junior Full Stack Developer", en: "Junior Full Stack Developer" },
+      place: "Aliyev Space",
+      period: { az: "Oktyabr 2026 – indiyədək", en: "Oct 2026 – Present" },
+      summary: {
+        az: "masapay — restoranlar üçün QR əsaslı, real vaxtda hesab bölmə və ödəniş platforması. Java 21, Spring Boot 3, PostgreSQL, Redis, WebSocket.",
+        en: "masapay — a QR-based, real-time bill-splitting and payment platform for restaurants. Java 21, Spring Boot 3, PostgreSQL, Redis, WebSocket.",
+      },
+    },
+    {
+      title: { az: "Full Stack Developer və Backend Developer təcrübəçisi", en: "Full Stack Developer & Backend Developer Intern" },
+      place: "TexnoEra Academy",
+      period: { az: "Oktyabr 2025 – indiyədək", en: "Oct 2025 – Present" },
+      summary: {
+        az: "Kurs İdarəetmə Sisteminin (Java, Spring Boot, MS SQL) backend hissəsinin təxminən 35%-ni hazırlamışam; buraxılış layihəsi olaraq full-stack təlim platforması qurmuşam.",
+        en: "Built about 35% of the backend of a Course Management System (Java, Spring Boot, MS SQL); capstone: a full-stack training platform.",
+      },
+    },
+  ],
   contacts: {
     email: "jalilova.antiqa@gmail.com",
     phone: "+994 70 523 99 28",

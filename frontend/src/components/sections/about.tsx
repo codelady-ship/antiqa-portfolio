@@ -13,6 +13,24 @@ const TILES = [
 ];
 const CHIP_DOTS = ["bg-rose", "bg-violet", "bg-mint", "bg-gold"];
 
+/**
+ * Institution on the left (may wrap), period on the right of the same row (never wraps, top-aligned),
+ * so a long university name never pushes the dates onto a line of their own.
+ */
+function Row({ place, period }: { place: string; period: string }) {
+  return (
+    <span className="mt-0.5 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 text-sm text-muted">
+      <span translate="no" className="notranslate min-w-0">
+        {place}
+      </span>
+      <span className="text-right whitespace-nowrap tabular-nums">{period}</span>
+    </span>
+  );
+}
+
+// job-title words that must never be machine-translated
+const ROLE_NAMES = ["Junior Full Stack Developer", "Full Stack Developer", "Backend Developer", "masapay"];
+
 export async function About({ profile, projects }: { profile: Profile; projects: Project[] }) {
   const t = await getTranslations("About");
   const locale = (await getLocale()) as "az" | "en";
@@ -20,8 +38,10 @@ export async function About({ profile, projects }: { profile: Profile; projects:
 
   return (
     <section id="about" className="wrap relative scroll-mt-24 py-24 sm:py-32">
-      <div className="grid gap-14 lg:grid-cols-12 lg:gap-12">
-        <div className="lg:col-span-7">
+      {/* this column shares the row with the persona stage on desktop: text beside the cards only from 2xl;
+          below that the cards sit under the text, two per row from md */}
+      <div className="grid gap-14 2xl:grid-cols-12 2xl:gap-10">
+        <div className="2xl:col-span-7">
           <Reveal as="p" className="kicker">
             {t("kicker")}
           </Reveal>
@@ -49,7 +69,31 @@ export async function About({ profile, projects }: { profile: Profile; projects:
           </dl>
         </div>
 
-        <div className="grid content-start gap-6 lg:col-span-5 lg:pt-14">
+        <div className="grid content-start gap-6 md:grid-cols-2 2xl:col-span-5 2xl:grid-cols-1 2xl:pt-14">
+          {profile.experience?.length > 0 && (
+            <Reveal className="rounded-[2rem] border border-line bg-surface p-6 shadow-[var(--shadow)] sm:p-8">
+              <h3 className="kicker mb-4">{t("experience")}</h3>
+              <ul className="grid gap-5">
+                {profile.experience.map((e) => (
+                  <li key={e.place + e.period.en} className="flex items-start gap-4">
+                    <span aria-hidden className="mt-1 grid size-10 shrink-0 place-items-center rounded-2xl bg-mint-soft">
+                      <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+                        <rect x="3" y="7" width="18" height="13" rx="2.5" />
+                        <path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3 12.5h18" />
+                      </svg>
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold">{withNames(e.title[locale], [...ROLE_NAMES, ...techs])}</span>
+                      <Row place={e.place} period={e.period[locale]} />
+                      {e.summary[locale] && (
+                        <span className="mt-1.5 block text-sm leading-relaxed text-pretty">{withNames(e.summary[locale], [...ROLE_NAMES, ...techs])}</span>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </Reveal>
+          )}
           {profile.education.length > 0 && (
             <Reveal className="rounded-[2rem] border border-line bg-surface p-6 shadow-[var(--shadow)] sm:p-8">
               <h3 className="kicker mb-4">{t("education")}</h3>
@@ -64,12 +108,7 @@ export async function About({ profile, projects }: { profile: Profile; projects:
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block font-semibold">{withNames(e.title[locale], [...techs])}</span>
-                      <span className="mt-0.5 flex flex-wrap justify-between gap-x-3 text-sm text-muted">
-                        <span translate="no" className="notranslate">
-                          {e.place}
-                        </span>
-                        <span className="tabular-nums">{e.period}</span>
-                      </span>
+                      <Row place={e.place} period={e.period} />
                     </span>
                   </li>
                 ))}
@@ -77,7 +116,7 @@ export async function About({ profile, projects }: { profile: Profile; projects:
             </Reveal>
           )}
 
-          <Reveal className="rounded-[2rem] bg-bg-2 p-6 sm:p-8">
+          <Reveal className="rounded-[2rem] bg-bg-2 p-6 sm:p-8 md:col-span-2 2xl:col-span-1">
             <h3 className="kicker mb-4">{t("skills")}</h3>
             <ul translate="no" lang="en" className="notranslate flex flex-wrap gap-2">
               {profile.skills.map((s, i) => (

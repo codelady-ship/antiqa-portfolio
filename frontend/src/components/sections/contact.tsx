@@ -38,10 +38,10 @@ export function Contact({ profile }: { profile: Profile }) {
     // `auto` remembers the real height once rendered
     <section id="contact" className="wrap relative scroll-mt-24 py-20 [contain-intrinsic-size:auto_900px] [content-visibility:auto] sm:py-28">
       {/* a postcard: pink paper, a lilac corner, a mint stamp (#32) */}
-      <div className="relative isolate overflow-hidden rounded-[2.5rem] bg-pink-soft px-5 py-14 sm:px-12 sm:py-20 lg:px-20">
+      <div className="relative isolate overflow-hidden rounded-[2.5rem] bg-pink-soft px-5 py-14 sm:px-12 sm:py-20 xl:px-16">
         <div aria-hidden className="absolute -top-24 -right-24 -z-10 size-72 rounded-full bg-lilac-soft sm:size-96" />
         <div aria-hidden className="absolute right-[12%] -bottom-16 -z-10 size-40 rotate-12 rounded-[2.5rem] bg-peach-soft max-sm:hidden" />
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:items-end">
+        <div className="grid gap-12 2xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] 2xl:items-end">
           <div>
             <Reveal as="p" className="kicker bg-surface">
               {t("kicker")}

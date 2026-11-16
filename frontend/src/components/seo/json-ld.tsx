@@ -19,6 +19,15 @@ function personNode(profile: Profile, locale: "az" | "en") {
     knowsAbout: profile.skills,
     knowsLanguage: ["az", "en"],
     alumniOf: profile.education.map((e) => ({ "@type": "EducationalOrganization", name: e.place })),
+    // current jobs (period ends in "Present") → worksFor; every role → hasOccupation
+    worksFor: (profile.experience ?? [])
+      .filter((e) => /present/i.test(e.period.en))
+      .map((e) => ({ "@type": "Organization", name: e.place })),
+    hasOccupation: (profile.experience ?? []).map((e) => ({
+      "@type": "Occupation",
+      name: e.title.en,
+      description: e.summary.en || undefined,
+    })),
     sameAs,
   };
 }
@@ -51,8 +60,8 @@ export function JsonLd({ profile, projects, locale }: { profile: Profile; projec
             "@type": "SoftwareSourceCode",
             name: p.title,
             description: p.summary?.[locale] || p.description || undefined,
-            codeRepository: p.repoUrl,
-            url: p.demoUrl ?? p.repoUrl,
+            codeRepository: p.repoUrl || undefined,
+            url: p.demoUrl ?? (p.repoUrl || undefined),
             programmingLanguage: p.languages.map((l) => l.name),
             dateCreated: p.createdAt ?? undefined,
             dateModified: p.pushedAt ?? undefined,

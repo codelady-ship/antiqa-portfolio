@@ -3,16 +3,16 @@
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import type { Project } from "@/lib/types";
+import { GithubImport } from "./github-import";
 import { api, Area, Button, Card, Field, Input, refreshSite } from "./ui";
 
-type AdminProject = Project & { hidden: boolean; order: number; syncError?: string | null; titleRaw?: string; demoOverride?: string };
+type AdminProject = Project & { hidden: boolean; order: number; syncError?: string | null; titleRaw?: string; demoOverride?: string; demoOff?: boolean };
 type SeedRepo = { url: string; featured?: boolean; backend?: string; title?: string; demo?: string };
 
 export function ProjectsPanel({ seedRepos }: { seedRepos: SeedRepo[] }) {
   const t = useTranslations("Admin");
   const [list, setList] = useState<AdminProject[] | null>(null);
-  const [url, setUrl] = useState("");
-  const [busy, setBusy] = useState<"" | "add" | "sync" | "seed">("");
+  const [busy, setBusy] = useState<"" | "sync" | "seed">("");
   const [msg, setMsg] = useState("");
 
   const load = useCallback(() => {
@@ -21,22 +21,6 @@ export function ProjectsPanel({ seedRepos }: { seedRepos: SeedRepo[] }) {
       .catch((e) => setMsg(`${t("error")}: ${(e as Error).message}`));
   }, [t]);
   useEffect(load, [load]);
-
-  const add = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setBusy("add");
-    setMsg("");
-    try {
-      await api("/api/projects", { method: "POST", body: JSON.stringify({ repoUrl: url.trim() }) });
-      setUrl("");
-      await refreshSite();
-      load();
-    } catch (e) {
-      setMsg(`${t("error")}: ${(e as Error).message}`);
-    } finally {
-      setBusy("");
-    }
-  };
 
   const syncAll = async () => {
     setBusy("sync");
@@ -76,18 +60,9 @@ export function ProjectsPanel({ seedRepos }: { seedRepos: SeedRepo[] }) {
 
   return (
     <div className="grid gap-6">
+      <GithubImport onAdded={load} />
       <Card>
-        <form onSubmit={add} className="flex flex-wrap items-end gap-3">
-          <div className="min-w-64 flex-1">
-            <Field label={t("repoUrl")}>
-              <Input type="url" required placeholder="https://github.com/codelady-ship/…" value={url} onChange={(e) => setUrl(e.target.value)} />
-            </Field>
-          </div>
-          <button type="submit" disabled={!!busy} className="rounded-full bg-ink px-6 py-2.5 text-sm font-medium text-bg disabled:opacity-50">
-            {busy === "add" ? t("adding") : `+ ${t("addProject")}`}
-          </button>
-        </form>
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="ghost" onClick={syncAll} disabled={!!busy}>
             ↻ {busy === "sync" ? t("syncing") : t("syncAll")}
           </Button>
@@ -134,7 +109,7 @@ function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => void }) 
   });
   const [err, setErr] = useState("");
 
-  const patch = async (body: Partial<typeof f>) => {
+  const patch = async (body: Partial<typeof f> & { comingSoon?: boolean; demoOff?: boolean }) => {
     setErr("");
     try {
       await api(`/api/projects/${p.id}`, { method: "PATCH", body: JSON.stringify(body) });
@@ -173,6 +148,17 @@ function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => void }) 
           <input type="checkbox" checked={p.hidden} onChange={(e) => patch({ hidden: e.target.checked })} />
           {t("hidden")}
         </label>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 pl-7 text-xs text-muted">
+        <label className="flex items-center gap-1.5">
+          <input type="checkbox" checked={!!p.comingSoon} onChange={(e) => patch({ comingSoon: e.target.checked })} />
+          {t("comingSoon")}
+        </label>
+        <label className="flex items-center gap-1.5">
+          <input type="checkbox" checked={!!p.demoOff} onChange={(e) => patch({ demoOff: e.target.checked })} />
+          {t("demoOff")}
+        </label>
+        {p.privateRepo && <span className="text-gold">{t("privateNote")}</span>}
       </div>
       {p.syncError && <p className="mt-2 text-xs text-rose">{t("syncError")}: {p.syncError}</p>}
 

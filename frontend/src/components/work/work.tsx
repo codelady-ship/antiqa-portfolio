@@ -3,107 +3,68 @@
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { Reveal, SplitWords } from "@/components/motion/reveal";
-import { sortProjects, type ProjectSort as Sort } from "@/lib/merge";
+import { sortProjects } from "@/lib/merge";
 import type { Project } from "@/lib/types";
 import { DemoModal } from "./demo-modal";
-import { ProjectCard } from "./project-card";
-import { ProjectSphere } from "./project-sphere";
+import { ProjectRing } from "./project-ring";
 
-export function Work({ projects }: { projects: Project[] }) {
+/** a language counts for a project (chip + filter) from this share of its code */
+const MIN_PERCENT = 5;
+const uses = (p: Project, lang: string) => p.languages.some((l) => l.name === lang && l.percent >= MIN_PERCENT);
+
+/**
+ * Work (#38): the figure in the middle, every project as a small card around her (ProjectRing),
+ * a language filter above. The chips list every language that makes up ≥ 5 % of at least one
+ * project, most used first; a chip keeps exactly the projects it counts, so none is ever empty.
+ */
+export function Work({ projects, alt }: { projects: Project[]; alt: string }) {
   const t = useTranslations("Work");
   const locale = useLocale() as "az" | "en";
-  const [filter, setFilter] = useState<string>("");
-  const [sort, setSort] = useState<Sort>("recommended");
+  const [filter, setFilter] = useState("");
   const [open, setOpen] = useState<Project | null>(null);
 
   const langs = useMemo(() => {
     const count = new Map<string, number>();
-    projects.forEach((p) => p.languages[0] && count.set(p.languages[0].name, (count.get(p.languages[0].name) ?? 0) + 1));
-    return [...count.entries()].sort((a, b) => b[1] - a[1]).map(([n]) => n);
+    projects.forEach((p) => p.languages.forEach((l) => l.percent >= MIN_PERCENT && count.set(l.name, (count.get(l.name) ?? 0) + 1)));
+    return [...count.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([n, c]) => ({ n, c }));
   }, [projects]);
 
-  const list = useMemo(
-    () => sortProjects(projects.filter((p) => !filter || p.languages.some((l) => l.name === filter)), sort),
-    [projects, filter, sort],
-  );
+  const list = useMemo(() => sortProjects(projects.filter((p) => !filter || uses(p, filter)), "recommended"), [projects, filter]);
 
   return (
-    <section id="work" className="relative scroll-mt-24">
-      {/* wider than .wrap on purpose: at xl the card columns sit left and right of the globe (#28) */}
-      <div className="mx-auto max-w-[118rem] px-4 pt-24 pb-24 sm:px-8 sm:pt-32 sm:pb-32 xl:px-12">
-        <Reveal as="p" className="kicker">
-          {t("kicker")}
-        </Reveal>
-        <Reveal as="h2" className="display type-section mt-5">
-          <SplitWords text={t("title")} />
-        </Reveal>
-
-        {/* below xl: globe, toolbar, card grid stacked. xl+: toolbar on top, then the card grid with an
-            empty middle column and the globe laid over that column (same grid cell), sticky while the
-            cards scroll past on its left and right */}
-        <div className="mt-10 sm:mt-14 xl:grid xl:grid-cols-1">
-          <ProjectSphere
-            projects={projects}
-            onOpen={setOpen}
-            hint={t("sphereHint")}
-            word={t("sphereWord")}
-            className="mb-10 xl:z-10 xl:col-start-1 xl:row-start-2 xl:mb-0 xl:justify-self-center xl:max-[1759px]:w-[30rem] min-[1760px]:w-[28rem]"
-          />
-
-          <div className="mb-10 flex flex-wrap items-center justify-between gap-4 xl:col-start-1 xl:row-start-1">
-            <div role="group" aria-label={t("filter")} className="flex flex-wrap gap-2">
-              {["", ...langs].map((l) => (
-                <button
-                  key={l || "all"}
-                  type="button"
-                  aria-pressed={filter === l}
-                  onClick={() => setFilter(l)}
-                  translate={l ? "no" : undefined}
-                  className={`min-h-11 rounded-full border px-4 py-2 text-sm transition-all duration-300 ${l ? "notranslate" : ""} ${filter === l ? "border-ink bg-accent font-semibold text-on-accent" : "border-line bg-surface hover:bg-pink-soft"}`}
-                >
-                  {l || t("all")}
-                </button>
-              ))}
-            </div>
-            <label className="flex items-center gap-2 text-sm text-muted">
-              <span className="sr-only">{t("sort")}</span>
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value as Sort)}
-                className="min-h-11 cursor-pointer rounded-full border border-line bg-surface px-4 py-2 font-medium text-ink"
-              >
-                <option value="recommended">{t("sortRecommended")}</option>
-                <option value="created">{t("sortNew")}</option>
-                <option value="updated">{t("sortUpdated")}</option>
-                <option value="stars">{t("sortStars")}</option>
-              </select>
-            </label>
+    <section id="work" data-persona="work" className="relative scroll-mt-24">
+      <div className="wrap pt-24 pb-20 sm:pt-32 sm:pb-28">
+        <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+          <div>
+            <Reveal as="p" className="kicker">
+              {t("kicker")}
+            </Reveal>
+            <Reveal as="h2" className="display type-section mt-5">
+              <SplitWords text={t("title")} />
+            </Reveal>
           </div>
+          <p className="text-sm font-medium text-muted" aria-live="polite">
+            {t("count", { n: list.length })}
+          </p>
+        </div>
 
-          {list.length ? (
-            <ul
-              className={[
-                // xl: cards keep their own height (no stretch to the tallest card in the row, no empty band)
-                "grid gap-6 sm:max-lg:grid-cols-2 lg:max-xl:grid-cols-3 xl:col-start-1 xl:row-start-2 xl:min-h-[32rem] xl:items-start",
-                // xl: one card column each side of a 30rem globe column (odd cards left, even right)
-                "xl:max-[1759px]:grid-cols-[minmax(0,1fr)_30rem_minmax(0,1fr)] xl:max-[1759px]:[&>li:nth-child(odd)]:col-start-1 xl:max-[1759px]:[&>li:nth-child(even)]:col-start-3",
-                // ≥ 1760 px: two card columns (ranges do not overlap: arbitrary breakpoints sort before xl) each side of a 28rem globe column
-                "min-[1760px]:grid-cols-[repeat(2,minmax(0,1fr))_28rem_repeat(2,minmax(0,1fr))]",
-                "min-[1760px]:[&>li:nth-child(4n+1)]:col-start-1 min-[1760px]:[&>li:nth-child(4n+2)]:col-start-2",
-                "min-[1760px]:[&>li:nth-child(4n+3)]:col-start-4 min-[1760px]:[&>li:nth-child(4n)]:col-start-5",
-              ].join(" ")}
+        <div role="group" aria-label={t("filter")} className="mt-8 flex flex-wrap gap-2 sm:mt-10">
+          {[{ n: "", c: projects.length }, ...langs].map(({ n, c }) => (
+            <button
+              key={n || "all"}
+              type="button"
+              aria-pressed={filter === n}
+              onClick={() => setFilter(n)}
+              translate={n ? "no" : undefined}
+              className={`min-h-11 rounded-full border px-4 py-2 text-sm transition-colors duration-300 ${n ? "notranslate" : ""} ${filter === n ? "border-ink bg-accent font-semibold text-on-accent" : "border-line bg-surface hover:bg-pink-soft"}`}
             >
-              {list.map((p, i) => (
-                <li key={p.id}>
-                  <ProjectCard project={p} index={i} locale={locale} onOpen={() => setOpen(p)} />
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="serif-it py-16 text-center text-2xl text-muted xl:col-start-1 xl:row-start-2 xl:min-h-[32rem] xl:max-w-[calc(50%-16rem)] xl:text-left">
-              {t("empty")}
-            </p>
-          )}
+              {n || t("all")} <span className={filter === n ? "opacity-80" : "text-muted"}>{c}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-8 sm:mt-10">
+          <ProjectRing projects={list} locale={locale} onOpen={setOpen} alt={alt} />
         </div>
       </div>
 

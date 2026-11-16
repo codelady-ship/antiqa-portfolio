@@ -194,9 +194,11 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                   ) : (
                     <p className="serif-it text-xl text-muted">
                       {t("noReadme")}{" "}
-                      <a href={`${p.repoUrl}#readme`} target="_blank" rel="noopener noreferrer" className="text-violet underline">
-                        GitHub ↗
-                      </a>
+                      {p.repoUrl && (
+                        <a href={`${p.repoUrl}#readme`} target="_blank" rel="noopener noreferrer" className="text-violet underline">
+                          GitHub ↗
+                        </a>
+                      )}
                     </p>
                   )}
                 </article>
@@ -288,9 +290,11 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                     {t("openNew")} ↗
                   </a>
                 )}
-                <a href={p.repoUrl} target="_blank" rel="noopener noreferrer" className="rounded-full border border-line py-3 text-center hover:border-violet">
-                  GitHub ↗
-                </a>
+                {p.repoUrl && (
+                  <a href={p.repoUrl} target="_blank" rel="noopener noreferrer" className="rounded-full border border-line py-3 text-center hover:border-violet">
+                    GitHub ↗
+                  </a>
+                )}
                 {p.backendUrl && (
                   <a href={p.backendUrl} target="_blank" rel="noopener noreferrer" className="rounded-full border border-line py-3 text-center hover:border-violet">
                     {t("backend")} ↗

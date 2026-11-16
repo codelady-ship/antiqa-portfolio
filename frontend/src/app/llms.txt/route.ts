@@ -23,7 +23,7 @@ export async function GET() {
     "## Projects",
     ...projects.map(
       (x) =>
-        `- [${x.title}](${x.repoUrl})${x.demoUrl ? ` — live demo: ${x.demoUrl}` : ""}${x.description ? ` — ${x.description}` : ""}${x.languages.length ? ` (${x.languages.map((l) => l.name).join(", ")})` : ""}`,
+        `- ${x.repoUrl ? `[${x.title}](${x.repoUrl})` : x.title}${x.demoUrl ? ` — live demo: ${x.demoUrl}` : ""}${x.description ? ` — ${x.description}` : ""}${x.languages.length ? ` (${x.languages.map((l) => l.name).join(", ")})` : ""}`,
     ),
     "",
     "## Contact",

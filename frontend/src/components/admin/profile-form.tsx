@@ -18,7 +18,7 @@ export function ProfileForm({ seed }: { seed: Profile }) {
         // first run: database is empty → start from the current site data
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { cv, ...rest } = p?.name ? ({ ...seed, ...p } as Profile) : seed;
-        setF(rest);
+        setF({ ...rest, experience: rest.experience ?? [] });
       })
       .catch((e) => setStatus(`${t("error")}: ${(e as Error).message}`));
   }, [seed, t]);
@@ -34,12 +34,12 @@ export function ProfileForm({ seed }: { seed: Profile }) {
   const save = async () => {
     setStatus("saving");
     try {
-      const { name, initials, tagline, about, location, openToWork, education, contacts } = f;
+      const { name, initials, tagline, about, location, openToWork, education, experience, contacts } = f;
       const roles = { az: clean(f.roles.az), en: clean(f.roles.en) };
       const skills = clean(f.skills);
       await api("/api/profile", {
         method: "PUT",
-        body: JSON.stringify({ name, initials, roles, tagline, about, location, openToWork, skills, education, contacts }),
+        body: JSON.stringify({ name, initials, roles, tagline, about, location, openToWork, skills, education, experience, contacts }),
       });
       await refreshSite();
       setStatus("saved");
@@ -92,6 +92,54 @@ export function ProfileForm({ seed }: { seed: Profile }) {
             <input type="checkbox" className="size-4 accent-violet-500" checked={f.openToWork} onChange={(e) => set("openToWork", e.target.checked)} />
             {t("openToWork")}
           </label>
+        </div>
+      </Card>
+
+      <Card
+        title={t("experience")}
+        actions={
+          <Button
+            variant="ghost"
+            onClick={() =>
+              set("experience", [...f.experience, { title: { az: "", en: "" }, place: "", period: { az: "", en: "" }, summary: { az: "", en: "" } }])
+            }
+          >
+            + {t("add")}
+          </Button>
+        }
+      >
+        <div className="grid gap-4">
+          {f.experience.map((e, i) => {
+            const upd = (v: Partial<(typeof f.experience)[number]>) => set("experience", f.experience.map((x, j) => (j === i ? { ...x, ...v } : x)));
+            return (
+              <div key={i} className="grid gap-3 rounded-2xl border border-line p-4 sm:grid-cols-2">
+                <Field label={t("expTitleAz")}>
+                  <Input value={e.title.az} onChange={(ev) => upd({ title: { ...e.title, az: ev.target.value } })} />
+                </Field>
+                <Field label={t("expTitleEn")}>
+                  <Input value={e.title.en} onChange={(ev) => upd({ title: { ...e.title, en: ev.target.value } })} />
+                </Field>
+                <Field label={t("expPlace")} wide>
+                  <Input value={e.place} onChange={(ev) => upd({ place: ev.target.value })} />
+                </Field>
+                <Field label={t("expPeriodAz")}>
+                  <Input value={e.period.az} onChange={(ev) => upd({ period: { ...e.period, az: ev.target.value } })} />
+                </Field>
+                <Field label={t("expPeriodEn")}>
+                  <Input value={e.period.en} onChange={(ev) => upd({ period: { ...e.period, en: ev.target.value } })} />
+                </Field>
+                <Field label={t("expSummaryAz")}>
+                  <Area rows={3} value={e.summary.az} onChange={(ev) => upd({ summary: { ...e.summary, az: ev.target.value } })} />
+                </Field>
+                <Field label={t("expSummaryEn")}>
+                  <Area rows={3} value={e.summary.en} onChange={(ev) => upd({ summary: { ...e.summary, en: ev.target.value } })} />
+                </Field>
+                <Button variant="danger" className="w-fit" onClick={() => set("experience", f.experience.filter((_, j) => j !== i))}>
+                  {t("remove")}
+                </Button>
+              </div>
+            );
+          })}
         </div>
       </Card>
 
