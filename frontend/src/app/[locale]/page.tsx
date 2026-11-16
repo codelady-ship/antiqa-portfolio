@@ -1,6 +1,8 @@
 import { locale as rootLocale } from "next/root-params";
 import { getTranslations } from "next-intl/server";
 import { Hero } from "@/components/hero/hero";
+import { PERSONA } from "@/components/persona/config";
+import { PersonaFilm } from "@/components/persona/persona-film";
 import { PersonaSlot } from "@/components/persona/slot";
 import { PersonaTraveler } from "@/components/persona/persona-traveler";
 import { PersonaStage } from "@/components/persona/persona-stage";
@@ -24,7 +26,12 @@ const GROUP_LEFT = "mx-auto max-w-[1320px] min-[1600px]:max-w-[1680px] lg:grid l
 
 export default async function Home() {
   const locale = ((await rootLocale()) === "en" ? "en" : "az") as "az" | "en";
-  const [profile, projects, tp] = await Promise.all([getProfile(), getProjects(), getTranslations({ locale, namespace: "Persona" })]);
+  const [profile, projects, tp, tw] = await Promise.all([
+    getProfile(),
+    getProjects(),
+    getTranslations({ locale, namespace: "Persona" }),
+    getTranslations({ locale, namespace: "Work" }),
+  ]);
   const [first, ...rest] = profile.name.split(" ");
   const cv = profile.cv[locale] ?? profile.cv.az ?? profile.cv.en ?? null;
   // the stage and ring figures are decorative (alt=""): the photo is not announced again and again
@@ -54,7 +61,8 @@ export default async function Home() {
           </div>
         </div>
         <Work projects={projects} />
-        <PersonaTraveler heroBubble={tp("hero")} aboutBubble={tp("skills")} />
+        {/* the film (owner's guide) once it exists; until then her photo travels */}
+        {PERSONA.film ? <PersonaFilm film={PERSONA.film} loadingLabel={tw("loading")} /> : <PersonaTraveler heroBubble={tp("hero")} aboutBubble={tp("skills")} />}
       </div>
       <div className={GROUP}>
         <div className="min-w-0" data-persona="contact">
