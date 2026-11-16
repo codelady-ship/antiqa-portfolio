@@ -1,6 +1,8 @@
 import { locale as rootLocale } from "next/root-params";
 import { getTranslations } from "next-intl/server";
 import { Hero } from "@/components/hero/hero";
+import { PersonaSlot } from "@/components/persona/slot";
+import { PersonaTraveler } from "@/components/persona/persona-traveler";
 import { PersonaStage } from "@/components/persona/persona-stage";
 import { About } from "@/components/sections/about";
 import { Contact } from "@/components/sections/contact";
@@ -11,9 +13,10 @@ import { getProfile, getProjects } from "@/lib/data";
 import { JOB_STACK, JOB_TITLE } from "@/lib/identity";
 
 /**
- * Home (#38): the persona follows the scroll. Hero + skills and the contact block each sit in a
- * two-column group with a sticky stage on the right (desktop); in the work section she stands
- * in the middle of the project ring. Phones and tablets get the plain one-column page.
+ * Home: the persona travels down with the scroll (persona-traveler.tsx). She stands beside the
+ * hero, falls to the About section and stays there (sticky, pose 2) while it is read, then falls
+ * into the middle of the project ring and stands there. The contact block has its own sticky stage.
+ * Phones and tablets get the plain one-column page (no slots, no travelling figure).
  */
 // centred like .wrap (1320 px, 1600 px from 1600 px wide), so the text lines up with the header and the work section
 const GROUP = "mx-auto max-w-[1320px] min-[1600px]:max-w-[1600px] lg:grid lg:grid-cols-[minmax(0,1fr)_clamp(19rem,28vw,30rem)]";
@@ -35,19 +38,27 @@ export default async function Home() {
   return (
     <>
       <JsonLd profile={profile} projects={projects} locale={locale} />
-      <div className={GROUP}>
-        <div className="min-w-0">
-          <div data-persona="hero">
+      {/* the "track" the travelling figure moves on: hero → About → the project ring */}
+      <div className="relative">
+        {/* two rows on desktop: hero | her slot, About | her (sticky) slot */}
+        <div className={GROUP}>
+          <div className="min-w-0" data-persona="hero">
             <Hero first={first} last={rest.join(" ")} title={JOB_TITLE} stack={JOB_STACK} tagline={profile.tagline[locale]} location={profile.location[locale]} cvHref={cv} />
           </div>
-          <div data-persona="skills">
+          <div aria-hidden className="hidden items-center justify-center pt-24 lg:flex">
+            <PersonaSlot id="hero" wave bubble={tp("hero")} className="w-[66%]" />
+          </div>
+          <div className="min-w-0" data-persona="skills">
             <Marquee items={profile.skills.slice(0, 10)} label={t("skills")} />
             <About profile={profile} projects={projects} />
           </div>
+          <div aria-hidden className="hidden lg:block">
+            <PersonaSlot id="about" pose="left" bubble={tp("skills")} chips={chips} className="sticky top-32 mx-auto mt-28 w-[66%]" />
+          </div>
         </div>
-        <PersonaStage chapters={["hero", "skills"]} bubbles={{ hero: tp("hero"), skills: tp("skills") }} chips={chips} alt="" />
+        <Work projects={projects} alt="" />
+        <PersonaTraveler heroBubble={tp("hero")} aboutBubble={tp("skills")} chips={chips} />
       </div>
-      <Work projects={projects} alt="" />
       <div className={GROUP}>
         <div className="min-w-0" data-persona="contact">
           <Contact profile={profile} />
