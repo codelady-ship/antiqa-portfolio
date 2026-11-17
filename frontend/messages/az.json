@@ -45,6 +45,7 @@
     "viewport": "Ekran eni",
     "demoTab": "Demo",
     "adminTab": "Admin panel",
+    "demoNoFrame": "Bu sayt təhlükəsizlik ayarına görə başqa saytın içində açılmır. Onu yeni tabda açın.",
     "adminNoFrame": "Bu admin panel təhlükəsizlik ayarına görə başqa saytın içində açılmır. Onu yeni tabda açın.",
     "adminHint": "Demo giriş",
     "demoFrame": "{title} — canlı demo",
