@@ -8,7 +8,12 @@ type Props = Omit<HTMLAttributes<HTMLElement>, "style"> & {
   as?: ElementType;
 };
 
-/** Fades/blurs its content up once, the first time it scrolls into view (styles in globals.css). */
+/**
+ * Fades/blurs its content up once, the first time it scrolls into view (styles in globals.css).
+ * Fail-safe (review #48): the observed area reaches far above the viewport, so a block that is
+ * already above it (a jump with an anchor link, a fast fling, a restored scroll position) counts as
+ * seen and shows, instead of staying invisible because it never crossed the viewport itself.
+ */
 export function Reveal({ children, index = 0, as: Tag = "div", ...rest }: Props) {
   const ref = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -23,7 +28,7 @@ export function Reveal({ children, index = 0, as: Tag = "div", ...rest }: Props)
           io.disconnect();
         }
       },
-      { rootMargin: "0px 0px -12% 0px" },
+      { rootMargin: "100000px 0px -12% 0px" },
     );
     io.observe(el);
     return () => io.disconnect();

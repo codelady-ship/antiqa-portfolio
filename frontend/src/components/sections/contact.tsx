@@ -37,10 +37,9 @@ export function Contact({ profile, bubble, aiNote }: { profile: Profile; bubble?
   };
 
   return (
-    // content-visibility: last section (only the footer follows), free of fixed/sticky children,
-    // so skipping its layout until it nears the viewport cannot move anything above it;
-    // `auto` remembers the real height once rendered
-    <section id="contact" className="wrap relative scroll-mt-24 py-20 [contain-intrinsic-size:auto_900px] [content-visibility:auto] sm:py-28">
+    // no content-visibility here any more (review #48): skipped rendering left the section blank in
+    // full-page captures (and print), and her video needs its box laid out to appear on time
+    <section id="contact" className="wrap relative scroll-mt-24 py-20 sm:py-28">
       {/* a postcard: pink paper, a lilac corner, a mint stamp (#32) */}
       <div className="relative isolate overflow-hidden rounded-[2.5rem] bg-pink-soft px-5 py-14 sm:px-12 sm:py-20 xl:px-16">
         <div aria-hidden className="absolute -top-24 -right-24 -z-10 size-72 rounded-full bg-lilac-soft sm:size-96" />

@@ -20,7 +20,8 @@ export function CountUp({ to, ms = 1400 }: { to: number; ms?: number }) {
         if (k < 1) requestAnimationFrame(step);
       };
       requestAnimationFrame(step);
-    });
+      // the area reaches far above the viewport: a number already scrolled past still counts up (review #48)
+    }, { rootMargin: "100000px 0px 0px 0px" });
     io.observe(el);
     return () => io.disconnect();
   }, [to, ms]);

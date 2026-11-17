@@ -439,8 +439,18 @@ html {
 .dark .persona-clip :is(video, img) {
   --fx: 26%;
 }
+/* dark belt (review #48): no cream box over the belt, only a soft oval glow around her. The oval
+   is tall (her head and feet stay clear) and narrow (the studio's sides are gone); her arm, when
+   out, fades a little towards the hand */
 .dark .persona-clip[data-mode="point"] :is(video, img) {
-  --fx: 14%;
+  -webkit-mask-image:
+    radial-gradient(ellipse 50% 78% at 50% 50%, #000 34%, transparent 100%),
+    linear-gradient(to bottom, transparent, #000 7%, #000 90%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    radial-gradient(ellipse 50% 78% at 50% 50%, #000 34%, transparent 100%),
+    linear-gradient(to bottom, transparent, #000 7%, #000 90%, transparent);
+  mask-composite: intersect;
 }
 
 @media (prefers-reduced-motion: reduce) {
