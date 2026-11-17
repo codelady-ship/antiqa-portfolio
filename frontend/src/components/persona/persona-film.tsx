@@ -24,29 +24,45 @@ type Section = (typeof SECTIONS)[number];
  * - the playhead follows the target with a lerp (EASE) and never seeks while a seek is running;
  * - the film is shifted sideways so the point where she stands (`focus`) sits where the section
  *   wants her (`place`): right in the hero, left in About, on the project belt in Projects;
- *   phones keep her centred;
- * - loading: after `load`, on idle, fetch → blob with a small progress pill; the poster shows
- *   until the first frame is decoded. iOS needs one play()/pause() from a gesture before it seeks
- *   a muted inline video: done on the first touch / click;
+ * - only ≥ 1024 px without prefers-reduced-motion (both followed live): phones and tablets keep the
+ *   plain page with the static figures (review #44: no full-screen video behind the text there);
+ * - loading: after `load`, on idle, fetch → blob with a small progress pill (the chunks are freed
+ *   once the blob exists); with Save-Data or a 2G connection it streams instead. The poster shows
+ *   until the first frame is decoded;
+ * - iOS seeks a muted inline video only after a play() from a user gesture: every touch / click
+ *   tries it once the video has a source, until one play() has succeeded;
+ * - a small "AI-generated video" note stays in the corner while the film runs;
  * - edges are feathered into the page colour (CSS mask, globals.css "persona film"); in dark mode
  *   a soft spotlight around her instead, since the studio is cream;
- * - prefers-reduced-motion: nothing here runs; the static figures in the slots stay.
  *
  * While it runs `film-live` on <html> hides the static slot figures (and the contact stage when the
  * film has a contact mark), so she is never drawn twice.
  */
-export function PersonaFilm({ film, loadingLabel }: { film: Film; loadingLabel: string }) {
+export function PersonaFilm({ film, loadingLabel, note }: { film: Film; loadingLabel: string; note: string }) {
   const root = useRef<HTMLDivElement>(null);
   const [progress, setProgress] = useState<number | null>(null);
+  // runs only on wide screens without reduced motion; both are followed while the page is open
+  const [on, setOn] = useState(false);
 
   useEffect(() => {
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+    const wide = matchMedia("(min-width: 1024px)");
+    const sync = () => setOn(wide.matches && !reduce.matches);
+    sync();
+    reduce.addEventListener("change", sync);
+    wide.addEventListener("change", sync);
+    return () => {
+      reduce.removeEventListener("change", sync);
+      wide.removeEventListener("change", sync);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!on) return;
     const el = root.current!;
     const track = el.parentElement!;
     const video = el.querySelector("video")!;
     const html = document.documentElement;
-    const reduce = matchMedia("(prefers-reduced-motion: reduce)");
-    const wide = matchMedia("(min-width: 1024px)");
-    if (reduce.matches) return;
 
     const fps = 24;
     const used = SECTIONS.filter((s) => film.marks[s] !== undefined);
@@ -57,6 +73,7 @@ export function PersonaFilm({ film, loadingLabel }: { film: Film; loadingLabel: 
       introStart = 0,
       introDone = false,
       url = "",
+      unlocked = false,
       stopped = false;
     const abort = new AbortController();
 
@@ -137,7 +154,7 @@ export function PersonaFilm({ film, loadingLabel }: { film: Film; loadingLabel: 
         e = pos - i,
         j = Math.min(i + 1, used.length - 1);
       const focus = lerp(at(film.focus, i, 0.5), at(film.focus, j, 0.5), e);
-      const place = wide.matches ? lerp(placeX(at(film.place, i, 0.5)), placeX(at(film.place, j, 0.5)), e) : 0.5;
+      const place = lerp(placeX(at(film.place, i, 0.5)), placeX(at(film.place, j, 0.5)), e);
       const h = innerHeight,
         w = (h * film.width) / film.height;
       video.style.width = `${w}px`;
@@ -155,14 +172,23 @@ export function PersonaFilm({ film, loadingLabel }: { film: Film; loadingLabel: 
       if (!raf) raf = requestAnimationFrame(frame);
     };
 
-    // iOS seeks a muted inline video only after a play() from a user gesture
+    // iOS seeks a muted inline video only after a play() from a user gesture. A gesture before the
+    // source is set would be wasted, so the listeners stay until one play() has succeeded.
     const unlock = () => {
-      video.play().then(() => video.pause(), () => {});
-      removeEventListener("touchstart", unlock);
-      removeEventListener("pointerdown", unlock);
+      if (unlocked || !video.getAttribute("src")) return;
+      video.play().then(
+        () => {
+          video.pause();
+          unlocked = true;
+          removeEventListener("touchstart", unlock);
+          removeEventListener("pointerdown", unlock);
+          request();
+        },
+        () => {},
+      );
     };
-    addEventListener("touchstart", unlock, { passive: true, once: true });
-    addEventListener("pointerdown", unlock, { once: true });
+    addEventListener("touchstart", unlock, { passive: true });
+    addEventListener("pointerdown", unlock);
 
     const onData = () => {
       ready = true;
@@ -175,7 +201,14 @@ export function PersonaFilm({ film, loadingLabel }: { film: Film; loadingLabel: 
     // after the page has loaded, on idle: fetch → blob (progress), then the video
     const load = async () => {
       if (stopped) return;
-      const src = wide.matches ? film.desktop : film.mobile;
+      const src = film.desktop;
+      // Save-Data / 2G: no blob in memory, the browser streams (all keyframes still scrub)
+      const net = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+      if (net?.saveData || /(^|-)2g$/.test(net?.effectiveType ?? "")) {
+        video.src = src;
+        video.load();
+        return;
+      }
       try {
         setProgress(0);
         const res = await fetch(src, { signal: abort.signal });
@@ -192,6 +225,7 @@ export function PersonaFilm({ film, loadingLabel }: { film: Film; loadingLabel: 
           if (size) setProgress(Math.round((got / size) * 100));
         }
         url = URL.createObjectURL(new Blob(parts, { type: "video/mp4" }));
+        parts.length = 0; // the blob holds the bytes now
         video.src = url;
       } catch {
         if (stopped) return;
@@ -225,8 +259,9 @@ export function PersonaFilm({ film, loadingLabel }: { film: Film; loadingLabel: 
       html.classList.remove("film-live", "film-contact");
       if (url) URL.revokeObjectURL(url);
     };
-  }, [film]);
+  }, [film, on]);
 
+  if (!on) return <div ref={root} hidden />;
   return (
     <div ref={root} aria-hidden className="persona-film pointer-events-none fixed inset-0 -z-10 overflow-hidden motion-reduce:hidden">
       <video
@@ -239,11 +274,15 @@ export function PersonaFilm({ film, loadingLabel }: { film: Film; loadingLabel: 
         className="absolute top-0 left-0 h-full max-w-none will-change-transform"
         style={{ aspectRatio: `${film.width}/${film.height}` }}
       />
-      {progress !== null && (
-        <p className="absolute right-4 bottom-4 rounded-full border border-line bg-surface/90 px-3 py-1 text-xs font-semibold text-muted tabular-nums shadow-[var(--shadow)]">
-          {loadingLabel} {progress}%
-        </p>
-      )}
+      <p className="absolute right-4 bottom-4 flex items-center gap-2 text-xs font-semibold text-muted">
+        {progress !== null && (
+          <span className="rounded-full border border-line bg-surface/90 px-3 py-1 tabular-nums shadow-[var(--shadow)]">
+            {loadingLabel} {progress}%
+          </span>
+        )}
+        {/* the figure is an AI video of a real person: say so (review #44) */}
+        <span className="rounded-full border border-line bg-surface/90 px-3 py-1 shadow-[var(--shadow)]">{note}</span>
+      </p>
     </div>
   );
 }

@@ -62,7 +62,7 @@ export default async function Home() {
         </div>
         <Work projects={projects} />
         {/* the film (owner's guide) once it exists; until then her photo travels */}
-        {PERSONA.film ? <PersonaFilm film={PERSONA.film} loadingLabel={tw("loading")} /> : <PersonaTraveler heroBubble={tp("hero")} aboutBubble={tp("skills")} />}
+        {PERSONA.film ? <PersonaFilm film={PERSONA.film} loadingLabel={tw("loading")} note={tp("filmNote")} /> : <PersonaTraveler heroBubble={tp("hero")} aboutBubble={tp("skills")} />}
       </div>
       <div className={GROUP}>
         <div className="min-w-0" data-persona="contact">

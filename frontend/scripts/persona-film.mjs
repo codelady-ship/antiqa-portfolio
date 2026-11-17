@@ -14,16 +14,18 @@
  *                        (docs/FLOW-PERSONA-PROMPTS.md clip plan: 3 = the desk, between About and Projects)
  *   --fade <s>           cross-fade between clips (default 0.25)
  *   --fps <n>            frame rate of the film (default 24)
- *   --delogo x:y:w:h     watermark box in the 1280×720 frame (default: Veo's corner mark,
- *                        bottom right 1160:672:104:36); --delogo none to keep the frame as it is
- *   --ffmpeg <path>      ffmpeg binary (default: $FFMPEG, the WinGet Gyan build if present, else "ffmpeg");
- *                        ffprobe is taken from the same folder
+ *   --delogo x:y:w:h     blur out a box in the 1280×720 frame. Off by default: the Veo watermark
+ *                        stays unless you pass this, and only after checking that your Flow/Veo plan
+ *                        allows removing it (Veo's corner mark is about 1160:672:104:36)
+ *   --ffmpeg <path>      ffmpeg binary (default: $FFMPEG, then "ffmpeg" on PATH, then the WinGet
+ *                        Gyan build as a last resort); ffprobe is taken from the same folder
  *   --force              replace an existing film in --out
  *
- * Output: film-1280.mp4 (desktop, CRF 27), film-854.mp4 (phones, CRF 28), poster.jpg (first
- * frame, 1280 px). H.264, -g 1 (all keyframes), +faststart, no audio.
+ * Output: film-1280.mp4 (desktop, CRF 27), film-854.mp4 (a smaller encode, kept for a later phone
+ * version), poster.jpg (first frame, 1280 px). H.264, -g 1 (all keyframes), +faststart, no audio.
+ * Warns when a file is larger than the site should download (all-keyframe video is big).
  */
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
@@ -45,13 +47,24 @@ if (clips.length < 2) {
 }
 for (const c of clips) if (!existsSync(c)) throw new Error(`no such clip: ${c}`);
 
-const WINGET = "C:/Users/user/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-9.0.2-full_build/bin/ffmpeg.exe";
-const ffmpeg = opt("--ffmpeg", process.env.FFMPEG || (existsSync(WINGET) ? WINGET : "ffmpeg"));
+/** --ffmpeg, $FFMPEG, "ffmpeg" on PATH, then any WinGet Gyan build (whatever its version) */
+function findFfmpeg() {
+  const given = opt("--ffmpeg", process.env.FFMPEG);
+  if (given) return given;
+  if (spawnSync("ffmpeg", ["-version"], { stdio: "ignore" }).status === 0) return "ffmpeg";
+  const base = process.env.LOCALAPPDATA && join(process.env.LOCALAPPDATA, "Microsoft/WinGet/Packages");
+  const pkg = base && existsSync(base) && readdirSync(base).find((d) => d.startsWith("Gyan.FFmpeg"));
+  const build = pkg && readdirSync(join(base, pkg)).find((d) => d.startsWith("ffmpeg-"));
+  const exe = build && join(base, pkg, build, "bin", "ffmpeg.exe");
+  if (exe && existsSync(exe)) return exe;
+  throw new Error("ffmpeg not found: install it (winget install Gyan.FFmpeg), or pass --ffmpeg <path> / set FFMPEG");
+}
+const ffmpeg = findFfmpeg();
 const ffprobe = ffmpeg.includes("/") || ffmpeg.includes("\\") ? join(dirname(ffmpeg), `ffprobe${ffmpeg.endsWith(".exe") ? ".exe" : ""}`) : "ffprobe";
 const out = resolve(opt("--out", "public/persona/film"));
 const fade = Number(opt("--fade", "0.25"));
 const fps = Number(opt("--fps", "24"));
-const delogo = opt("--delogo", "1160:672:104:36");
+const delogo = opt("--delogo", "none");
 const sections = (opt("--sections", clips.length === 5 ? "hero,about,-,work,contact" : clips.length === 4 ? "hero,about,-,work" : "") || "").split(",").filter(Boolean);
 if (sections.length !== clips.length) throw new Error(`--sections needs one entry per clip (${clips.length})`);
 const KNOWN = new Set(["hero", "about", "work", "contact", "-"]);
@@ -102,6 +115,10 @@ execFileSync(
 execFileSync(ffmpeg, ["-y", "-v", "error", "-i", join(out, "film-1280.mp4"), "-frames:v", "1", "-q:v", "3", join(out, "poster.jpg")], { stdio: "inherit" });
 
 const kb = (f) => Math.round(statSync(join(out, f)).size / 1024);
+// the whole film is downloaded before it plays: keep it small (fewer / shorter clips, higher --crf)
+const LIMIT = { "film-1280.mp4": 12 * 1024, "film-854.mp4": 8 * 1024 };
+for (const [f, max] of Object.entries(LIMIT))
+  if (kb(f) > max) console.warn(`warning: ${f} is ${(kb(f) / 1024).toFixed(1)} MB (> ${max / 1024} MB): too heavy for the site; use shorter clips or fewer of them`);
 const filmLen = duration(join(out, "film-1280.mp4"));
 const m = Object.fromEntries(sections.map((s, i) => [s, +marks[i].toFixed(2)]).filter(([s]) => s !== "-"));
 const pub = out.replace(/\\/g, "/").split("/public/")[1] ?? "persona/film";
@@ -109,7 +126,7 @@ console.log(`\n${files.map((f) => `${f} ${kb(f)} KB`).join(", ")} in ${out} (${f
 console.log("Put this in src/components/persona/config.ts (PERSONA.film), then tune `place` by eye:\n");
 console.log(`  film: {
     desktop: "/${pub}/film-1280.mp4",
-    mobile: "/${pub}/film-854.mp4",
+    mobile: "/${pub}/film-854.mp4", // not used yet: phones keep the static page
     poster: "/${pub}/poster.jpg",
     width: 1280,
     height: 720,
@@ -118,7 +135,7 @@ console.log(`  film: {
     hold: 0.35,
     // where she stands in the film at each mark (0 = left edge, 1 = right edge)
     focus: { hero: 0.5, about: 0.33, work: 0.5${m.contact !== undefined ? ", contact: 0.5" : ""} },
-    // where she should stand on the screen (≥ 1024 px): right in the hero, left in About, on the belt
+    // where she should stand on the screen: right in the hero, left in About, on the belt
     place: { hero: 0.72, about: 0.27, work: "belt"${m.contact !== undefined ? ", contact: 0.5" : ""} },
   },`);
 if (readdirSync(out).some((f) => /\.webp$/.test(f))) console.log("\nnote: old frame files are in this folder; they are not used any more.");

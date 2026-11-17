@@ -49,8 +49,9 @@ node scripts/persona-film.mjs C:/Users/user/Downloads/clip1.mp4 C:/Users/user/Do
 
 The script:
 - joins the clips with a 0.25 s cross-fade;
-- removes the Veo watermark (`--delogo x:y:w:h` moves the box; `--delogo none` turns it off);
-- encodes `public/persona/film/film-1280.mp4` (desktop) and `film-854.mp4` (phones). Every frame is a keyframe, so seeking is instant. There is no audio, and faststart is on;
+- keeps the Veo watermark. To remove it, pass `--delogo x:y:w:h` (Veo's corner mark is about `1160:672:104:36`), and only after checking that your Flow/Veo plan allows it;
+- encodes `public/persona/film/film-1280.mp4` (the site) and `film-854.mp4` (kept for a later phone version). Every frame is a keyframe, so seeking is instant. There is no audio, and faststart is on;
+- warns when a file is too big for the site (over 12 MB at 1280, over 8 MB at 854);
 - makes `poster.jpg` from the first frame;
 - prints the `film: { … }` block to paste into `src/components/persona/config.ts`.
 
@@ -61,9 +62,10 @@ After pasting the block, check `focus` by eye. This is where she stands in the f
 How the site uses the film:
 - On load the hero clip plays by itself (the turn and the wave).
 - After that, the scroll position sets the time. Each section holds on its pose while it is read (`hold`), and the film plays on to the next pose on the way down.
-- The film moves sideways so she stands on the right in the hero, on the left in About and in the middle of the project belt (`place`). Phones keep her centred.
-- The film loads after the page has loaded (fetch → blob, with a small progress pill). The poster shows until then.
-- With reduced motion, the film does not run. The static figures stay.
+- The film moves sideways so she stands on the right in the hero, on the left in About and in the middle of the project belt (`place`).
+- The film loads after the page has loaded (fetch → blob, with a small progress pill; with Save-Data or 2G it streams instead). The poster shows until then.
+- A small "AI-generated video" note shows in the corner while the film runs.
+- The film runs only at 1024 px and wider, without reduced motion. Phones, tablets and reduced motion keep the static figures.
 
 When the clips are ready, tell Claude "flow hazır" and where they are (for example, Downloads). Claude runs the script, wires the film in and opens a PR.
 

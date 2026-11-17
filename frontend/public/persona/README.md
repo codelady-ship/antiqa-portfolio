@@ -11,7 +11,7 @@ Prompts for Google Flow and the film script: `docs/FLOW-PERSONA-PROMPTS.md`.
 | file | what |
 | --- | --- |
 | `film-1280.mp4` | desktop (≥ 1024 px): H.264, every frame a keyframe (`-g 1`), CRF 27, no audio, faststart |
-| `film-854.mp4` | phones / tablets: the same, CRF 28 |
+| `film-854.mp4` | the same at 854 px, CRF 28: kept for a later phone version (phones show the static page for now) |
 | `poster.jpg` | the first frame, shown while the film loads |
 
 It then prints the `PERSONA.film` block for `config.ts`: the marks where each section's pose is reached,

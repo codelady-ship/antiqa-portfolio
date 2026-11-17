@@ -24,10 +24,10 @@ type Section = "hero" | "about" | "work" | "contact";
  * then the film plays on to the next mark. See persona-film.tsx.
  */
 export type Film = {
-  /** H.264, all keyframes (-g 1), no audio: ≥ 1024 px … */
+  /** H.264, all keyframes (-g 1), no audio; the film runs only ≥ 1024 px */
   desktop: string;
-  /** … and phones / tablets */
-  mobile: string;
+  /** the 854 px encode, kept for a later phone version (phones show the static page for now) */
+  mobile?: string;
   /** first frame, shown while the film loads (and the only picture with reduced motion) */
   poster: string;
   width: number;
@@ -41,7 +41,7 @@ export type Film = {
   /** where she stands in the film frame at each mark, 0 = left edge … 1 = right edge */
   focus: Partial<Record<Section, number>> & { hero: number };
   /**
-   * where she should stand on the screen at each mark (≥ 1024 px; phones keep her centred),
+   * where she should stand on the screen at each mark,
    * 0 = left … 1 = right of the viewport; "belt" = the middle of the project belt
    * (owner: right in the hero, left in About, centre in Projects)
    */
