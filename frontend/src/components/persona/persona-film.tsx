@@ -263,26 +263,29 @@ export function PersonaFilm({ film, loadingLabel, note }: { film: Film; loadingL
 
   if (!on) return <div ref={root} hidden />;
   return (
-    <div ref={root} aria-hidden className="persona-film pointer-events-none fixed inset-0 -z-10 overflow-hidden motion-reduce:hidden">
-      <video
-        muted
-        playsInline
-        preload="none"
-        poster={film.poster}
-        width={film.width}
-        height={film.height}
-        className="absolute top-0 left-0 h-full max-w-none will-change-transform"
-        style={{ aspectRatio: `${film.width}/${film.height}` }}
-      />
-      <p className="absolute right-4 bottom-4 flex items-center gap-2 text-xs font-semibold text-muted">
+    <>
+      <div ref={root} aria-hidden className="persona-film pointer-events-none fixed inset-0 -z-10 overflow-hidden motion-reduce:hidden">
+        <video
+          muted
+          playsInline
+          preload="none"
+          poster={film.poster}
+          width={film.width}
+          height={film.height}
+          className="absolute top-0 left-0 h-full max-w-none will-change-transform"
+          style={{ aspectRatio: `${film.width}/${film.height}` }}
+        />
         {progress !== null && (
-          <span className="rounded-full border border-line bg-surface/90 px-3 py-1 tabular-nums shadow-[var(--shadow)]">
+          <p className="absolute right-4 bottom-14 rounded-full border border-line bg-surface/90 px-3 py-1 text-xs font-semibold text-muted tabular-nums shadow-[var(--shadow)]">
             {loadingLabel} {progress}%
-          </span>
+          </p>
         )}
-        {/* the figure is an AI video of a real person: say so (review #44) */}
-        <span className="rounded-full border border-line bg-surface/90 px-3 py-1 shadow-[var(--shadow)]">{note}</span>
+      </div>
+      {/* the figure is an AI video of a real person: say so. Outside the hidden back layer, above
+          the content, so it is always visible and read by screen readers (review #44) */}
+      <p className="pointer-events-none fixed right-4 bottom-4 z-40 rounded-full border border-line bg-surface/90 px-3 py-1 text-xs font-semibold text-muted shadow-[var(--shadow)]">
+        {note}
       </p>
-    </div>
+    </>
   );
 }
