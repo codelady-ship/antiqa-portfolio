@@ -82,3 +82,32 @@ describe("validation", () => {
     expect(r.status).toBe(200);
   });
 });
+
+describe("admin panel url", () => {
+  it("accepts https only and a short plain hint; present() shows them only with a url", async () => {
+    const { ProjectPatch, present } = await import("./app.js");
+    expect(ProjectPatch.safeParse({ adminUrl: "http://x.dev/admin" }).success).toBe(false);
+    expect(ProjectPatch.safeParse({ adminUrl: "https://x.dev/admin", adminHint: "demo@x.dev / demo" }).success).toBe(true);
+    expect(ProjectPatch.safeParse({ adminHint: "<b>x</b>" }).success).toBe(false);
+    const base = { _id: "1", owner: "o", name: "n", repoUrl: "https://github.com/o/n" };
+    expect(present({ ...base, adminHint: "x" })).toMatchObject({ adminUrl: null, adminHint: "" });
+    expect(present({ ...base, adminUrl: "https://x.dev/admin", adminNoFrame: true })).toMatchObject({ adminUrl: "https://x.dev/admin", adminFrame: false });
+  });
+  it("detects panels that refuse to be framed", async () => {
+    const { frameBlocked } = await import("./app.js");
+    const real = globalThis.fetch;
+    const reply = (h: Record<string, string>) => (globalThis.fetch = (async () => new Response("", { headers: h })) as typeof fetch);
+    try {
+      reply({ "x-frame-options": "DENY" });
+      expect(await frameBlocked("https://x.dev")).toBe(true);
+      reply({ "content-security-policy": "default-src 'self'; frame-ancestors 'none'" });
+      expect(await frameBlocked("https://x.dev")).toBe(true);
+      reply({ "content-security-policy": "frame-ancestors *" });
+      expect(await frameBlocked("https://x.dev")).toBe(false);
+      reply({});
+      expect(await frameBlocked("https://x.dev")).toBe(false);
+    } finally {
+      globalThis.fetch = real;
+    }
+  });
+});
