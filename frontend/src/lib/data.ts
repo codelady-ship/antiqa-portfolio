@@ -6,10 +6,14 @@ import type { Profile, Project } from "./types";
 const API_URL = process.env.API_URL?.replace(/\/$/, "");
 const GH = "https://api.github.com";
 
+/** cache profile of the fallback data: refetched after a minute, gone after five */
+const FALLBACK_LIFE = { stale: 30, revalidate: 60, expire: 300 };
+
 async function api<T>(path: string): Promise<T | null> {
   if (!API_URL) return null;
   try {
-    const r = await fetch(`${API_URL}${path}`, { headers: { Accept: "application/json" } });
+    // long enough for a cold start of the API's serverless function; a timeout falls back (briefly cached)
+    const r = await fetch(`${API_URL}${path}`, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(25_000) });
     return r.ok ? ((await r.json()) as T) : null;
   } catch {
     return null;
@@ -18,9 +22,11 @@ async function api<T>(path: string): Promise<T | null> {
 
 export async function getProfile(): Promise<Profile> {
   "use cache";
-  cacheLife("minutes");
   cacheTag("profile");
   const p = await api<Partial<Profile>>("/api/profile");
+  // API down or cold: the seed profile is kept only briefly
+  if (p) cacheLife("minutes");
+  else cacheLife(FALLBACK_LIFE);
   return mergeProfile(SEED_PROFILE, p);
 }
 
@@ -34,10 +40,10 @@ export async function getProjects(): Promise<Project[]> {
     cacheLife("minutes");
     return fromApi;
   }
+  // the API failed or was cold: the GitHub/seed fallback is kept only briefly (never longer than the
+  // API result), so one failed refetch cannot pin the fallback list on the site
+  cacheLife(FALLBACK_LIFE);
   const gh = await fromGithub();
-  // partial/empty result (GitHub limit, network): keep it only for minutes and never show an empty page
-  if (gh.length === SEED_REPOS.length) cacheLife("hours");
-  else cacheLife("minutes");
   // repos GitHub did not return (rate limit) still show, from the static seed
   const got = new Set(gh.map((p) => p.id.toLowerCase()));
   return [...gh, ...staticSeed().filter((p) => !got.has(p.id.toLowerCase()))];

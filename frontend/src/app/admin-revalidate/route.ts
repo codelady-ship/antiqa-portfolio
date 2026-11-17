@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import { revalidateTag } from "next/cache";
 
 const API_URL = process.env.API_URL?.replace(/\/$/, "");
@@ -9,13 +10,19 @@ const API_URL = process.env.API_URL?.replace(/\/$/, "");
  */
 export async function POST(req: Request) {
   const secret = process.env.CRON_SECRET;
-  if (secret && req.headers.get("authorization") === `Bearer ${secret}`) return expire();
+  if (secret && sameSecret(req.headers.get("authorization") ?? "", `Bearer ${secret}`)) return expire();
   if (!API_URL) return Response.json({ error: "no api" }, { status: 503 });
   const me = await fetch(`${API_URL}/api/auth/me`, { headers: { cookie: req.headers.get("cookie") ?? "" }, cache: "no-store" })
     .then((r) => (r.ok ? (r.json() as Promise<{ admin: boolean }>) : { admin: false }))
     .catch(() => ({ admin: false }));
   if (!me.admin) return Response.json({ error: "unauthorized" }, { status: 401 });
   return expire();
+}
+
+/** constant-time: both sides hashed to the same length first, so neither the content nor the length leaks */
+function sameSecret(given: string, want: string) {
+  const h = (s: string) => createHash("sha256").update(s).digest();
+  return timingSafeEqual(h(given), h(want));
 }
 
 function expire() {

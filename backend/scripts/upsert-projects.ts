@@ -218,6 +218,11 @@ async function setShowcase() {
 async function revalidateSite() {
   if (dryRun || args.includes("--no-revalidate")) return;
   const site = (process.env.SITE_URL || "https://antiqa-portfolio.vercel.app").replace(/\/$/, "");
+  // the token only ever goes over https
+  if (!/^https:\/\//i.test(site)) {
+    console.log("site cache: not expired (SITE_URL must be https; the token is never sent over plain http)");
+    return;
+  }
   if (!process.env.CRON_SECRET) {
     console.log("site cache: not expired (CRON_SECRET is not set); the site shows the change within a few minutes");
     return;
