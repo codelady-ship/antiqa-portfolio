@@ -1,7 +1,9 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import type { ReactNode } from "react";
+import { useCallback, useRef, useState, type ReactNode } from "react";
+import { PersonaClip } from "@/components/persona/clip";
+import { PERSONA } from "@/components/persona/config";
 import { PersonaFigure } from "@/components/persona/figure";
 import { SushiConveyorMenu, type ConveyorDish } from "@/components/ui/sushi-conveyor-menu";
 import { hasThumb } from "@/lib/seed";
@@ -15,9 +17,8 @@ import type { Project } from "@/lib/types";
  * list, so the belt is right before the seed script has run. Keep in sync with SHOWCASE there.
  */
 const SHOWCASE_FALLBACK = new Set(
-  ["planera", "hypedomino", "jeparla", "masapay", "curtain-shop-web-site-frontend", "task7-front-end-for-task6-", "antiqa-portfolio", "scholarship-visa-scam-checker"].map((n) =>
-    n.toLowerCase(),
-  ),
+  // owner, 2026-11-17: Programmers List (task7/task6) and this portfolio are off the belt
+  ["planera", "hypedomino", "jeparla", "masapay", "curtain-shop-web-site-frontend", "scholarship-visa-scam-checker"].map((n) => n.toLowerCase()),
 );
 export const onBelt = (p: Project) => !p.hidden && (p.fullStack ?? SHOWCASE_FALLBACK.has(p.name.toLowerCase()));
 
@@ -48,16 +49,25 @@ export function blurb(p: Project, locale: "az" | "en") {
 
 /** plate ring colour: 1 rose = live demo, 2 violet = code only, 4 gold = coming soon */
 const tierOf = (p: Project) => (p.comingSoon ? 4 : p.demoUrl ? 1 : 2);
+const TIER_DOT: Record<number, string> = { 1: "bg-rose", 2: "bg-violet", 4: "bg-gold" };
+
+const stackOf = (p: Project) => {
+  const own = STACK[p.name.toLowerCase()];
+  if (own) return own;
+  const langs = p.languages.filter((l) => l.percent >= MIN_PERCENT).map((l) => l.name);
+  const topics = p.topics.filter((x) => !NOISE.has(x) && !langs.some((l) => l.toLowerCase() === x));
+  return [...langs, ...topics].slice(0, 9);
+};
 
 const button =
   "inline-flex min-h-11 items-center gap-1.5 rounded-full border-2 border-ink px-5 py-2 text-sm font-semibold shadow-[3px_3px_0_var(--ink)] transition-transform hover:-translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose motion-reduce:transition-none";
 
 /**
- * Projects (#43): her full-stack work goes round on a conveyor belt (SushiConveyorMenu, 21st.dev)
- * and she stands on the island in the middle. Hover / focus stops the belt and lifts a plate; a
- * click opens it with the description, the stack (translate="no") and the live / code links.
- * The figure on the island is the "work" slot the travelling persona lands on (persona-traveler.tsx
- * reads `.ring-stage` for the landing scroll position).
+ * Projects: her full-stack work goes round on a conveyor belt (SushiConveyorMenu, 21st.dev) and she
+ * stands in the middle (owner, 2026-11-17): on desktop as video, pointing at the hovered plate (the
+ * clip mirrored for plates on the other side). The left column shows the hovered / focused project
+ * (title, summary, stack, links; the first project until one is picked). A click on a plate opens
+ * the project modal (DemoModal), as before the belt.
  */
 export function ProjectConveyor({
   projects,
@@ -65,44 +75,102 @@ export function ProjectConveyor({
   header,
   onDetails,
   githubUrl,
+  aiNote,
 }: {
   projects: Project[];
   locale: "az" | "en";
   header: ReactNode;
   onDetails: (p: Project) => void;
   githubUrl: string;
+  aiNote?: string;
 }) {
   const t = useTranslations("Work");
-  const byId = new Map(projects.map((p) => [p.id, p]));
+  const [shown, setShown] = useState(0);
+  const [side, setSide] = useState<"left" | "right" | null>(null);
+  const center = useRef<HTMLDivElement>(null);
 
-  const items: ConveyorDish[] = projects.map((p) => {
-    const langs = p.languages.filter((l) => l.percent >= MIN_PERCENT).map((l) => l.name);
-    const topics = p.topics.filter((x) => !NOISE.has(x) && !langs.some((l) => l.toLowerCase() === x));
-    return {
-      id: p.id,
-      name: p.title,
-      description: blurb(p, locale) || undefined,
-      tier: tierOf(p),
-      image: THUMBS[p.name.toLowerCase()] ?? (p.demoUrl && hasThumb(p.repoUrl) ? shot(p.demoUrl, 480) : undefined),
-      cover: true,
-      initial: p.title.charAt(0),
-      details: STACK[p.name.toLowerCase()] ?? [...langs, ...topics].slice(0, 9),
-    };
-  });
+  const items: ConveyorDish[] = projects.map((p) => ({
+    id: p.id,
+    name: p.title,
+    description: blurb(p, locale) || undefined,
+    tier: tierOf(p),
+    image: THUMBS[p.name.toLowerCase()] ?? (p.demoUrl && hasThumb(p.repoUrl) ? shot(p.demoUrl, 480) : undefined),
+    cover: true,
+    initial: p.title.charAt(0),
+    details: stackOf(p),
+  }));
+
+  // the lifted plate: show it on the left, and she points at it (left or right of her)
+  const onActive = useCallback((i: number | null) => {
+    if (i === null) return setSide(null);
+    setShown(i);
+    const me = center.current;
+    const plate = me?.closest("[data-stage]")?.querySelector<HTMLElement>(`[data-dish="${i}"]`);
+    if (!me || !plate) return setSide(null);
+    const a = me.getBoundingClientRect(),
+      b = plate.getBoundingClientRect();
+    setSide(b.left + b.width / 2 < a.left + a.width / 2 ? "left" : "right");
+  }, []);
+
+  const p = projects[Math.min(shown, projects.length - 1)];
+  const stack = p ? stackOf(p) : [];
+  const info = p && (
+    // key: a new project slides in (globals.css .project-info)
+    <div key={p.id} className="project-info rounded-[2rem] border border-line bg-surface p-6 text-left shadow-[var(--shadow)]">
+      <p className="flex items-center gap-2 text-xs font-medium text-muted">
+        <span aria-hidden className={`size-2.5 rounded-full ${TIER_DOT[tierOf(p)]}`} />
+        {p.comingSoon ? t("legendSoon") : p.demoUrl ? t("legendLive") : t("legendCode")}
+      </p>
+      <h3 className="display mt-2 text-2xl leading-tight font-semibold text-balance">{p.title}</h3>
+      {blurb(p, locale) && <p className="mt-2 text-[0.95rem] leading-relaxed text-pretty text-muted">{blurb(p, locale)}</p>}
+      {stack.length > 0 && (
+        <ul translate="no" lang="en" className="notranslate mt-4 flex flex-wrap gap-1.5">
+          {stack.map((s) => (
+            <li key={s} className="rounded-full border border-line bg-bg-2 px-2.5 py-1 text-xs font-medium">
+              {s}
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="mt-5 flex flex-wrap items-center gap-3">
+        {p.comingSoon ? (
+          <span className="rounded-full bg-butter-soft px-4 py-2 text-sm font-semibold text-ink">{t("comingSoon")}</span>
+        ) : (
+          p.demoUrl && (
+            <a href={p.demoUrl} target="_blank" rel="noopener noreferrer" className={`${button} bg-accent text-on-accent`}>
+              {t("live")} <span aria-hidden>↗</span>
+            </a>
+          )
+        )}
+        {p.repoUrl && (
+          <a href={p.repoUrl} target="_blank" rel="noopener noreferrer" className={`${button} bg-surface text-ink`}>
+            <span translate="no" className="notranslate">
+              GitHub
+            </span>{" "}
+            <span aria-hidden>↗</span>
+          </a>
+        )}
+        <button type="button" onClick={() => onDetails(p)} className="min-h-11 px-2 text-sm font-semibold text-muted underline underline-offset-4 hover:text-ink">
+          {t("details")}
+        </button>
+      </div>
+    </div>
+  );
 
   const figure = (
-    // the "work" slot: the static figure shows without JS / with reduced motion, and the travelling
-    // figure lands on this box (persona-traveler.tsx + globals.css .persona-live rules)
-    <div data-persona-slot="work" className="relative aspect-[677/800] w-full">
-      <div className="ring-figure persona-static">
-        <PersonaFigure alt="" sizes="(min-width: 1024px) 200px, 140px" />
+    <div ref={center} className="relative w-full">
+      {/* desktop: her video, pointing; smaller screens: her photo */}
+      <div className="hidden lg:block">
+        <PersonaClip clip={PERSONA.point} mode="point" point={side} />
+      </div>
+      <div className="relative aspect-[677/800] w-full lg:hidden">
+        <PersonaFigure alt="" sizes="140px" />
       </div>
     </div>
   );
 
   return (
     <SushiConveyorMenu
-      className="ring-stage"
       items={items}
       header={header}
       beltLabel={t("beltLabel")}
@@ -117,50 +185,17 @@ export function ProjectConveyor({
       technicalDetails
       speed={22}
       labels={{ add: t("details"), close: t("close"), previous: t("previous"), next: t("next"), pause: t("pause") }}
+      onActiveChange={onActive}
+      onPick={(i) => projects[i] && onDetails(projects[i])}
+      info={info}
       action={
-        <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-rose underline underline-offset-4 hover:no-underline">
-          {t("allOnGithub")} <span aria-hidden>↗</span>
-        </a>
+        <span className="flex flex-col items-center gap-1 lg:items-start">
+          <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-rose underline underline-offset-4 hover:no-underline">
+            {t("allOnGithub")} <span aria-hidden>↗</span>
+          </a>
+          {aiNote && <span className="hidden text-xs text-muted lg:block">{aiNote}</span>}
+        </span>
       }
-      renderActions={(item, close) => {
-        const p = byId.get(item.id);
-        if (!p) return null;
-        const links: ReactNode[] = [];
-        if (p.comingSoon) {
-          links.push(
-            <span key="soon" className="rounded-full bg-butter-soft px-4 py-2 text-sm font-semibold text-ink">
-              {t("comingSoon")}
-            </span>,
-          );
-        } else if (p.demoUrl) {
-          links.push(
-            <a key="live" href={p.demoUrl} target="_blank" rel="noopener noreferrer" className={`${button} bg-accent text-on-accent`}>
-              {t("live")} <span aria-hidden>↗</span>
-            </a>,
-          );
-        }
-        if (p.repoUrl) {
-          links.push(
-            <a key="code" href={p.repoUrl} target="_blank" rel="noopener noreferrer" className={`${button} bg-surface text-ink`}>
-              <span translate="no" className="notranslate">GitHub</span> <span aria-hidden>↗</span>
-            </a>,
-          );
-        }
-        links.push(
-          <button
-            key="more"
-            type="button"
-            onClick={() => {
-              close();
-              onDetails(p);
-            }}
-            className="min-h-11 px-2 text-sm font-semibold text-muted underline underline-offset-4 hover:text-ink"
-          >
-            {t("details")}
-          </button>,
-        );
-        return links;
-      }}
     />
   );
 }

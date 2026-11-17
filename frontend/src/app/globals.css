@@ -396,69 +396,61 @@ html {
   transform: none;
 }
 
-/* ---------- persona travel (persona-traveler.tsx) ---------- */
-/* while the travelling figure runs, the static ones in the slots hide; on a slot she has landed
-   on, the slot's own figure shows and the traveller hides (same box, same image: no jump) */
-.persona-live > .persona-layer {
-  display: block;
+/* ---------- persona clips (clip.tsx, owner 2026-11-17) ---------- */
+/* she appears in each section: fades and scales in when its box comes into view */
+.persona-clip {
+  transition:
+    opacity 0.8s cubic-bezier(0.2, 0.7, 0.2, 1),
+    transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1);
 }
-.persona-live .persona-static {
-  visibility: hidden;
+.persona-clip[data-state="out"] {
+  opacity: 0;
+  transform: translateY(14px) scale(0.94);
 }
-.persona-live[data-landed="hero"] [data-persona-slot="hero"] .persona-static,
-.persona-live[data-landed="about"] [data-persona-slot="about"] .persona-static {
-  visibility: visible;
+/* the project panel beside the belt: the newly picked project slides in */
+.project-info {
+  animation: project-info 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
-/* the belt island's own figure drops in over the last part of the way down
-   (Tailwind's translate utilities use the `translate` property, so `transform` is free here) */
-.persona-live [data-persona-slot="work"] {
-  transform: translateY(calc((1 - var(--ring-in, 0)) * -18%));
+@keyframes project-info {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
 }
-.persona-live [data-persona-slot="work"] .persona-static {
-  visibility: visible;
-  opacity: var(--ring-in, 0);
-}
-.persona-live[data-landed] .persona-traveler {
-  visibility: hidden;
-}
-/* she travels under the content: a soft halo in the page colour keeps text readable over her */
-:is(.persona-live, .film-live) :is(#hero-name, #hero-name ~ div p, #hero-name ~ p, #about h2, #about p, #about dt, #about dd, #work h2, #work p) {
-  text-shadow:
-    0 0 2px var(--bg),
-    0 0 8px var(--bg),
-    0 0 16px var(--bg);
-}
-
-/* a frame sequence is drawing on the canvas: hide the photo / pose stills under it */
-
-/* ---------- persona film (persona-film.tsx) ---------- */
-/* the film plays her: the static figures (slots, belt island, contact stage) step aside */
-.film-live .persona-static,
-.film-live [data-centerpiece],
-.film-contact .persona-stage {
-  visibility: hidden;
-}
-/* the belt's island turns see-through: she stands in the middle of the belt, in the film */
-.film-live [data-slot="sushi-conveyor-menu"] {
-  --island: transparent;
-  --island-low: transparent;
-  --island-wall: transparent;
-}
-/* edges feathered into the page colour (the studio is cream like the page) */
-.persona-film video {
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent), linear-gradient(to bottom, #000 76%, transparent);
+/* the cream studio melts into the page: all four edges feathered (--fx: the side fade; the pointing
+   clip keeps it narrow, her hand reaches the edge), plus a soft radial vignette for the corners */
+.persona-clip :is(video, img) {
+  --fx: 20%;
+  -webkit-mask-image:
+    linear-gradient(to right, transparent, #000 var(--fx), #000 calc(100% - var(--fx)), transparent),
+    linear-gradient(to bottom, transparent, #000 9%, #000 88%, transparent),
+    radial-gradient(ellipse 75% 75% at 50% 50%, #000 70%, transparent 100%);
   -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent), linear-gradient(to bottom, #000 76%, transparent);
+  mask-image:
+    linear-gradient(to right, transparent, #000 var(--fx), #000 calc(100% - var(--fx)), transparent),
+    linear-gradient(to bottom, transparent, #000 9%, #000 88%, transparent),
+    radial-gradient(ellipse 75% 75% at 50% 50%, #000 70%, transparent 100%);
   mask-composite: intersect;
 }
-/* dark page: only a soft spotlight around her, the cream studio fades out */
-.dark .persona-film video {
-  -webkit-mask-image: radial-gradient(ellipse 20% 46% at var(--fx, 50%) 56%, #000 50%, transparent 100%);
-  mask-image: radial-gradient(ellipse 20% 46% at var(--fx, 50%) 56%, #000 50%, transparent 100%);
+.persona-clip[data-mode="point"] :is(video, img) {
+  --fx: 11%;
+}
+/* dark page: the cream studio is a soft spotlight; the edges fade out further */
+.dark .persona-clip :is(video, img) {
+  --fx: 26%;
+}
+.dark .persona-clip[data-mode="point"] :is(video, img) {
+  --fx: 14%;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .persona-wave {
+    animation: none;
+  }
+  .persona-clip {
+    transition: none;
+  }
+  .project-info {
     animation: none;
   }
   .ring-figure {

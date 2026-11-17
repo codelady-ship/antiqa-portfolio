@@ -1,62 +1,42 @@
 /**
- * Persona assets (the figure of Antiqa that follows the scroll). Files live in
- * frontend/public/persona/ — see the README there.
- *
- * Until the film exists `film` stays null and the travelling figure is her photo
- * (src/components/persona/antiqa.webp, imported once, so Next serves one hashed copy) moved by
- * persona-traveler.tsx. The film: clips from Google Flow (docs/FLOW-PERSONA-PROMPTS.md), joined by
- * scripts/persona-film.mjs, which prints the `film` block below.
+ * Her videos, one per section (owner, 2026-11-17): she no longer travels between sections. When a
+ * section comes into view she appears there (fade + scale) and does her movement. Made from the
+ * Google Flow / Veo clips by `node scripts/persona-clips.mjs` (files in public/persona/clips/).
+ * Desktop (≥ 1024 px) only; phones keep the static page. With reduced motion the poster (a still
+ * frame) shows instead of the video.
  */
-
-/** Page chapters the figure reacts to (data-persona="…" on the sections). */
-export type Chapter = "hero" | "skills" | "work" | "contact";
-
-/** Poses for the slot figures: the direction she looks / leans. */
-export type Pose = "idle" | "up" | "down" | "left" | "right";
-
-type Section = "hero" | "about" | "work" | "contact";
-
-/**
- * A scroll-scrubbed film (owner's "AI Character Portfolio" guide, 2026-11-16): one <video>, every
- * frame a keyframe, in a fixed stage behind the page. The scroll position picks the time:
- * on load the hero clip plays by itself up to `marks.hero`; after that each section holds on its
- * mark for the first `hold` share of the way to the next section (she stands while it is read),
- * then the film plays on to the next mark. See persona-film.tsx.
- */
-export type Film = {
-  /** H.264, all keyframes (-g 1), no audio; the film runs only ≥ 1024 px */
-  desktop: string;
-  /** the 854 px encode, kept for a later phone version (phones show the static page for now) */
-  mobile?: string;
-  /** first frame, shown while the film loads (and the only picture with reduced motion) */
+export type Clip = {
+  /** H.264, no audio */
+  src: string;
+  /** a still frame (first frame), shown until the video plays and with reduced motion */
   poster: string;
   width: number;
   height: number;
-  /** seconds */
-  duration: number;
-  /** film seconds where she has reached each section's pose (the end of its clip) */
-  marks: { hero: number; about: number; work: number; contact?: number };
-  /** share of the scroll between two sections spent holding on the first one's mark (0 … 0.9) */
+};
+
+export type PointClip = Clip & {
+  /** seconds: she stands at rest (the clip starts / reverses here) */
+  rest: number;
+  /** seconds: her arm is out, towards the plate; the video holds on this frame while a plate is hovered */
   hold: number;
-  /** where she stands in the film frame at each mark, 0 = left edge … 1 = right edge */
-  focus: Partial<Record<Section, number>> & { hero: number };
-  /**
-   * where she should stand on the screen at each mark,
-   * 0 = left … 1 = right of the viewport; "belt" = the middle of the project belt
-   * (owner: right in the hero, left in About, centre in Projects)
-   */
-  place: Partial<Record<Section, number | "belt">> & { hero: number | "belt" };
+  /** the side she points to in the file itself; the other side is the same video mirrored (CSS) */
+  faces: "left" | "right";
 };
 
 export const PERSONA: {
-  /** the scroll-scrubbed film; null = the photo traveller (persona-traveler.tsx) */
-  film: Film | null;
-  /** pose stills for the slot figures; a missing pose = her photo, leaning (CSS) */
-  poses: Partial<Record<Pose, string>>;
+  /** hero (right) and contact: she waves (a short loop) */
+  wave: Clip;
+  /** About: she sits down at the desk and types; scrubbed by the scroll (every frame a keyframe) */
+  desk: Clip;
+  /**
+   * Projects: she points at the hovered plate. For now cut from the wave (its arm-raise part,
+   * 0 … 1.5 s): her right arm goes out sideways, to the viewer's left. When the real pointing clip
+   * (clip4) is ready: `node scripts/persona-clips.mjs --wave clip1.mp4 --desk clip3.mp4 --point clip4.mp4`,
+   * then set `rest`, `hold`, `faces` and the size here.
+   */
+  point: PointClip;
 } = {
-  film: null,
-  // when the AI poses are ready, e.g.:
-  // poses: { idle: "/persona/poses/idle.webp", up: "/persona/poses/up.webp", down: "/persona/poses/down.webp",
-  //          left: "/persona/poses/left.webp", right: "/persona/poses/right.webp" },
-  poses: {},
+  wave: { src: "/persona/clips/wave.mp4", poster: "/persona/clips/wave.webp", width: 432, height: 640 },
+  desk: { src: "/persona/clips/desk.mp4", poster: "/persona/clips/desk.webp", width: 720, height: 540 },
+  point: { src: "/persona/clips/point.mp4", poster: "/persona/clips/point.webp", width: 360, height: 534, rest: 0.4, hold: 0.88, faces: "left" },
 };
