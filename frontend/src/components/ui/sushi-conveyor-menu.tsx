@@ -97,8 +97,15 @@ export interface SushiConveyorMenuProps extends React.ComponentProps<"section"> 
   spacing?: number;
   /** Radius of the belt's ends as a multiple of the default (a deeper island for the centerpiece). */
   curve?: number;
-  /** Smallest plate diameter in px on narrow screens. */
+  /** Smallest plate diameter in px on narrow screens (ignored with autoDensity: the belt never overflows). */
   minPlate?: number;
+  /**
+   * Fit any number of plates (1 … ~20): `spacing` / `curve` become the look for a handful of plates;
+   * fewer plates get a longer gap (the loop keeps room for the island), more plates first close the
+   * gaps (never closer than a lifted plate needs), then get a deeper oval, then get smaller. The
+   * cruise speed follows the plate size.
+   */
+  autoDensity?: boolean;
   /** classes sizing the belt before it is measured (server render), e.g. responsive aspect ratios, so it does not shift. */
   initialClass?: string;
   /** A click on a plate calls this instead of opening the built-in dialog (the site's own project modal). */
@@ -213,6 +220,22 @@ function makeGeo(width: number, n: number, d: number, kb: number, spacing = 1, c
   return g;
 }
 
+/** autoDensity: closest pitch (in SPACING units) at which a lifted plate (×1.08) still clears its neighbours */
+const MIN_GAP = 1.24 / SPACING;
+/** autoDensity: the shortest loop, in plate diameters, that still leaves the island its room */
+const MIN_LOOP = 12;
+
+/** autoDensity: gap and curve for n plates, from the look set for a handful of plates (base spacing / curve). */
+export function density(n: number, spacing: number, curve: number, narrow = false) {
+  const count = Math.max(1, n);
+  return {
+    // few plates: a longer gap, so the loop (and the island in it) keeps its size
+    spacing: Math.max(spacing, MIN_LOOP / (SPACING * count)),
+    // many plates: a deeper oval holds more belt in the same width (phones go nearly round)
+    curve: curve * clamp(Math.sqrt(count / 6), 1, narrow ? 2.6 : 1.8),
+  };
+}
+
 function halfSpan(g: Geo) {
   let span = 0;
   for (let j = 0; j < 120; j++) {
@@ -300,6 +323,7 @@ export function SushiConveyorMenu({
   spacing = 1,
   curve = 1,
   minPlate = 96,
+  autoDensity = false,
   initialClass = "aspect-[2]",
   onPick,
   info,
@@ -344,11 +368,28 @@ export function SushiConveyorMenu({
 
   const geo = React.useMemo(() => {
     if (!size.stage || count === 0) return null;
-    const span = halfSpan(makeGeo(1000, count, 100, kb, spacing, curve)) / 100;
     const cap = wide ? 150 : clamp(size.section * 0.143, 96, 150);
-    const fit = (size.stage - 8) / (2 * span);
-    return makeGeo(size.stage, count, Math.round(clamp(fit, Math.min(minPlate, cap), cap)), kb, spacing, curve);
-  }, [size.stage, size.section, count, kb, wide, spacing, curve, minPlate]);
+    const fitFor = (sp: number, cv: number) => (size.stage - 8) / ((2 * halfSpan(makeGeo(1000, count, 100, kb, sp, cv))) / 100);
+    if (!autoDensity) {
+      const fit = fitFor(spacing, curve);
+      return makeGeo(size.stage, count, Math.round(clamp(fit, Math.min(minPlate, cap), cap)), kb, spacing, curve);
+    }
+    const auto = density(count, spacing, curve, narrow);
+    let sp = auto.spacing;
+    // too small at the preferred gap: close the gaps first (bisection: fit falls as the gap grows)
+    const want = cap * 0.8;
+    if (fitFor(sp, auto.curve) < want && sp > MIN_GAP) {
+      let lo = MIN_GAP;
+      let hi = sp;
+      for (let k = 0; k < 16; k++) {
+        const mid = (lo + hi) / 2;
+        if (fitFor(mid, auto.curve) >= want) lo = mid;
+        else hi = mid;
+      }
+      sp = lo;
+    }
+    return makeGeo(size.stage, count, Math.max(16, Math.floor(Math.min(fitFor(sp, auto.curve), cap))), kb, sp, auto.curve);
+  }, [size.stage, size.section, count, kb, wide, narrow, spacing, curve, minPlate, autoDensity]);
 
   const live = React.useRef({
     geo: null as Geo | null, active: null as number | null, paused: false, reduced: false, open: false, count: 0, speed: 26,
@@ -360,7 +401,8 @@ export function SushiConveyorMenu({
     onPick: undefined as ((index: number) => void) | undefined,
   });
   live.current = {
-    geo, active, paused, reduced, open: openIndex !== null, count, speed: Math.max(0, speed),
+    // autoDensity: smaller plates travel slower, so a full belt does not look like it races
+    geo, active, paused, reduced, open: openIndex !== null, count, speed: Math.max(0, autoDensity && geo ? speed * clamp(geo.d / 110, 0.5, 1.1) : speed),
     activeControlled: activeProp !== undefined, pausedControlled: pausedProp !== undefined,
     onActiveChange, onPausedChange, onOpenChange, onAdd, onPick,
   };
@@ -900,12 +942,13 @@ export function SushiConveyorMenu({
           </svg>
         )}
       </div>
+      {/* autoDensity: her size follows the usual plate size, not the smaller plates of a full belt */}
       {g && centerpiece && (
         <div
           aria-hidden="true"
           data-centerpiece
           className="pointer-events-none absolute"
-          style={{ left: g.cx, top: g.ym + g.d * 0.3, width: g.d * centerWidth, transform: "translate(-50%, -100%)", zIndex: 100 + Math.round(g.ym) }}
+          style={{ left: g.cx, top: g.ym + g.d * 0.3, width: (autoDensity ? Math.max(g.d, Math.min(g.d * 1.75, 140)) : g.d) * centerWidth, transform: "translate(-50%, -100%)", zIndex: 100 + Math.round(g.ym) }}
         >
           {centerpiece}
         </div>

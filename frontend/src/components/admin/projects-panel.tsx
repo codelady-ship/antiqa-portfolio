@@ -13,7 +13,7 @@ type SeedRepo = { url: string; featured?: boolean; backend?: string; title?: str
 export function ProjectsPanel({ seedRepos }: { seedRepos: SeedRepo[] }) {
   const t = useTranslations("Admin");
   const [list, setList] = useState<AdminProject[] | null>(null);
-  const [busy, setBusy] = useState<"" | "sync" | "seed">("");
+  const [busy, setBusy] = useState<"" | "sync" | "seed" | "order">("");
   const [msg, setMsg] = useState("");
 
   // resolves once the list is fresh (a row clears its optimistic ticks then)
@@ -40,6 +40,28 @@ export function ProjectsPanel({ seedRepos }: { seedRepos: SeedRepo[] }) {
     } finally {
       setBusy("");
     }
+  };
+
+  // ↑ / ↓: swap with the neighbour (within the same group: featured projects always come first), then
+  // renumber the list's order values so the site shows exactly this order (one PATCH per changed project)
+  const move = async (i: number, dir: -1 | 1) => {
+    if (!list) return;
+    const j = i + dir;
+    if (j < 0 || j >= list.length || list[j].featured !== list[i].featured) return;
+    const next = [...list];
+    [next[i], next[j]] = [next[j], next[i]];
+    setList(next);
+    setBusy("order");
+    const step = Math.max(1, Math.floor(1000 / next.length));
+    const changes = next.map((p, k) => ({ p, order: (next.length - k) * step })).filter(({ p, order }) => p.order !== order);
+    try {
+      await Promise.all(changes.map(({ p, order }) => api(`/api/projects/${p.id}`, { method: "PATCH", body: JSON.stringify({ order }) })));
+    } catch (e) {
+      setMsg(`${t("error")}: ${(e as Error).message}`);
+    }
+    await refreshSite();
+    await load();
+    setBusy("");
   };
 
   // one-time import of the projects that were on the site before the database existed
@@ -91,8 +113,16 @@ export function ProjectsPanel({ seedRepos }: { seedRepos: SeedRepo[] }) {
         <p className="text-muted">{t("empty")}</p>
       ) : (
         <ul className="grid gap-3">
-          {list.map((p) => (
-            <ProjectRow key={p.id} p={p} onChange={load} />
+          {list.map((p, i) => (
+            // the order is in the key: a reorder remounts the row, so its form never saves a stale order
+            <ProjectRow
+              key={`${p.id}:${p.order}`}
+              p={p}
+              onChange={load}
+              onMove={busy ? undefined : (dir) => void move(i, dir)}
+              canUp={i > 0 && list[i - 1].featured === p.featured}
+              canDown={i < list.length - 1 && list[i + 1].featured === p.featured}
+            />
           ))}
         </ul>
       )}
@@ -100,7 +130,19 @@ export function ProjectsPanel({ seedRepos }: { seedRepos: SeedRepo[] }) {
   );
 }
 
-function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => Promise<unknown> | void }) {
+function ProjectRow({
+  p,
+  onChange,
+  onMove,
+  canUp = false,
+  canDown = false,
+}: {
+  p: AdminProject;
+  onChange: () => Promise<unknown> | void;
+  onMove?: (dir: -1 | 1) => void;
+  canUp?: boolean;
+  canDown?: boolean;
+}) {
   const t = useTranslations("Admin");
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState(false);
@@ -144,6 +186,14 @@ function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => Promise<
   return (
     <li className={`rounded-2xl border border-line bg-surface p-4 ${flag("hidden", p.hidden) ? "opacity-60" : ""}`}>
       <div className="flex flex-wrap items-center gap-3">
+        <span className="flex flex-col">
+          <button type="button" aria-label={t("moveUp")} title={t("moveUp")} disabled={!onMove || !canUp} onClick={() => onMove?.(-1)} className="grid h-6 w-8 place-items-center rounded text-muted hover:text-ink disabled:opacity-25">
+            ▲
+          </button>
+          <button type="button" aria-label={t("moveDown")} title={t("moveDown")} disabled={!onMove || !canDown} onClick={() => onMove?.(1)} className="grid h-6 w-8 place-items-center rounded text-muted hover:text-ink disabled:opacity-25">
+            ▼
+          </button>
+        </span>
         <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="flex min-w-0 flex-1 items-center gap-3 text-left">
           <span className="text-muted">{open ? "▾" : "▸"}</span>
           <span className="min-w-0">

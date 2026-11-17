@@ -24,6 +24,8 @@ export function Contact({ profile, bubble, aiNote }: { profile: Profile; bubble?
     c.github && { label: "GitHub", href: c.github, k: "GitHub", brand: true },
     c.linkedin && { label: "LinkedIn", href: c.linkedin, k: "LinkedIn", brand: true },
     c.phone && { label: c.phone, href: `tel:${c.phone.replace(/\s/g, "")}`, k: t("phone") },
+    // other socials added in the admin panel
+    ...(profile.socials ?? []).map((s) => ({ label: s.label, href: s.url, k: s.label, brand: true })),
   ].filter(Boolean) as { label: string; href: string; k: string; brand?: boolean }[];
 
   const copy = async () => {

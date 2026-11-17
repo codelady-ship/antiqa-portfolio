@@ -25,6 +25,8 @@ const ProfileSchema = new Schema(
       github: { type: String, default: "" },
       instagram: { type: String, default: "" },
     },
+    // other socials the owner adds in the admin panel (YouTube, X, Behance, …): shown in Contact and About
+    socials: { type: [{ _id: false, label: { type: String, default: "" }, url: { type: String, default: "" } }], default: [] },
   },
   { timestamps: true },
 );

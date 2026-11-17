@@ -18,7 +18,8 @@ import type { Project } from "@/lib/types";
  */
 const SHOWCASE_FALLBACK = new Set(
   // owner, 2026-11-17: Programmers List (task7/task6) and this portfolio are off the belt
-  ["planera", "hypedomino", "jeparla", "masapay", "curtain-shop-web-site-frontend", "codelady-skills"].map((n) => n.toLowerCase()),
+  ["planera", "hypedomino", "jeparla", "masapay", "curtain-shop-web-site-frontend", "codelady-skills",
+   "ecommerse-app", "my-fitness-app", "my-quiz-app", "hello-fresh-with-react", "net-pro-group-fiqma", "afn-rent-a-car-fiqma"].map((n) => n.toLowerCase()),
 );
 export const onBelt = (p: Project) => !p.hidden && (p.fullStack ?? SHOWCASE_FALLBACK.has(p.name.toLowerCase()));
 
@@ -177,9 +178,10 @@ export function ProjectConveyor({
       caption={t("beltCaption")}
       centerpiece={figure}
       centerWidth={1.15}
+      // the look for ~6 projects; autoDensity fits any count from the data (1 … ~20)
       spacing={1.6}
       curve={1.5}
-      minPlate={64}
+      autoDensity
       // measured belt sizes (width / height) for these props: phones ~1.6, tablets ~2.07, ≥ 1024 ~1.74
       initialClass="aspect-[1.6] sm:aspect-[2.07] lg:aspect-[1.74]"
       technicalDetails

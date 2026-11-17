@@ -18,7 +18,7 @@ export function ProfileForm({ seed }: { seed: Profile }) {
         // first run: database is empty → start from the current site data
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { cv, ...rest } = p?.name ? ({ ...seed, ...p } as Profile) : seed;
-        setF({ ...rest, experience: rest.experience ?? [] });
+        setF({ ...rest, experience: rest.experience ?? [], socials: rest.socials ?? [] });
       })
       .catch((e) => setStatus(`${t("error")}: ${(e as Error).message}`));
   }, [seed, t]);
@@ -35,11 +35,12 @@ export function ProfileForm({ seed }: { seed: Profile }) {
     setStatus("saving");
     try {
       const { name, initials, tagline, about, location, openToWork, education, experience, contacts } = f;
+      const socials = (f.socials ?? []).map((s) => ({ label: s.label.trim(), url: s.url.trim() })).filter((s) => s.label && s.url);
       const roles = { az: clean(f.roles.az), en: clean(f.roles.en) };
       const skills = clean(f.skills);
       await api("/api/profile", {
         method: "PUT",
-        body: JSON.stringify({ name, initials, roles, tagline, about, location, openToWork, skills, education, experience, contacts }),
+        body: JSON.stringify({ name, initials, roles, tagline, about, location, openToWork, skills, education, experience, contacts, socials }),
       });
       await refreshSite();
       setStatus("saved");
@@ -200,6 +201,26 @@ export function ProfileForm({ seed }: { seed: Profile }) {
           <Field label={t("instagram")}>
             <Input value={f.contacts.instagram} onChange={(e) => setC("instagram", e.target.value.replace(/^@/, ""))} />
           </Field>
+        </div>
+        {/* other socials: shown in Contact and About (https links only, up to 6) */}
+        <div className="mt-6 grid gap-3">
+          <p className="text-sm font-semibold">{t("socials")}</p>
+          {(f.socials ?? []).map((s, i) => (
+            <div key={i} className="grid gap-2 sm:grid-cols-[12rem_1fr_auto]">
+              <Input aria-label={t("socialLabel")} placeholder="YouTube" maxLength={40} value={s.label} onChange={(e) => set("socials", (f.socials ?? []).map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))} />
+              <Input aria-label={t("socialUrl")} type="url" pattern="https://.*" placeholder="https://" value={s.url} onChange={(e) => set("socials", (f.socials ?? []).map((x, j) => (j === i ? { ...x, url: e.target.value } : x)))} />
+              <Button variant="ghost" onClick={() => set("socials", (f.socials ?? []).filter((_, j) => j !== i))}>
+                {t("remove")}
+              </Button>
+            </div>
+          ))}
+          {(f.socials ?? []).length < 6 && (
+            <div>
+              <Button variant="ghost" onClick={() => set("socials", [...(f.socials ?? []), { label: "", url: "" }])}>
+                + {t("addSocial")}
+              </Button>
+            </div>
+          )}
         </div>
       </Card>
 

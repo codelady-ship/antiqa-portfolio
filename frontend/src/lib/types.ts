@@ -21,6 +21,8 @@ export type Profile = {
     github: string;
     instagram: string;
   };
+  /** other socials (admin): label + https link */
+  socials?: { label: string; url: string }[];
   cv: Partial<Record<"az" | "en", string>>;
 };
 

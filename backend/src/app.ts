@@ -43,6 +43,8 @@ export const ProfileInput = z.object({
     github: url,
     instagram: z.string().regex(/^[A-Za-z0-9._]{0,30}$/),
   }),
+  // other socials: short label + https link, a handful
+  socials: z.array(z.object({ label: z.string().trim().min(1).max(40), url: httpsUrl })).max(6).optional(),
 });
 
 // extra card links (e.g. related repos): https only, short labels, a handful per project
