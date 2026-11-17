@@ -18,18 +18,18 @@ import type { Project } from "@/lib/types";
  */
 const SHOWCASE_FALLBACK = new Set(
   // owner, 2026-11-17: Programmers List (task7/task6) and this portfolio are off the belt
-  ["planera", "hypedomino", "jeparla", "masapay", "curtain-shop-web-site-frontend", "scholarship-visa-scam-checker"].map((n) => n.toLowerCase()),
+  ["planera", "hypedomino", "jeparla", "masapay", "curtain-shop-web-site-frontend", "codelady-skills"].map((n) => n.toLowerCase()),
 );
 export const onBelt = (p: Project) => !p.hidden && (p.fullStack ?? SHOWCASE_FALLBACK.has(p.name.toLowerCase()));
 
 /**
- * Screenshots for projects that have no public live URL yet (mShots needs one), by repo name:
- * Codelady Skills (the skills site, not deployed yet) was shot from its local build.
+ * Fixed screenshots instead of the live-site shot (mShots), by repo name: Codelady Skills was shot
+ * from its own build (its first view is an animated intro).
  */
-const THUMBS: Record<string, string> = { "scholarship-visa-scam-checker": "/projects/codelady-skills.webp" };
+const THUMBS: Record<string, string> = { "codelady-skills": "/projects/codelady-skills.webp" };
 /** the stack chips, where the repo behind the record is not the project's own code (its languages / topics) */
 const STACK: Record<string, string[]> = {
-  "scholarship-visa-scam-checker": ["Next.js", "TypeScript", "Supabase", "Cloudflare Workers", "Gemini API", "Claude Skills"],
+  "codelady-skills": ["Next.js", "TypeScript", "Supabase", "Cloudflare Workers", "Gemini API", "Claude Skills"],
 };
 
 /** topics that say nothing about the stack */

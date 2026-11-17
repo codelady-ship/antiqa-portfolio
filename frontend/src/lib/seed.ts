@@ -73,10 +73,10 @@ export const SEED_REPOS: { url: string; featured?: boolean; backend?: string; ti
   { url: "https://github.com/codelady-ship/hypedomino", featured: true, title: "HypeDomino" },
   { url: "https://github.com/codelady-ship/masapay", featured: true, title: "masapay" },
   {
-    url: "https://github.com/codelady-ship/scholarship-visa-scam-checker",
+    url: "https://github.com/codelady-ship/codelady-skills",
     featured: true,
     title: "Codelady Skills",
-    // the skill repos are private (they would 404 for visitors): no extra links
+    demo: "https://codelady-ship.github.io/codelady-skills/az/",
     links: [],
   },
   { url: "https://github.com/codelady-ship/planera", featured: true, title: "Planera — Randevum", demo: "https://randevum-seven.vercel.app" },

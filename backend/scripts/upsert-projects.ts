@@ -34,7 +34,7 @@ export const SHOWCASE = [
   "jeparla", // Next.js + Spring Boot + PostgreSQL (coming soon)
   "masapay", // Next.js + Spring Boot + PostgreSQL + Redis
   "Curtain-shop-web-site-frontend", // Perde.az: React + Spring Boot backend repo
-  "scholarship-visa-scam-checker", // "Codelady Skills": the skills site (Next.js, Supabase, Cloudflare Workers, Gemini) + the skills
+  "codelady-skills", // "Codelady Skills": the skills site (Next.js, Supabase, Cloudflare Workers, Gemini) + the skills
   // owner, 2026-11-17: Programmers List (task7/task6) and this portfolio are off the belt
 ];
 
@@ -110,23 +110,21 @@ const ENTRIES: Entry[] = [
     },
   },
   {
-    repo: "https://github.com/codelady-ship/scholarship-visa-scam-checker",
-    // the repo is private again (2026-11-17): no code link on the site
-    allowPrivate: true,
+    // owner, 2026-11-17: "skillərlə bağlı saytı da qoy portfolioya". Its own public repo (MIT) and
+    // live site since 2026-11-17; it replaces the old scholarship-visa-scam-checker record (hide that
+    // one: --hide scholarship-visa-scam-checker)
+    repo: "https://github.com/codelady-ship/codelady-skills",
     patch: {
-      // owner, 2026-11-17: "skillərlə bağlı saytı da qoy portfolioya". The site (local repo
-      // agensi-skills/skills-site, no GitHub remote and not deployed yet) is shown through this
-      // record as "coming soon"; give it its own entry + live link once it is pushed and deployed.
       title: "Codelady Skills",
       featured: true,
       hidden: false,
-      comingSoon: true,
+      comingSoon: false,
+      demoOverride: "https://codelady-ship.github.io/codelady-skills/az/",
       order: 10,
       summary: {
         az: "Claude AI skill-lərim üçün sayt: hər skill-in öz iş paneli var (səsləndirmə, fırıldaq yoxlaması, xaricdə təhsil, viza, iş müraciəti), müəlliflər üçün marketplace və ödəniş. Next.js + TypeScript, Supabase, Cloudflare Workers və Gemini API üzərində qurulur.",
         en: "A website for my Claude AI skills: each skill has its own working panel (voiceover, scam check, study abroad, visa, job applications), plus a marketplace with payments for skill authors. Being built with Next.js + TypeScript, Supabase, Cloudflare Workers and the Gemini API.",
       },
-      // the skill repos are private (they would 404 for visitors): no extra links
       links: [],
     },
   },
