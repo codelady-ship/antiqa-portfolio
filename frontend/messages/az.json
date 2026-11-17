@@ -83,7 +83,17 @@
     "ringHint": "Sürüşdür və fırlat",
     "ringIdle": "Kartın üstünə gəl — sənə danışım",
     "ringIdleTouch": "Karta toxun — sənə danışım",
-    "count": "{n} layihə"
+    "count": "{n} layihə",
+    "beltLabel": "Layihələr lenti",
+    "beltCaption": "Layihənin üstünə gəl — lent dayanır. Kliklə, layihəni aç.",
+    "allOnGithub": "Bütün layihələr GitHub-da",
+    "previous": "Əvvəlki layihə",
+    "next": "Növbəti layihə",
+    "pause": "Lenti dayandır",
+    "legendLive": "canlı demo",
+    "legendCode": "kod",
+    "legendSoon": "tezliklə",
+    "beltNote": "Full-stack layihələrim: frontend + backend"
   },
   "Contact": {
     "kicker": "03 — Əlaqə",
@@ -247,6 +257,7 @@
     "privateNote": "Bu repo gizlidir: saytda kod linki və README göstərilmir.",
     "allowPrivate": "Gizli repo — kod linki olmadan göstər",
     "comingSoon": "Tezliklə nişanı (hələ yayımlanmayıb)",
+    "fullStack": "Lentdə göstər (full-stack layihə)",
     "demoOff": "Demo işləmir — yalnız kod kimi göstər",
     "exists": "Bu repo artıq saytdadır.",
     "save2": "Sayta əlavə et",

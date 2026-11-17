@@ -53,7 +53,7 @@ export default async function Home() {
             <About profile={profile} projects={projects} />
           </div>
         </div>
-        <Work projects={projects} alt="" />
+        <Work projects={projects} />
         <PersonaTraveler heroBubble={tp("hero")} aboutBubble={tp("skills")} />
       </div>
       <div className={GROUP}>

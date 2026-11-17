@@ -366,16 +366,8 @@ html {
   transform-origin: 0 100%;
 }
 
-/* ---------- project ring (#38) ---------- */
-.ring-card {
-  animation: ring-in 0.5s ease-out both;
-}
-@keyframes ring-in {
-  from {
-    opacity: 0;
-  }
-}
-/* placeholder poses: she leans towards the hovered card, a drawn hand points at it */
+/* ---------- persona figure poses (slots, belt island) ---------- */
+/* placeholder poses: she leans towards the side she looks at */
 .ring-figure {
   transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -390,16 +382,6 @@ html {
 }
 [data-pose="down"] .ring-figure {
   transform: translateY(3%) rotate(-2deg) scale(0.98);
-}
-.ring-hand {
-  opacity: 0;
-  transform: rotate(var(--aim, 0deg));
-  transition:
-    opacity 0.25s,
-    transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.ring-stage:not([data-pose="idle"]) .ring-hand {
-  opacity: 1;
 }
 /* real pose images (config.ts): cross-fade to the one for the current direction */
 .ring-figure [data-pose-img] {
@@ -431,7 +413,7 @@ html {
 .persona-live[data-landed="about"] [data-persona-slot="about"] .persona-static {
   visibility: visible;
 }
-/* the ring's own figure (below the cards) drops in over the last part of the way down
+/* the belt island's own figure drops in over the last part of the way down
    (Tailwind's translate utilities use the `translate` property, so `transform` is free here) */
 .persona-live [data-persona-slot="work"] {
   transform: translateY(calc((1 - var(--ring-in, 0)) * -18%));
@@ -458,16 +440,13 @@ html {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .persona-wave,
-  .ring-card {
+  .persona-wave {
     animation: none;
   }
-  .ring-figure,
-  .ring-hand {
+  .ring-figure {
     transition: none;
     transform: none !important;
   }
-  .ring-hand,
   .ring-figure [data-pose-img] {
     display: none;
   }

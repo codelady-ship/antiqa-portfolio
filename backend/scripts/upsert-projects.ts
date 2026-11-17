@@ -8,6 +8,9 @@
 //              repo fixes change homepages or descriptions. Warns when a demo override hides a new homepage.
 //   --hide a,b / --show a,b  only sets the "hidden" flag of these projects (no GitHub calls), e.g.
 //              --hide Food-Wagon-delivery-figma,net-pro-group-fiqma,exam-task-react
+//   --showcase only sets the "fullStack" flag (no GitHub calls): true for SHOWCASE, false for every
+//              other project, so the home page belt shows the full-stack work and not the early
+//              practice tasks (those stay in the database and on GitHub). With --dry-run: prints the plan.
 // Private repos (allowPrivate) need a GITHUB_TOKEN that can read them; the site shows them
 // without a code link or README (see present() in src/app.ts).
 // Idempotent: run it again to refresh. Never prints environment values or the connection string.
@@ -19,6 +22,21 @@ import { connectDb, Project } from "../src/models.js";
 import { fetchSnapshot, parseRepoUrl } from "../src/services/github.js";
 
 type Entry = { repo: string; patch: Record<string, unknown>; allowPrivate?: boolean };
+
+/**
+ * The projects on the home page belt (owner, 2026-11-16: "təzə vaxtlar yazdığım taskları qoyma,
+ * full stack olanları qoy"): a frontend and a backend of her own. Keep in sync with
+ * SHOWCASE_FALLBACK in frontend/src/components/work/project-conveyor.tsx.
+ */
+export const SHOWCASE = [
+  "planera", // Next.js + Spring Boot + PostgreSQL
+  "hypedomino", // Unity client, Go server, PostgreSQL, Redis, Next.js admin
+  "jeparla", // Next.js + Spring Boot + PostgreSQL (coming soon)
+  "masapay", // Next.js + Spring Boot + PostgreSQL + Redis
+  "Curtain-shop-web-site-frontend", // Perde.az: React + Spring Boot backend repo
+  "task7-front-end-for-task6-", // Fullstack Programmers List: Next.js server actions + MongoDB
+  "antiqa-portfolio", // this site: Next.js + Express + MongoDB
+];
 
 const ENTRIES: Entry[] = [
   {
@@ -109,6 +127,21 @@ const ENTRIES: Entry[] = [
       ],
     },
   },
+  {
+    // this site: Next.js frontend + Express/MongoDB API, both on Vercel
+    repo: "https://github.com/codelady-ship/antiqa-portfolio",
+    patch: {
+      title: "Antiqa Portfolio",
+      featured: true,
+      hidden: false,
+      order: 5,
+      demoOverride: "https://antiqa-portfolio.vercel.app/",
+      summary: {
+        az: "Bu sayt: layihələrimi GitHub-dan özü oxuyan portfolio. Next.js + TypeScript frontend, Express və MongoDB API, layihələri, CV-ləri və profili idarə edən admin paneli, az/en dil dəstəyi.",
+        en: "This site: a portfolio that reads my projects from GitHub by itself. A Next.js + TypeScript frontend, an Express + MongoDB API, an admin panel for projects, CVs and the profile, in Azerbaijani and English.",
+      },
+    },
+  },
 ];
 
 const args = process.argv.slice(2);
@@ -123,6 +156,7 @@ const listArg = (name: string) => {
 const refreshAll = args.includes("--refresh-all");
 const hide = listArg("--hide");
 const show = listArg("--show");
+const showcase = args.includes("--showcase");
 const only = onlyIdx >= 0 ? new Set(String(args[onlyIdx + 1] ?? "").toLowerCase().split(",").filter(Boolean)) : null;
 if (envPath && existsSync(envPath)) process.loadEnvFile(envPath); // values are never printed
 
@@ -154,7 +188,27 @@ async function setHidden(names: string[], hidden: boolean) {
   return failed;
 }
 
+/** --showcase: fullStack = true for SHOWCASE, false for the rest (case-insensitive names). */
+async function setShowcase() {
+  const want = new Set(SHOWCASE.map((n) => n.toLowerCase()));
+  if (dryRun && !process.env.MONGODB_URI) {
+    console.log(`would set fullStack=true for: ${SHOWCASE.join(", ")}; false for every other project`);
+    return 0;
+  }
+  await connect();
+  const all = (await Project.find({}, { name: 1, fullStack: 1, hidden: 1 }).lean()) as any[];
+  for (const p of all) {
+    const on = want.has(String(p.name).toLowerCase());
+    if (!dryRun && p.fullStack !== on) await Project.updateOne({ _id: p._id }, { $set: { fullStack: on } });
+    console.log(`${p.name}: ${on ? "on the belt" : "-"}${p.hidden ? " (hidden)" : ""}${dryRun ? " (dry run)" : ""}`);
+  }
+  const missing = SHOWCASE.filter((n) => !all.some((p) => String(p.name).toLowerCase() === n.toLowerCase()));
+  if (missing.length) console.log(`not in the database yet (add them first, e.g. --only antiqa-portfolio): ${missing.join(", ")}`);
+  return 0;
+}
+
 async function main() {
+  if (showcase) return setShowcase();
   if (hide || show) {
     if (dryRun) throw new Error("--hide/--show write directly; there is no dry run");
     return (hide ? await setHidden(hide, true) : 0) + (show ? await setHidden(show, false) : 0);

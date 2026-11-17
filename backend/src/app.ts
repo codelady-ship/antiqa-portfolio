@@ -55,6 +55,7 @@ export const ProjectPatch = z.object({
   backendUrl: url.optional(),
   featured: z.boolean().optional(),
   hidden: z.boolean().optional(),
+  fullStack: z.boolean().optional(),
   order: z.number().int().min(-1000).max(1000).optional(),
   links: ProjectLinks.optional(),
   comingSoon: z.boolean().optional(),
@@ -104,6 +105,8 @@ export function present(p: any, admin = false) {
     license: gh.license ?? null,
     languages: gh.languages ?? [],
     featured: !!p.featured,
+    // only when set (seed script / admin): unset lets the site fall back to its own list
+    ...(typeof p.fullStack === "boolean" && { fullStack: p.fullStack }),
     comingSoon: !!p.comingSoon,
     privateRepo: priv,
     ...(admin && { demoOff: !!p.demoOff }),
