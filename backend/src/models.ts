@@ -25,6 +25,8 @@ const ProfileSchema = new Schema(
       github: { type: String, default: "" },
       instagram: { type: String, default: "" },
     },
+    // other socials the owner adds in the admin panel (YouTube, X, Behance, …): shown in Contact and About
+    socials: { type: [{ _id: false, label: { type: String, default: "" }, url: { type: String, default: "" } }], default: [] },
   },
   { timestamps: true },
 );
@@ -46,6 +48,8 @@ const ProjectSchema = new Schema(
     // set when adminUrl is saved/synced: the panel refuses to be framed (X-Frame-Options /
     // CSP frame-ancestors), so the modal offers "open in a new tab" instead of a blank frame
     adminNoFrame: { type: Boolean, default: false },
+    // the same for the live demo (the computed live link: override, homepage or GitHub Pages)
+    demoNoFrame: { type: Boolean, default: false },
     featured: { type: Boolean, default: false },
     hidden: { type: Boolean, default: false },
     // shown on the project belt of the home page (a real full-stack project, not a practice task);

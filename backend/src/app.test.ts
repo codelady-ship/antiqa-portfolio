@@ -92,6 +92,8 @@ describe("admin panel url", () => {
     const base = { _id: "1", owner: "o", name: "n", repoUrl: "https://github.com/o/n" };
     expect(present({ ...base, adminHint: "x" })).toMatchObject({ adminUrl: null, adminHint: "" });
     expect(present({ ...base, adminUrl: "https://x.dev/admin", adminNoFrame: true })).toMatchObject({ adminUrl: "https://x.dev/admin", adminFrame: false });
+    expect(present({ ...base, demoOverride: "https://x.dev", demoNoFrame: true })).toMatchObject({ demoUrl: "https://x.dev", demoFrame: false });
+    expect(present(base)).not.toHaveProperty("demoFrame");
   });
   it("detects panels that refuse to be framed", async () => {
     const { frameBlocked } = await import("./app.js");

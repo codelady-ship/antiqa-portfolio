@@ -66,6 +66,7 @@ export default async function AboutPage() {
     c.linkedin && { k: "LinkedIn", label: c.linkedin.replace(/^https?:\/\/(www\.)?/, ""), href: c.linkedin },
     c.github && { k: "GitHub", label: c.github.replace(/^https?:\/\//, ""), href: c.github },
     c.instagram && { k: "Instagram", label: `@${c.instagram}`, href: `https://instagram.com/${c.instagram}` },
+    ...(profile.socials ?? []).map((s) => ({ k: s.label, label: s.url.replace(/^https?:\/\/(www\.)?/, ""), href: s.url })),
     cv && { k: t("cv"), label: "PDF", href: cv },
   ].filter((x): x is { k: string; label: string; href: string } => !!x);
   const faq = buildFaq(t, profile, locale, projects.length);

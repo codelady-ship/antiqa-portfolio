@@ -26,6 +26,8 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
   const canAdmin = !!p?.adminUrl && isSafeFrame(p.adminUrl);
   // the page the preview frame shows: the live demo, or (Admin tab) the project's admin panel
   const frameUrl = (tab === "admin" ? p?.adminUrl : p?.demoUrl) ?? "";
+  // the shown site refuses to be framed: an "open in a new tab" card instead of the preview
+  const blocked = (tab === "admin" && !!p?.adminUrl && p.adminFrame === false) || (tab === "demo" && canFrame && p?.demoFrame === false);
 
   // reset the view when another project opens (state adjusted during render, not in an effect)
   const [shown, setShown] = useState<Project | null>(null);
@@ -124,7 +126,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                   </button>
                 ))}
               </div>
-              {tab !== "readme" && (
+              {tab !== "readme" && !blocked && (
                 <div role="group" aria-label={t("viewport")} className="hidden rounded-full border border-line p-0.5 text-sm md:flex">
                   {(Object.keys(WIDTHS) as (keyof typeof WIDTHS)[]).map((k) => (
                     <button
@@ -166,15 +168,16 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
               aria-labelledby={`tab-${tab}`}
               className={`min-h-0 min-w-0 justify-center bg-bg-2 p-2 sm:p-5 md:flex ${info ? "max-md:hidden" : "flex"}`}
             >
-              {tab === "admin" && p.adminUrl && p.adminFrame === false ? (
+              {blocked ? (
+                // the site refuses to be framed (X-Frame-Options / CSP): a card instead of a blank frame
                 <div className="flex size-full flex-col items-center justify-center gap-5 rounded-2xl border border-line bg-bg p-8 text-center">
-                  <p className="max-w-md text-muted">{t("adminNoFrame")}</p>
-                  {p.adminHint && (
+                  <p className="max-w-md text-muted">{t(tab === "admin" ? "adminNoFrame" : "demoNoFrame")}</p>
+                  {tab === "admin" && p.adminHint && (
                     <p translate="no" className="notranslate rounded-full bg-butter-soft px-4 py-2 text-xs text-ink">
                       {t("adminHint")}: {p.adminHint}
                     </p>
                   )}
-                  <a href={p.adminUrl} target="_blank" rel="noopener noreferrer" className="rounded-full bg-ink px-6 py-3 font-medium text-bg">
+                  <a href={frameUrl} target="_blank" rel="noopener noreferrer" className="rounded-full bg-ink px-6 py-3 font-medium text-bg">
                     {t("openNew")} ↗
                   </a>
                 </div>

@@ -38,7 +38,14 @@ export const SHOWCASE = [
   "jeparla", // Next.js + Spring Boot + PostgreSQL (coming soon)
   "masapay", // Next.js + Spring Boot + PostgreSQL + Redis
   "Curtain-shop-web-site-frontend", // Perde.az: React + Spring Boot backend repo
-  "scholarship-visa-scam-checker", // "Codelady Skills": the skills site (Next.js, Supabase, Cloudflare Workers, Gemini) + the skills
+  "codelady-skills", // "Codelady Skills": the skills site (Next.js, Supabase, Cloudflare Workers, Gemini) + the skills
+  // owner, 2026-11-17: the finished projects with a Node.js + Express + MongoDB backend
+  "Ecommerse-app", // HUELINE: React + GSAP, Express + MongoDB
+  "My-Fitness-App", // Pulsa: Next.js, Express + MongoDB
+  "My-Quiz-App", // Kod Sınağı: React + Vite, Express + MongoDB
+  "hello-fresh-with-react", // HelloFresh clone: React + Vite, Express + MongoDB
+  "net-pro-group-fiqma", // Net Pro Group: HTML/CSS/JS, Express + MongoDB
+  "AFN-rent-a-car-fiqma", // AFN Rent a Car: React + TypeScript, Express + MongoDB
   // owner, 2026-11-17: Programmers List (task7/task6) and this portfolio are off the belt
 ];
 
@@ -62,6 +69,9 @@ const ENTRIES: Entry[] = [
       featured: true,
       hidden: false,
       order: 30,
+      // its demo page cannot be framed (X-Frame-Options: DENY): the modal's Demo tab shows an
+      // "open in a new tab" card for it (demoNoFrame, set on sync)
+      demoOverride: "https://ideyanest.com/az/projects/ismat-jahangirov/hypedomino-real-time-onlayn-domino-oyunu",
       summary: {
         az: "Real vaxtda onlayn çoxoyunçulu mobil domino oyunu. Unity (C#) klienti, WebSocket və protobuf ilə işləyən Go serveri, PostgreSQL, Redis və Next.js admin paneli var.",
         en: "A real-time online multiplayer mobile domino game, with a Unity (C#) client, a Go server over WebSocket and protobuf, PostgreSQL, Redis and a Next.js admin panel.",
@@ -69,14 +79,15 @@ const ENTRIES: Entry[] = [
     },
   },
   {
-    // private and not deployed yet: a "coming soon" card, no code link (summary from its README)
+    // private repo (no code link); live since 2026-11-17: the merchant area (it opens on its login page)
     repo: "https://github.com/codelady-ship/jeparla",
     allowPrivate: true,
     patch: {
       title: "Jeparla",
       featured: true,
       hidden: false,
-      comingSoon: true,
+      comingSoon: false,
+      demoOverride: "https://jeparla.duckdns.org/az/merchant",
       order: 25,
       summary: {
         az: "Qızıl, gümüş və brilyant zərgərlik mağazaları üçün çoxmağazalı kataloq: əyar, çəki, qiymət və brilyant filtrləri, AMB-nin gündəlik metal məzənnəsinə bağlı avtomatik qiymət, “Jeparla Verified” yoxlama statusları, mağaza kabineti və admin paneli. Next.js + TypeScript, Java Spring Boot və PostgreSQL üzərində qurulur.",
@@ -90,6 +101,9 @@ const ENTRIES: Entry[] = [
       featured: true,
       hidden: false,
       order: 20,
+      // GitHub Pages (live since 2026-11-17); liveOrSkip still leaves it out if it ever stops answering 200,
+      // so the card stays code-only instead of linking to a 404
+      demoOverride: "https://codelady-ship.github.io/masapay/",
       summary: {
         az: "Komanda layihəsi. Restoranlar üçün QR əsaslı hesab bölmə və ödəniş platforması: müştəri masadakı QR kodu skan edib canlı hesabı görür, hesabı bölür, bəxşiş əlavə edir və Payriff ilə ödəyir. React + TypeScript, Java Spring Boot, PostgreSQL və WebSocket üzərində qurulub.",
         en: "Team project. A QR-based bill-splitting and payment platform for restaurants: guests scan the table's QR code, see the live bill, split it, add a tip and pay via Payriff. Built with React + TypeScript, Java Spring Boot, PostgreSQL and WebSocket.",
@@ -114,24 +128,112 @@ const ENTRIES: Entry[] = [
     },
   },
   {
-    repo: "https://github.com/codelady-ship/scholarship-visa-scam-checker",
-    // the repo is private again (2026-11-17): no code link on the site
-    allowPrivate: true,
+    // owner, 2026-11-17: "skillərlə bağlı saytı da qoy portfolioya". Its own public repo (MIT) and
+    // live site since 2026-11-17; it replaces the old scholarship-visa-scam-checker record (hide that
+    // one: --hide scholarship-visa-scam-checker)
+    repo: "https://github.com/codelady-ship/codelady-skills",
     patch: {
-      // owner, 2026-11-17: "skillərlə bağlı saytı da qoy portfolioya". The site (local repo
-      // agensi-skills/skills-site, no GitHub remote and not deployed yet) is shown through this
-      // record as "coming soon"; give it its own entry + live link once it is pushed and deployed.
       title: "Codelady Skills",
       featured: true,
       hidden: false,
-      comingSoon: true,
+      comingSoon: false,
+      demoOverride: "https://codelady-ship.github.io/codelady-skills/az/",
       order: 10,
       summary: {
         az: "Claude AI skill-lərim üçün sayt: hər skill-in öz iş paneli var (səsləndirmə, fırıldaq yoxlaması, xaricdə təhsil, viza, iş müraciəti), müəlliflər üçün marketplace və ödəniş. Next.js + TypeScript, Supabase, Cloudflare Workers və Gemini API üzərində qurulur.",
         en: "A website for my Claude AI skills: each skill has its own working panel (voiceover, scam check, study abroad, visa, job applications), plus a marketplace with payments for skill authors. Being built with Next.js + TypeScript, Supabase, Cloudflare Workers and the Gemini API.",
       },
-      // the skill repos are private (they would 404 for visitors): no extra links
       links: [],
+    },
+  },
+  {
+    // full stack: frontend + Node.js / Express / MongoDB API in backend/ (owner, 2026-11-17: on the belt)
+    repo: "https://github.com/codelady-ship/Ecommerse-app",
+    patch: {
+      title: "HUELINE",
+      featured: true,
+      hidden: false,
+      order: 14,
+      demoOverride: "https://codelady-ship.github.io/Ecommerse-app/",
+      summary: {
+        az: "Uydurma qadın geyimi brendi HUELINE üçün lookbook və mağaza: kataloq, səbət, seçilmişlər, demo sifariş və bülleten. Hərəkətli React frontend (GSAP, Lenis) və Node.js + Express + MongoDB API. Demo layihədir, real ödəniş yoxdur.",
+        en: "A lookbook and shop for HUELINE, a fictional womenswear label: catalogue, bag, saved list, demo checkout and newsletter. A motion-heavy React frontend (GSAP, Lenis) with a Node.js + Express + MongoDB API. A demo: nothing is for sale.",
+      },
+    },
+  },
+  {
+    // full stack: frontend + Node.js / Express / MongoDB API in backend/ (owner, 2026-11-17: on the belt)
+    repo: "https://github.com/codelady-ship/My-Fitness-App",
+    patch: {
+      title: "Pulsa",
+      featured: true,
+      hidden: false,
+      order: 13,
+      demoOverride: "https://my-fitness-app-tau-drab.vercel.app/",
+      summary: {
+        az: "Ürək ritminə əsaslanan kardio-məşq tətbiqi: landing, proqramlar, məşqçilər, qiymətlər, giriş/qeydiyyat və istifadəçi/admin paneli (ürək göstəriciləri, gündəlik plan, üzvlər, işçilər). Next.js frontend və Node.js + Express + MongoDB API.",
+        en: "A heart-rate based cardio coaching app: landing page, programmes, coaches, pricing, sign-in and a user/admin dashboard (heart metrics, daily plan, members, staff). A Next.js frontend with a Node.js + Express + MongoDB API.",
+      },
+    },
+  },
+  {
+    // full stack: frontend + Node.js / Express / MongoDB API in backend/ (owner, 2026-11-17: on the belt)
+    repo: "https://github.com/codelady-ship/My-Quiz-App",
+    patch: {
+      title: "Kod Sınağı · Code Check",
+      featured: true,
+      hidden: false,
+      order: 12,
+      demoOverride: "https://codelady-ship.github.io/My-Quiz-App/",
+      summary: {
+        az: "HTML, CSS, JavaScript və React üzrə iki dilli (az/en) viktorina: hər raundda 10 təsadüfi sual, taymer, cavabların təhlili və onlayn liderlər cədvəli. React + Vite frontend və Node.js + Express + MongoDB API.",
+        en: "A bilingual (az/en) web-development quiz on HTML, CSS, JavaScript and React: 10 random questions a round, a timer, answer review and an online leaderboard. A React + Vite frontend with a Node.js + Express + MongoDB API.",
+      },
+    },
+  },
+  {
+    // full stack: frontend + Node.js / Express / MongoDB API in backend/ (owner, 2026-11-17: on the belt)
+    repo: "https://github.com/codelady-ship/hello-fresh-with-react",
+    patch: {
+      title: "HelloFresh clone (practice)",
+      featured: true,
+      hidden: false,
+      order: 11,
+      demoOverride: "https://codelady-ship.github.io/hello-fresh-with-react/",
+      summary: {
+        az: "Təlim layihəsi: HelloFresh saytının çoxsəhifəli klonu: planlar, reseptlər, abunə və hədiyyə kartları. React, React Router, Vite və Tailwind CSS frontend, Node.js + Express + MongoDB API. HelloFresh ilə əlaqəsi yoxdur.",
+        en: "Practice project: a multi-page clone of the HelloFresh meal-kit site with plans, recipes, subscriptions and gift cards. A React, React Router, Vite and Tailwind CSS frontend with a Node.js + Express + MongoDB API. Not affiliated with HelloFresh.",
+      },
+    },
+  },
+  {
+    // full stack: frontend + Node.js / Express / MongoDB API in backend/ (owner, 2026-11-17: on the belt)
+    repo: "https://github.com/codelady-ship/net-pro-group-fiqma",
+    patch: {
+      title: "Net Pro Group",
+      featured: true,
+      hidden: false,
+      order: 9,
+      demoOverride: "https://codelady-ship.github.io/net-pro-group-fiqma/",
+      summary: {
+        az: "Figma dizaynı əsasında İT və şəbəkə avadanlıqları şirkəti üçün çoxsəhifəli, responsiv sayt (təlim layihəsi). Əlaqə və məhsul sorğuları Node.js + Express + MongoDB API-yə yazılır; admin üçün status, qeyd və statistika.",
+        en: "A multi-page, responsive site for an IT and network equipment company, built from a Figma design (practice project). Contact and product requests go to a Node.js + Express + MongoDB API, with statuses, notes and stats for the admin.",
+      },
+    },
+  },
+  {
+    // full stack: frontend + Node.js / Express / MongoDB API in backend/ (owner, 2026-11-17: on the belt)
+    repo: "https://github.com/codelady-ship/AFN-rent-a-car-fiqma",
+    patch: {
+      title: "AFN Rent a Car",
+      featured: true,
+      hidden: false,
+      order: 8,
+      demoOverride: "https://codelady-ship.github.io/AFN-rent-a-car-fiqma/",
+      summary: {
+        az: "Bakı üçün avtomobil icarəsi saytı (Figma dizaynı əsasında təlim layihəsi): avtopark və filtrlər, avtomobil səhifəsi, onlayn rezervasiya (qiyməti server hesablayır, eyni günlərə ikinci rezervasiya mümkün deyil). React + TypeScript frontend və Node.js + Express + MongoDB API.",
+        en: "A car rental site for Baku, built from a Figma design (practice project): fleet with filters, car pages and online booking (the server prices it and blocks double bookings). A React + TypeScript frontend with a Node.js + Express + MongoDB API.",
+      },
     },
   },
   {
@@ -182,6 +284,27 @@ async function connect() {
 // only the error type and code: driver messages can contain the host name
 const safeDbError = (e: unknown) =>
   new Error(`database not reachable (${e instanceof Error ? e.name : "error"}${(e as { code?: string })?.code ? ` ${(e as { code?: string }).code}` : ""})`);
+
+/**
+ * A live link (demoOverride) that does not answer 200 yet (e.g. a GitHub Pages site whose PR is not
+ * merged) is left out of the write, so the project keeps its current link instead of a dead one.
+ * Run the script again once the site is up.
+ */
+async function liveOrSkip(label: string, patch: Record<string, unknown>) {
+  const url = patch.demoOverride;
+  if (typeof url !== "string" || !url) return patch;
+  const status = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(15_000) })
+    .then((r) => {
+      void r.body?.cancel();
+      return r.status;
+    })
+    .catch(() => 0);
+  if (status === 200) return patch;
+  console.log(`${label}: live link ${url} answered ${status || "no response"}; left out (run again when it is up)`);
+  const { demoOverride: _skip, ...rest } = patch;
+  void _skip;
+  return rest;
+}
 
 /** --hide / --show: flip the hidden flag only (case-insensitive repo names). */
 async function setHidden(names: string[], hidden: boolean) {
@@ -294,7 +417,7 @@ async function run() {
         let p: any = await Project.findOne(ref).collation({ locale: "en", strength: 2 });
         const created = !p;
         p ??= new Project({ ...ref, repoUrl: `https://github.com/${ref.owner}/${ref.name}` });
-        p.set(patch);
+        p.set(await liveOrSkip(label, patch));
         await sync(p); // same GitHub snapshot + sanitizing as POST /api/projects; saves
         const err = p.syncError || (p.privateRepo && !allowPrivate ? "private repository: set allowPrivate on the entry" : "");
         if (err) {

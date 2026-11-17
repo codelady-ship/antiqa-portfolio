@@ -5,7 +5,7 @@ import type { Profile, Project } from "@/lib/types";
 /** schema.org Person node shared by the home and /about pages. */
 function personNode(profile: Profile, locale: "az" | "en") {
   const c = profile.contacts;
-  const sameAs = [c.github, c.linkedin, c.instagram && `https://instagram.com/${c.instagram}`].filter(Boolean);
+  const sameAs = [c.github, c.linkedin, c.instagram && `https://instagram.com/${c.instagram}`, ...(profile.socials ?? []).map((s) => s.url)].filter(Boolean);
   return {
     "@type": "Person",
     "@id": `${SITE_URL}/#person`,
