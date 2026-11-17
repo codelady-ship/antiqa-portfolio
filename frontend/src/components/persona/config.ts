@@ -6,9 +6,11 @@
  * frame) shows instead of the video.
  */
 export type Clip = {
-  /** H.264, no audio */
+  /** VP9 WebM with an alpha channel: her cut out of the studio (Chrome, Edge, Firefox) */
+  alpha?: string;
+  /** H.264 with the cream studio, no audio: the fallback where WebM alpha does not work (Safari), feathered by CSS */
   src: string;
-  /** a still frame (first frame), shown until the video plays and with reduced motion */
+  /** a still frame (first frame, cut out: transparent WebP), shown until the video plays and with reduced motion */
   poster: string;
   width: number;
   height: number;
@@ -36,7 +38,16 @@ export const PERSONA: {
    */
   point: PointClip;
 } = {
-  wave: { src: "/persona/clips/wave.mp4", poster: "/persona/clips/wave.webp", width: 432, height: 640 },
-  desk: { src: "/persona/clips/desk.mp4", poster: "/persona/clips/desk.webp", width: 720, height: 540 },
-  point: { src: "/persona/clips/point.mp4", poster: "/persona/clips/point.webp", width: 360, height: 534, rest: 0.4, hold: 0.88, faces: "left" },
+  wave: { alpha: "/persona/clips/wave.webm", src: "/persona/clips/wave.mp4", poster: "/persona/clips/wave.webp", width: 432, height: 640 },
+  desk: { alpha: "/persona/clips/desk.webm", src: "/persona/clips/desk.mp4", poster: "/persona/clips/desk.webp", width: 720, height: 540 },
+  point: {
+    alpha: "/persona/clips/point.webm",
+    src: "/persona/clips/point.mp4",
+    poster: "/persona/clips/point.webp",
+    width: 360,
+    height: 534,
+    rest: 0.4,
+    hold: 0.88,
+    faces: "left",
+  },
 };
