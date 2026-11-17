@@ -37,7 +37,7 @@ export function GithubImport({ onAdded }: { onAdded: () => void }) {
   const [pv, setPv] = useState<Preview | null>(null);
   const [busy, setBusy] = useState<"" | "read" | "save">("");
   const [msg, setMsg] = useState("");
-  const [form, setForm] = useState({ title: "", az: "", en: "", demo: "", featured: false, comingSoon: false, allowPrivate: false });
+  const [form, setForm] = useState({ title: "", az: "", en: "", demo: "", featured: false, comingSoon: false, allowPrivate: false, fullStack: false });
 
   useEffect(() => {
     if (!showRepos || repos) return;
@@ -65,6 +65,7 @@ export function GithubImport({ onAdded }: { onAdded: () => void }) {
         en: p.description,
         demo: p.live.url ?? "",
         featured: false,
+        fullStack: false,
         comingSoon: p.private && !p.live.url,
         allowPrivate: p.private,
       });
@@ -90,6 +91,8 @@ export function GithubImport({ onAdded }: { onAdded: () => void }) {
           // the API derives homepage / GitHub Pages links itself; anything else (Vercel, an edit) is stored as an override
           demoOverride: form.demo && !(form.demo === pv.live.url && (pv.live.source === "homepage" || pv.live.source === "pages")) ? form.demo : "",
           featured: form.featured,
+          // "Show on the belt": the home page belt shows only these (Project.fullStack)
+          fullStack: form.fullStack,
           comingSoon: form.comingSoon,
           allowPrivate: form.allowPrivate,
         }),
@@ -203,6 +206,10 @@ export function GithubImport({ onAdded }: { onAdded: () => void }) {
             <label className="flex min-h-11 items-center gap-2">
               <input type="checkbox" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} />
               {t("featured")}
+            </label>
+            <label className="flex min-h-11 items-center gap-2">
+              <input type="checkbox" checked={form.fullStack} onChange={(e) => setForm({ ...form, fullStack: e.target.checked })} />
+              {t("fullStack")}
             </label>
             <label className="flex min-h-11 items-center gap-2">
               <input type="checkbox" checked={form.comingSoon} onChange={(e) => setForm({ ...form, comingSoon: e.target.checked })} />
