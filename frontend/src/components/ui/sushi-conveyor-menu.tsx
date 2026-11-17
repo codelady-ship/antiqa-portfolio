@@ -220,6 +220,18 @@ function makeGeo(width: number, n: number, d: number, kb: number, spacing = 1, c
   return g;
 }
 
+/**
+ * Width of the centerpiece box. grow: keep the usual size when the plates get small (autoDensity on
+ * wider screens). Always capped so a portrait (about 1.2 × its width tall) stays inside the stage:
+ * its bottom sits at ym + 0.3 d, so its top never rises above the stage's top edge.
+ */
+function centerpieceWidth(g: Geo, centerWidth: number, grow: boolean) {
+  const base = (grow ? Math.max(g.d, Math.min(g.d * 1.75, 140)) : g.d) * centerWidth;
+  return Math.min(base, (g.ym + g.d * 0.3) / PORTRAIT);
+}
+/** height / width of the centerpiece portrait (her photo is 677 × 800, the clip a little taller) */
+const PORTRAIT = 1.25;
+
 /** autoDensity: closest pitch (in SPACING units) at which a lifted plate (×1.08) still clears its neighbours */
 const MIN_GAP = 1.24 / SPACING;
 /** autoDensity: the shortest loop, in plate diameters, that still leaves the island its room */
@@ -942,13 +954,15 @@ export function SushiConveyorMenu({
           </svg>
         )}
       </div>
-      {/* autoDensity: her size follows the usual plate size, not the smaller plates of a full belt */}
+      {/* autoDensity: her size follows the usual plate size, not the smaller plates of a full belt; on
+          phones the plain plate-based size, and never taller than the room above the island
+          (review #51: at 390 px she covered the legend) */}
       {g && centerpiece && (
         <div
           aria-hidden="true"
           data-centerpiece
           className="pointer-events-none absolute"
-          style={{ left: g.cx, top: g.ym + g.d * 0.3, width: (autoDensity ? Math.max(g.d, Math.min(g.d * 1.75, 140)) : g.d) * centerWidth, transform: "translate(-50%, -100%)", zIndex: 100 + Math.round(g.ym) }}
+          style={{ left: g.cx, top: g.ym + g.d * 0.3, width: centerpieceWidth(g, centerWidth, autoDensity && !narrow), transform: "translate(-50%, -100%)", zIndex: 100 + Math.round(g.ym) }}
         >
           {centerpiece}
         </div>

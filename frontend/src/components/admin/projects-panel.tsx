@@ -54,11 +54,16 @@ export function ProjectsPanel({ seedRepos }: { seedRepos: SeedRepo[] }) {
     setBusy("order");
     const step = Math.max(1, Math.floor(1000 / next.length));
     const changes = next.map((p, k) => ({ p, order: (next.length - k) * step })).filter(({ p, order }) => p.order !== order);
-    try {
-      await Promise.all(changes.map(({ p, order }) => api(`/api/projects/${p.id}`, { method: "PATCH", body: JSON.stringify({ order }) })));
-    } catch (e) {
-      setMsg(`${t("error")}: ${(e as Error).message}`);
+    // one by one: a failed save is reported (and the reloaded list shows the real order)
+    const failed: string[] = [];
+    for (const { p, order } of changes) {
+      try {
+        await api(`/api/projects/${p.id}`, { method: "PATCH", body: JSON.stringify({ order }) });
+      } catch (e) {
+        failed.push(`${p.title}: ${(e as Error).message}`);
+      }
     }
+    setMsg(failed.length ? `${t("error")}: ${failed.join("; ")}` : t("saved"));
     await refreshSite();
     await load();
     setBusy("");

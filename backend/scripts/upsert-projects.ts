@@ -101,8 +101,8 @@ const ENTRIES: Entry[] = [
       featured: true,
       hidden: false,
       order: 20,
-      // GitHub Pages once its PR is merged; until the page answers 200 the script leaves the link
-      // out (see liveOrSkip), so the card stays code-only instead of linking to a 404
+      // GitHub Pages (live since 2026-11-17); liveOrSkip still leaves it out if it ever stops answering 200,
+      // so the card stays code-only instead of linking to a 404
       demoOverride: "https://codelady-ship.github.io/masapay/",
       summary: {
         az: "Komanda layihəsi. Restoranlar üçün QR əsaslı hesab bölmə və ödəniş platforması: müştəri masadakı QR kodu skan edib canlı hesabı görür, hesabı bölür, bəxşiş əlavə edir və Payriff ilə ödəyir. React + TypeScript, Java Spring Boot, PostgreSQL və WebSocket üzərində qurulub.",
