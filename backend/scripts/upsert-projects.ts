@@ -127,11 +127,8 @@ const ENTRIES: Entry[] = [
         az: "Claude AI skill-lərim üçün sayt: hər skill-in öz iş paneli var (səsləndirmə, fırıldaq yoxlaması, xaricdə təhsil, viza, iş müraciəti), müəlliflər üçün marketplace və ödəniş. Next.js + TypeScript, Supabase, Cloudflare Workers və Gemini API üzərində qurulur.",
         en: "A website for my Claude AI skills: each skill has its own working panel (voiceover, scam check, study abroad, visa, job applications), plus a marketplace with payments for skill authors. Being built with Next.js + TypeScript, Supabase, Cloudflare Workers and the Gemini API.",
       },
-      links: [
-        { label: "Scholarship & Visa Scam Checker", url: "https://github.com/codelady-ship/scholarship-visa-scam-checker" },
-        { label: "Azerbaijani Voiceover Studio", url: "https://github.com/codelady-ship/azerbaijani-voiceover-studio" },
-        { label: "Photoshop Design Coach", url: "https://github.com/codelady-ship/photoshop-design-coach" },
-      ],
+      // the skill repos are private (they would 404 for visitors): no extra links
+      links: [],
     },
   },
   {

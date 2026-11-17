@@ -76,11 +76,8 @@ export const SEED_REPOS: { url: string; featured?: boolean; backend?: string; ti
     url: "https://github.com/codelady-ship/scholarship-visa-scam-checker",
     featured: true,
     title: "Codelady Skills",
-    links: [
-      { label: "Scholarship & Visa Scam Checker", url: "https://github.com/codelady-ship/scholarship-visa-scam-checker" },
-      { label: "Azerbaijani Voiceover Studio", url: "https://github.com/codelady-ship/azerbaijani-voiceover-studio" },
-      { label: "Photoshop Design Coach", url: "https://github.com/codelady-ship/photoshop-design-coach" },
-    ],
+    // the skill repos are private (they would 404 for visitors): no extra links
+    links: [],
   },
   { url: "https://github.com/codelady-ship/planera", featured: true, title: "Planera — Randevum", demo: "https://randevum-seven.vercel.app" },
   { url: "https://github.com/codelady-ship/Ecommerse-app", featured: true, title: "E-Commerce App", demo: "https://codelady-ship.github.io/Ecommerse-app/", thumb: false },
