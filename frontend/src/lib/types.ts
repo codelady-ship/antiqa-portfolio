@@ -38,6 +38,8 @@ export type Project = {
   adminUrl?: string | null;
   /** a demo-mode login shown under the admin tab (never real credentials) */
   adminHint?: string;
+  /** false: the admin panel refuses to be framed (open it in a new tab instead) */
+  adminFrame?: boolean;
   demoUrl: string | null;
   createdAt: string | null;
   pushedAt: string | null;

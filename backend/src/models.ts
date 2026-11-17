@@ -43,6 +43,9 @@ const ProjectSchema = new Schema(
     adminUrl: { type: String, default: "" },
     // one line under it, ONLY for demo-mode admins (e.g. a public demo login); never real credentials
     adminHint: { type: String, default: "" },
+    // set when adminUrl is saved/synced: the panel refuses to be framed (X-Frame-Options /
+    // CSP frame-ancestors), so the modal offers "open in a new tab" instead of a blank frame
+    adminNoFrame: { type: Boolean, default: false },
     featured: { type: Boolean, default: false },
     hidden: { type: Boolean, default: false },
     // shown on the project belt of the home page (a real full-stack project, not a practice task);

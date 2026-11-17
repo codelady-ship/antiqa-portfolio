@@ -166,7 +166,19 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
               aria-labelledby={`tab-${tab}`}
               className={`min-h-0 min-w-0 justify-center bg-bg-2 p-2 sm:p-5 md:flex ${info ? "max-md:hidden" : "flex"}`}
             >
-              {(tab === "demo" && p.demoUrl && canFrame) || (tab === "admin" && p.adminUrl && canAdmin) ? (
+              {tab === "admin" && p.adminUrl && p.adminFrame === false ? (
+                <div className="flex size-full flex-col items-center justify-center gap-5 rounded-2xl border border-line bg-bg p-8 text-center">
+                  <p className="max-w-md text-muted">{t("adminNoFrame")}</p>
+                  {p.adminHint && (
+                    <p translate="no" className="notranslate rounded-full bg-butter-soft px-4 py-2 text-xs text-ink">
+                      {t("adminHint")}: {p.adminHint}
+                    </p>
+                  )}
+                  <a href={p.adminUrl} target="_blank" rel="noopener noreferrer" className="rounded-full bg-ink px-6 py-3 font-medium text-bg">
+                    {t("openNew")} ↗
+                  </a>
+                </div>
+              ) : (tab === "demo" && p.demoUrl && canFrame) || (tab === "admin" && p.adminUrl && canAdmin) ? (
                 <div
                   className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white transition-[width] duration-500 ease-out"
                   style={{ width: WIDTHS[device], maxWidth: "100%" }}

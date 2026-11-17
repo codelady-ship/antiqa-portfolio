@@ -101,6 +101,8 @@ export function present(p: any, admin = false) {
     backendUrl: p.backendUrl || null,
     adminUrl: p.adminUrl || null,
     adminHint: p.adminUrl ? p.adminHint || "" : "",
+    // false: the admin panel cannot be framed, the modal shows an "open in a new tab" card
+    ...(p.adminUrl && { adminFrame: !p.adminNoFrame }),
     demoUrl: p.comingSoon || p.demoOff ? null : demoUrl({ owner: p.owner, name: p.name, homepage: gh.homepage ?? null, hasPages: !!gh.hasPages }, p.demoOverride),
     createdAt: gh.createdAt ?? null,
     pushedAt: gh.pushedAt ?? null,
@@ -124,8 +126,32 @@ export function present(p: any, admin = false) {
   };
 }
 
+/**
+ * Does this page refuse to be shown in an iframe on another site? (X-Frame-Options DENY/SAMEORIGIN,
+ * or a CSP frame-ancestors list without "*"). Unknown (network error) = framable: the modal still
+ * has its open-in-new-tab link.
+ */
+export async function frameBlocked(url: string): Promise<boolean> {
+  try {
+    const r = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(8000) });
+    void r.body?.cancel();
+    const xfo = (r.headers.get("x-frame-options") ?? "").toLowerCase();
+    if (/deny|sameorigin/.test(xfo)) return true;
+    const fa = /frame-ancestors([^;]*)/i.exec(r.headers.get("content-security-policy") ?? "")?.[1]?.trim();
+    return fa !== undefined && !/(^|\s)\*(\s|$)/.test(fa);
+  } catch {
+    return false;
+  }
+}
+
+/** Re-checks adminNoFrame for the current adminUrl (call after adminUrl changes). */
+export async function checkAdminFrame(p: any) {
+  p.adminNoFrame = p.adminUrl ? await frameBlocked(p.adminUrl) : false;
+}
+
 /** Refreshes and saves a project's GitHub snapshot (POST /api/projects, sync, scripts). Never throws on GitHub errors: sets syncError. */
 export async function sync(p: any) {
+  await checkAdminFrame(p);
   try {
     // private repos are read too (metadata only, no README), so a repo that turns private loses its code link
     const { private: priv, ...s } = await fetchSnapshot({ owner: p.owner, name: p.name }, { allowPrivate: true });
@@ -327,8 +353,13 @@ export function createApp() {
     requireAdmin,
     wrap(async (req, res) => {
       if (!isValidObjectId(req.params.id)) return res.status(404).json({ error: "not found" });
-      const p = await Project.findByIdAndUpdate(req.params.id, ProjectPatch.parse(req.body), { new: true });
+      const patch = ProjectPatch.parse(req.body);
+      const p = await Project.findByIdAndUpdate(req.params.id, patch, { new: true });
       if (!p) return res.status(404).json({ error: "not found" });
+      if (patch.adminUrl !== undefined) {
+        await checkAdminFrame(p);
+        await p.save();
+      }
       res.json(present(p, true));
     }),
   );

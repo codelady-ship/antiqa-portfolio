@@ -45,6 +45,7 @@
     "viewport": "Screen width",
     "demoTab": "Demo",
     "adminTab": "Admin panel",
+    "adminNoFrame": "This admin panel can't be shown inside another site (a security setting). Open it in a new tab.",
     "adminHint": "Demo login",
     "demoFrame": "{title} — live demo",
     "shotAlt": "{title} — screenshot",
