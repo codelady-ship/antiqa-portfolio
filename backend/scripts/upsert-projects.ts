@@ -36,6 +36,7 @@ export const SHOWCASE = [
   "Curtain-shop-web-site-frontend", // Perde.az: React + Spring Boot backend repo
   "task7-front-end-for-task6-", // Fullstack Programmers List: Next.js server actions + MongoDB
   "antiqa-portfolio", // this site: Next.js + Express + MongoDB
+  "scholarship-visa-scam-checker", // "Codelady Skills": the skills site (Next.js, Supabase, Cloudflare Workers, Gemini) + the skills
 ];
 
 const ENTRIES: Entry[] = [
@@ -111,20 +112,23 @@ const ENTRIES: Entry[] = [
   },
   {
     repo: "https://github.com/codelady-ship/scholarship-visa-scam-checker",
+    // the repo is private again (2026-11-17): no code link on the site
+    allowPrivate: true,
     patch: {
-      title: "Claude AI Skills",
+      // owner, 2026-11-17: "skillərlə bağlı saytı da qoy portfolioya". The site (local repo
+      // agensi-skills/skills-site, no GitHub remote and not deployed yet) is shown through this
+      // record as "coming soon"; give it its own entry + live link once it is pushed and deployed.
+      title: "Codelady Skills",
       featured: true,
       hidden: false,
+      comingSoon: true,
       order: 10,
       summary: {
-        az: "Agensi marketplace-i üçün hazırladığım üç pulsuz Claude AI skill-i: təqaüd və viza fırıldaqlarını yoxlayan köməkçi, Azərbaycan dilində səsləndirmə studiyası və Photoshop dizayn məşqçisi.",
-        en: "Three free Claude AI skills I built for the Agensi marketplace: a scholarship and visa scam checker, an Azerbaijani voiceover studio and a Photoshop design coach.",
+        az: "Claude AI skill-lərim üçün sayt: hər skill-in öz iş paneli var (səsləndirmə, fırıldaq yoxlaması, xaricdə təhsil, viza, iş müraciəti), müəlliflər üçün marketplace və ödəniş. Next.js + TypeScript, Supabase, Cloudflare Workers və Gemini API üzərində qurulur.",
+        en: "A website for my Claude AI skills: each skill has its own working panel (voiceover, scam check, study abroad, visa, job applications), plus a marketplace with payments for skill authors. Being built with Next.js + TypeScript, Supabase, Cloudflare Workers and the Gemini API.",
       },
-      links: [
-        { label: "Scholarship & Visa Scam Checker", url: "https://github.com/codelady-ship/scholarship-visa-scam-checker" },
-        { label: "Azerbaijani Voiceover Studio", url: "https://github.com/codelady-ship/azerbaijani-voiceover-studio" },
-        { label: "Photoshop Design Coach", url: "https://github.com/codelady-ship/photoshop-design-coach" },
-      ],
+      // the skill repos are private (they would 404 for visitors): no extra links
+      links: [],
     },
   },
   {
