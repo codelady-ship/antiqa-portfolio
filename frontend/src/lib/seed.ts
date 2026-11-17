@@ -75,7 +75,7 @@ export const SEED_REPOS: { url: string; featured?: boolean; backend?: string; ti
   {
     url: "https://github.com/codelady-ship/scholarship-visa-scam-checker",
     featured: true,
-    title: "Claude AI Skills",
+    title: "Codelady Skills",
     links: [
       { label: "Scholarship & Visa Scam Checker", url: "https://github.com/codelady-ship/scholarship-visa-scam-checker" },
       { label: "Azerbaijani Voiceover Studio", url: "https://github.com/codelady-ship/azerbaijani-voiceover-studio" },

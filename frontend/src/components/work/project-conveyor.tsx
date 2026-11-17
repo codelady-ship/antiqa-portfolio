@@ -15,9 +15,21 @@ import type { Project } from "@/lib/types";
  * list, so the belt is right before the seed script has run. Keep in sync with SHOWCASE there.
  */
 const SHOWCASE_FALLBACK = new Set(
-  ["planera", "hypedomino", "jeparla", "masapay", "curtain-shop-web-site-frontend", "task7-front-end-for-task6-", "antiqa-portfolio"].map((n) => n.toLowerCase()),
+  ["planera", "hypedomino", "jeparla", "masapay", "curtain-shop-web-site-frontend", "task7-front-end-for-task6-", "antiqa-portfolio", "scholarship-visa-scam-checker"].map((n) =>
+    n.toLowerCase(),
+  ),
 );
 export const onBelt = (p: Project) => !p.hidden && (p.fullStack ?? SHOWCASE_FALLBACK.has(p.name.toLowerCase()));
+
+/**
+ * Screenshots for projects that have no public live URL yet (mShots needs one), by repo name:
+ * Codelady Skills (the skills site, not deployed yet) was shot from its local build.
+ */
+const THUMBS: Record<string, string> = { "scholarship-visa-scam-checker": "/projects/codelady-skills.webp" };
+/** the stack chips, where the repo behind the record is not the project's own code (its languages / topics) */
+const STACK: Record<string, string[]> = {
+  "scholarship-visa-scam-checker": ["Next.js", "TypeScript", "Supabase", "Cloudflare Workers", "Gemini API", "Claude Skills"],
+};
 
 /** topics that say nothing about the stack */
 const NOISE = new Set(["portfolio", "github-pages", "practice-project", "landing-page", "responsive-design", "responsive", "vercel", "ecommerce", "azerbaijani", "bilingual"]);
@@ -71,10 +83,10 @@ export function ProjectConveyor({
       name: p.title,
       description: blurb(p, locale) || undefined,
       tier: tierOf(p),
-      image: p.demoUrl && hasThumb(p.repoUrl) ? shot(p.demoUrl, 480) : undefined,
+      image: THUMBS[p.name.toLowerCase()] ?? (p.demoUrl && hasThumb(p.repoUrl) ? shot(p.demoUrl, 480) : undefined),
       cover: true,
       initial: p.title.charAt(0),
-      details: [...langs, ...topics].slice(0, 9),
+      details: STACK[p.name.toLowerCase()] ?? [...langs, ...topics].slice(0, 9),
     };
   });
 
