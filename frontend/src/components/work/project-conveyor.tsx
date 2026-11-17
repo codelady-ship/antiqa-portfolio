@@ -15,9 +15,8 @@ import type { Project } from "@/lib/types";
  * list, so the belt is right before the seed script has run. Keep in sync with SHOWCASE there.
  */
 const SHOWCASE_FALLBACK = new Set(
-  ["planera", "hypedomino", "jeparla", "masapay", "curtain-shop-web-site-frontend", "task7-front-end-for-task6-", "antiqa-portfolio", "scholarship-visa-scam-checker"].map((n) =>
-    n.toLowerCase(),
-  ),
+  // owner, 2026-11-17: Programmers List (task7/task6) and this portfolio are off the belt
+  ["planera", "hypedomino", "jeparla", "masapay", "curtain-shop-web-site-frontend", "scholarship-visa-scam-checker"].map((n) => n.toLowerCase()),
 );
 export const onBelt = (p: Project) => !p.hidden && (p.fullStack ?? SHOWCASE_FALLBACK.has(p.name.toLowerCase()));
 
