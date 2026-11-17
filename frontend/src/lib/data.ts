@@ -29,7 +29,9 @@ export async function getProjects(): Promise<Project[]> {
   cacheTag("projects");
   const fromApi = await api<Project[]>("/api/projects");
   if (fromApi?.length) {
-    cacheLife("hours");
+    // minutes, not hours: a change written straight to the database (seed script, the daily GitHub
+    // sync) without a revalidate call still shows within minutes (2026-11-17: "7 projects" lingered)
+    cacheLife("minutes");
     return fromApi;
   }
   const gh = await fromGithub();

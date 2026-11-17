@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { Clip, PointClip } from "./config";
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
@@ -39,6 +39,23 @@ function useMotionDesktop() {
 }
 
 /**
+ * WebM with alpha plays cut out in Chromium and Firefox. Safari plays VP9 WebM but drops the alpha
+ * (a black box), so it gets the MP4 with the cream studio (feathered in CSS) instead.
+ */
+let alphaOk: boolean | null = null;
+function alphaSupported() {
+  if (alphaOk === null) {
+    const ua = navigator.userAgent;
+    const safari = /safari/i.test(ua) && !/chrome|chromium|crios|edg|fxios|firefox|android/i.test(ua);
+    alphaOk = !safari && document.createElement("video").canPlayType('video/webm; codecs="vp9"') !== "";
+  }
+  return alphaOk;
+}
+const noSubscribe = () => () => {};
+/** false on the server and in the first client render (hydration), then the real answer */
+const useAlpha = () => useSyncExternalStore(noSubscribe, alphaSupported, () => false);
+
+/**
  * One of her section videos (owner, 2026-11-17: she does not travel any more, she appears in each
  * section). The server HTML has the poster (a still frame): that is also what shows without JS,
  * with reduced motion and on screens < 1024 px. On desktop the video takes over: it starts loading
@@ -49,6 +66,7 @@ export function PersonaClip({ clip, mode, track, point = null, className = "" }:
   const box = useRef<HTMLDivElement>(null);
   const vid = useRef<HTMLVideoElement>(null);
   const on = useMotionDesktop();
+  const alpha = useAlpha() && !!clip.alpha;
   const [near, setNear] = useState(false);
   const [shown, setShown] = useState(false);
   // point mode reads the latest target from the rAF loop
@@ -171,6 +189,7 @@ export function PersonaClip({ clip, mode, track, point = null, className = "" }:
       aria-hidden
       data-state={on ? (shown ? "in" : "out") : undefined}
       data-mode={mode}
+      data-alpha={on && alpha ? "" : undefined}
       className={`persona-clip relative ${className}`}
       style={{ aspectRatio: `${clip.width} / ${clip.height}` }}
     >
@@ -182,7 +201,7 @@ export function PersonaClip({ clip, mode, track, point = null, className = "" }:
           disablePictureInPicture
           loop={mode === "loop"}
           preload={near ? "auto" : "none"}
-          src={near ? clip.src : undefined}
+          src={near ? (alpha ? clip.alpha : clip.src) : undefined}
           poster={clip.poster}
           width={clip.width}
           height={clip.height}

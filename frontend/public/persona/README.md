@@ -14,8 +14,15 @@ hashed file). Phones and tablets (< 1024 px) show it in the middle of the projec
 | `desk.mp4` / `desk.webp` | About (left, sticky): she sits down at the desk and types, scrubbed by the scroll | 720 × 540, CRF 30, every frame a keyframe (`-g 1`) |
 | `point.mp4` / `point.webp` | Projects (middle of the belt): she points at the hovered plate | 360 × 534, `-g 1` (played forwards and backwards) |
 
-The `.webp` is the first frame: the server HTML shows it, and it stays the picture with reduced
-motion. The 2 px black lines at the top and bottom of the Veo clips are cropped; nothing else is
+**Cut out (fix/persona-matte):** `wave.webm`, `desk.webm`, `point.webm` are the same clips with an
+alpha channel (VP9, yuva420p): she stands on the page itself, with no studio box. They are made from
+frames matted by `scripts/persona-matte.mjs` (a local background-removal model, nothing is uploaded),
+then `persona-clips.mjs --wave-alpha … --desk-alpha …`. The wave loop is the first 4.5 s (she waves,
+then the loop starts again). Chrome, Edge and Firefox play the WebM; Safari drops WebM alpha, so it
+gets the MP4 with the studio, feathered by CSS.
+
+The `.webp` is the first frame, cut out (transparent): the server HTML shows it, and it stays the
+picture with reduced motion. The 2 px black lines at the top and bottom of the Veo clips are cropped; nothing else is
 removed. Until clip4 (pointing) exists, `point.mp4` is cut from the wave (0–1.5 s, the arm going
 out); after re-running with `--point`, set `rest` / `hold` / `faces` in `src/components/persona/config.ts`.
 

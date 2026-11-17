@@ -417,9 +417,12 @@ html {
     transform: translateY(10px);
   }
 }
+/* (fix/persona-matte) the clips are cut out (WebM with alpha) and the posters are transparent WebP:
+   no box at all. Only browsers without WebM alpha (Safari) get the cream-studio MP4, and only that
+   one is feathered: */
 /* the cream studio melts into the page: all four edges feathered (--fx: the side fade; the pointing
    clip keeps it narrow, her hand reaches the edge), plus a soft radial vignette for the corners */
-.persona-clip :is(video, img) {
+.persona-clip:not([data-alpha]) video {
   --fx: 20%;
   -webkit-mask-image:
     linear-gradient(to right, transparent, #000 var(--fx), #000 calc(100% - var(--fx)), transparent),
@@ -432,17 +435,17 @@ html {
     radial-gradient(ellipse 75% 75% at 50% 50%, #000 70%, transparent 100%);
   mask-composite: intersect;
 }
-.persona-clip[data-mode="point"] :is(video, img) {
+.persona-clip:not([data-alpha])[data-mode="point"] video {
   --fx: 11%;
 }
 /* dark page: the cream studio is a soft spotlight; the edges fade out further */
-.dark .persona-clip :is(video, img) {
+.dark .persona-clip:not([data-alpha]) video {
   --fx: 26%;
 }
 /* dark belt (review #48): no cream box over the belt, only a soft oval glow around her. The oval
    is tall (her head and feet stay clear) and narrow (the studio's sides are gone); her arm, when
    out, fades a little towards the hand */
-.dark .persona-clip[data-mode="point"] :is(video, img) {
+.dark .persona-clip:not([data-alpha])[data-mode="point"] video {
   -webkit-mask-image:
     radial-gradient(ellipse 44% 80% at 50% 52%, #000 22%, transparent 100%),
     linear-gradient(to bottom, transparent, #000 14%, #000 90%, transparent);

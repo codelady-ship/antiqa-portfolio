@@ -18,6 +18,12 @@
  *
  * Options: --out <dir> (default public/persona/clips), --ffmpeg <path>, --point-from <s>, --point-to <s>
  *
+ * Cut-out versions (fix/persona-matte): pass the RGBA frames made by scripts/persona-matte.mjs
+ *   --wave-alpha <dir>   frames of the wave clip's portrait box (480×712, also used for the pointing clip)
+ *   --desk-alpha <dir>   frames of the desk clip's box (950×712)
+ * and the script also writes wave.webm / desk.webm / point.webm (VP9 with alpha, yuva420p) and makes
+ * the .webp posters transparent. The MP4s stay: they are the fallback where WebM alpha does not work.
+ *
  * Every clip: the 2 px black lines at the top and bottom are cropped, the frame is cut to a portrait
  * box around her (desk: her + the desk), H.264 yuv420p, +faststart, no audio. Nothing is blurred
  * out: a Veo watermark, when the clip has one, stays.
@@ -73,9 +79,37 @@ function run(input, file, vf, extra, trim = []) {
   console.log(`${file}: ${kb} KB${kb > 2500 ? "  (large: raise -crf or lower the size)" : ""}`);
 }
 
+/**
+ * VP9 with alpha from a folder of RGBA PNG frames (0001.png …, 24 fps; the pointing clip starts at
+ * frame 1, i.e. --point-from is not used here).
+ */
+function runAlpha(dir, file, scale, gop, frames = null, crf = 36, pre = "") {
+  if (!dir) return;
+  const dst = join(out, file);
+  const input = ["-framerate", "24", "-start_number", "1", "-i", join(dir, "%04d.png")];
+  const vf = `format=rgba,${pre}${scale},setsar=1,format=yuva420p`;
+  const limit = frames ? ["-frames:v", String(frames)] : [];
+  execFileSync(
+    ffmpeg,
+    ["-y", "-v", "error", ...input, ...limit, "-vf", vf, "-c:v", "libvpx-vp9", "-pix_fmt", "yuva420p", "-b:v", "0", "-crf", String(crf), "-row-mt", "1", "-auto-alt-ref", "0", "-g", String(gop), "-an", dst],
+    { stdio: "inherit" },
+  );
+  execFileSync(ffmpeg, ["-y", "-v", "error", ...input, "-vf", vf, "-frames:v", "1", "-c:v", "libwebp", "-pix_fmt", "yuva420p", "-quality", "82", dst.replace(/\.webm$/, ".webp")], { stdio: "inherit" });
+  console.log(`${file}: ${Math.round(statSync(dst).size / 1024)} KB (alpha)`);
+}
+
 run(wave, "wave.mp4", `${NORM},${PORTRAIT},scale=432:-2`, ["-crf", "28", "-g", "48"]);
 // About: her chair on the left, the desk on the right (x 330 … 1280)
 run(desk, "desk.mp4", `${NORM},crop=950:712:330:0,scale=720:-2`, ["-crf", "30", ...ALL_KEYS]);
 const from = opt("--point-from", "0"), to = opt("--point-to", "1.5");
 run(point ?? wave, "point.mp4", `${NORM},${PORTRAIT},scale=360:-2`, ["-crf", "28", ...ALL_KEYS], point ? [] : ["-ss", from, "-to", to]);
+// cut-out versions (the posters are replaced by transparent ones)
+const waveA = opt("--wave-alpha"), deskA = opt("--desk-alpha");
+runAlpha(waveA, "wave.webm", "scale=432:-2", 48);
+// scrubbed: a keyframe every 8 frames keeps seeks quick and the file small (568 KB); the alpha
+// curve drops the faint ghosts the model leaves where the desk and chair fade in and out
+runAlpha(deskA, "desk.webm", "scale=720:-2", 8, null, 44, "lutrgb=a='clip((val-48)*255/160\\,0\\,255)',");
+// pointing (from the wave until clip4 exists): the first 1.5 s, played both ways; a keyframe every 4
+// frames (all-keyframe VP9 alpha was 4x the size)
+if (!point) runAlpha(waveA, "point.webm", "scale=360:-2", 4, Math.round(Number(opt("--point-to", "1.5")) * 24), 40);
 console.log(`done → ${out}`);
