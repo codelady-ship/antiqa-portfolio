@@ -16,12 +16,17 @@ export function ProjectsPanel({ seedRepos }: { seedRepos: SeedRepo[] }) {
   const [busy, setBusy] = useState<"" | "sync" | "seed">("");
   const [msg, setMsg] = useState("");
 
-  const load = useCallback(() => {
-    api<AdminProject[]>("/api/projects?all=1")
-      .then(setList)
-      .catch((e) => setMsg(`${t("error")}: ${(e as Error).message}`));
-  }, [t]);
-  useEffect(load, [load]);
+  // resolves once the list is fresh (a row clears its optimistic ticks then)
+  const load = useCallback(
+    () =>
+      api<AdminProject[]>("/api/projects?all=1")
+        .then(setList)
+        .catch((e) => setMsg(`${t("error")}: ${(e as Error).message}`)),
+    [t],
+  );
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const syncAll = async () => {
     setBusy("sync");
@@ -95,7 +100,7 @@ export function ProjectsPanel({ seedRepos }: { seedRepos: SeedRepo[] }) {
   );
 }
 
-function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => void }) {
+function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => Promise<unknown> | void }) {
   const t = useTranslations("Admin");
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState(false);
@@ -122,7 +127,9 @@ function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => void }) 
     try {
       await api(`/api/projects/${p.id}`, { method: "PATCH", body: JSON.stringify(body) });
       await refreshSite();
-      onChange();
+      await onChange();
+      // the reloaded list now has the saved values: drop the optimistic ones (review #47)
+      setOpt((o) => Object.fromEntries(Object.entries(o).filter(([k]) => !(k in flags))));
     } catch (e) {
       setOpt((o) => Object.fromEntries(Object.entries(o).filter(([k]) => !(k in flags))));
       setErr((e as Error).message);
