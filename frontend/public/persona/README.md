@@ -1,31 +1,26 @@
 # Persona assets (the figure of Antiqa that follows the scroll)
 
 Her photo is `src/components/persona/antiqa.webp` (677 × 800, a static import, so it is served
-once as a hashed file). It is the figure until real assets exist, and the small round
-photo on phones. After adding frames or poses, switch them on in
-`frontend/src/components/persona/config.ts` (`PERSONA.frames` / `PERSONA.poses`).
-Prompts for Google Flow and the frame script: `docs/FLOW-PERSONA-PROMPTS.md`.
+once as a hashed file). It is the figure until the film exists, and the small round photo on phones.
+Prompts for Google Flow and the film script: `docs/FLOW-PERSONA-PROMPTS.md`.
 
-## 1. Scroll sequence — `frames/` (the travelling figure and the contact stage, desktop ≥ 1024 px)
+## 1. Film — `film/` (the figure that follows the scroll)
 
-- One full-body cut-out of her per frame, **transparent WebP**, same size for every frame,
-  portrait **677 × 800** (or any size with that ratio, ≤ 900 px tall). Aim for ≤ 25 KB per frame.
-- Names: `0001.webp`, `0002.webp`, … (4 digits, 1-based, no gaps).
-- 24 – 30 frames per second of motion is plenty; ~90 – 150 frames in total.
-- Chapter ranges go in `config.ts`, e.g.
-  `chapters: { hero: [1, 40], skills: [41, 90], contact: [91, 130] }`
-  - hero: standing, waves to the visitor
-  - skills: gestures / counts on her fingers while the tech chips float around
-  - contact: waves goodbye / points to the contact links
-- Frames are scrubbed by scroll position (not played in real time), loaded only after the page
-  has loaded, coarse to fine (every 8th frame first), so the page never waits for them.
+`node scripts/persona-film.mjs clip1.mp4 clip2.mp4 …` writes:
 
-Making them from an AI video: `node scripts/persona-frames.mjs persona.mp4 --frames 72 --idle`
-(ffmpeg; cuts the clip evenly, keys out the cream background, prints the config block).
-A scroll-scrubbed `<video>` is not used: seeking is unreliable on many browsers unless every
-frame is a keyframe, and transparent video is poorly supported.
+| file | what |
+| --- | --- |
+| `film-1280.mp4` | desktop (≥ 1024 px): H.264, every frame a keyframe (`-g 1`), CRF 27, no audio, faststart |
+| `film-854.mp4` | the same at 854 px, CRF 28: kept for a later phone version (phones show the static page for now) |
+| `poster.jpg` | the first frame, shown while the film loads |
 
-## 2. Poses — `poses/` (the project ring, all screen sizes)
+It then prints the `PERSONA.film` block for `config.ts`: the marks where each section's pose is reached,
+the hold, and where she stands (`focus`) / should stand (`place`). Aim for ≤ 4 MB (desktop) and
+≤ 2.5 MB (phones). A 16:9 cream studio (#FBF3EC): the edges are feathered into the page.
+The old canvas frame sequence (`frames/`) is gone: an all-keyframe video seeks just as well and is
+one request instead of a hundred.
+
+## 2. Poses — `poses/` (the slot figures, all screen sizes)
 
 Transparent WebP, same 677 × 800 box, her feet at the bottom edge:
 

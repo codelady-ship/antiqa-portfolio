@@ -358,10 +358,6 @@ html {
     transform: rotate(-8deg);
   }
 }
-/* a frame sequence is drawing: hide the photo placeholder underneath */
-.persona-stage[data-frames] .persona-placeholder {
-  visibility: hidden;
-}
 .persona-bubble {
   transform-origin: 0 100%;
 }
@@ -426,7 +422,7 @@ html {
   visibility: hidden;
 }
 /* she travels under the content: a soft halo in the page colour keeps text readable over her */
-.persona-live :is(#hero-name, #hero-name ~ div p, #hero-name ~ p, #about h2, #about p, #about dt, #about dd, #work h2, #work p) {
+:is(.persona-live, .film-live) :is(#hero-name, #hero-name ~ div p, #hero-name ~ p, #about h2, #about p, #about dt, #about dd, #work h2, #work p) {
   text-shadow:
     0 0 2px var(--bg),
     0 0 8px var(--bg),
@@ -434,9 +430,31 @@ html {
 }
 
 /* a frame sequence is drawing on the canvas: hide the photo / pose stills under it */
-.persona-traveler[data-frames] [data-fig],
-.persona-traveler[data-frames] [data-pose-img] {
+
+/* ---------- persona film (persona-film.tsx) ---------- */
+/* the film plays her: the static figures (slots, belt island, contact stage) step aside */
+.film-live .persona-static,
+.film-live [data-centerpiece],
+.film-contact .persona-stage {
   visibility: hidden;
+}
+/* the belt's island turns see-through: she stands in the middle of the belt, in the film */
+.film-live [data-slot="sushi-conveyor-menu"] {
+  --island: transparent;
+  --island-low: transparent;
+  --island-wall: transparent;
+}
+/* edges feathered into the page colour (the studio is cream like the page) */
+.persona-film video {
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent), linear-gradient(to bottom, #000 76%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent, #000 14%, #000 86%, transparent), linear-gradient(to bottom, #000 76%, transparent);
+  mask-composite: intersect;
+}
+/* dark page: only a soft spotlight around her, the cream studio fades out */
+.dark .persona-film video {
+  -webkit-mask-image: radial-gradient(ellipse 20% 46% at var(--fx, 50%) 56%, #000 50%, transparent 100%);
+  mask-image: radial-gradient(ellipse 20% 46% at var(--fx, 50%) 56%, #000 50%, transparent 100%);
 }
 
 @media (prefers-reduced-motion: reduce) {

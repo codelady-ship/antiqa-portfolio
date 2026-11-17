@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type CSSProperties } from "react";
-import { PERSONA, type Chapter, type FrameSequence } from "./config";
-import { loadFrame, nearestLoaded, preload } from "./frames";
+import type { Chapter } from "./config";
 import { PersonaFigure, WaveHand } from "./figure";
 
 type Props = {
@@ -32,13 +31,12 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 /**
  * Sticky stage beside the text (desktop, ≥ 1024 px): the figure plays through its chapters as
  * they scroll past. The chapter under the middle of the viewport sets the pose; the last 40 % of a
- * chapter blends into the next one. With a frame sequence (config.ts) the frames are scrubbed on
- * a canvas; without one, the photo placeholder leans/scales and per-chapter props fade in.
+ * chapter blends into the next one: the photo leans/scales and per-chapter props fade in. When the
+ * film (PERSONA.film) has a contact mark, the film plays this chapter and this stage is hidden (CSS).
  *
  * - phones/tablets: the stage is display:none and nothing here runs or loads;
- * - prefers-reduced-motion: a static pose (the first chapter), no scroll listener, no frames;
- * - frames load only after `load`, on idle, coarse to fine — never compete with the LCP;
- * - the stage box has a fixed size (sticky, 100svh), so loading frames never shifts layout.
+ * - prefers-reduced-motion: a static pose (the first chapter), no scroll listener;
+ * - the stage box has a fixed size (sticky, 100svh): no layout shift.
  */
 export function PersonaStage({ chapters, bubbles, chips = [], alt }: Props) {
   const root = useRef<HTMLDivElement>(null);
@@ -51,11 +49,7 @@ export function PersonaStage({ chapters, bubbles, chips = [], alt }: Props) {
     const secs = chapters.map((c) => group.querySelector<HTMLElement>(`[data-persona="${c}"]`)).filter((x): x is HTMLElement => !!x);
     const fig = el.querySelector<HTMLElement>("[data-fig]")!;
     const props = [...el.querySelectorAll<HTMLElement>("[data-for]")];
-    const canvas = el.querySelector<HTMLCanvasElement>("canvas");
-    const seq: FrameSequence | null = PERSONA.frames;
-    let raf = 0,
-      stopped = false,
-      lastFrame = -1;
+    let raf = 0;
 
     const show = (k: number) =>
       props.forEach((p) => {
@@ -79,20 +73,6 @@ export function PersonaStage({ chapters, bubbles, chips = [], alt }: Props) {
       return { i, frac: clamp((a - r.top) / Math.max(1, r.height)) };
     };
 
-    const drawFrame = (n: number) => {
-      if (!seq || !canvas || n === lastFrame) return;
-      const lo = seq.chapters[chapters[0]][0],
-        hi = seq.chapters[chapters[chapters.length - 1]][1];
-      const img = nearestLoaded(n, lo, hi);
-      if (!img) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      lastFrame = n;
-      el.dataset.frames = "1"; // hides the placeholder figure (CSS)
-    };
-
     const draw = () => {
       raf = 0;
       if (!wide.matches) return;
@@ -104,47 +84,20 @@ export function PersonaStage({ chapters, bubbles, chips = [], alt }: Props) {
       const sway = Math.sin(frac * Math.PI) * 1.5; // a slight lean while a chapter scrolls by
       fig.style.transform = `translate(${lerp(a.x, b.x, e)}%, ${lerp(a.y, b.y, e)}%) rotate(${lerp(a.r, b.r, e) + sway}deg) scale(${lerp(a.s, b.s, e)})`;
       show(i + e);
-      if (seq) {
-        const [f0, f1] = seq.chapters[chapters[i]];
-        drawFrame(Math.round(lerp(f0, f1, frac)));
-      }
     };
     const request = () => {
       if (!raf) raf = requestAnimationFrame(draw);
     };
 
-    // frames: after `load`, on idle, only on wide screens
-    const startFrames = () => {
-      if (!seq || !canvas || stopped || !wide.matches) return;
-      canvas.width = seq.width;
-      canvas.height = seq.height;
-      const lo = seq.chapters[chapters[0]][0],
-        hi = seq.chapters[chapters[chapters.length - 1]][1];
-      const w = window as Window & { requestIdleCallback?: (cb: () => void) => number };
-      const go = () => {
-        loadFrame(lo).decode().then(request, () => {});
-        void preload(lo, hi, () => stopped).then(() => {
-          lastFrame = -1;
-          request();
-        });
-      };
-      if (w.requestIdleCallback) w.requestIdleCallback(go);
-      else setTimeout(go, 300);
-    };
-    if (document.readyState === "complete") startFrames();
-    else addEventListener("load", startFrames, { once: true });
-
     addEventListener("scroll", request, { passive: true });
     addEventListener("resize", request);
-    wide.addEventListener("change", startFrames);
+    wide.addEventListener("change", request);
     draw();
     return () => {
-      stopped = true;
       cancelAnimationFrame(raf);
-      removeEventListener("load", startFrames);
       removeEventListener("scroll", request);
       removeEventListener("resize", request);
-      wide.removeEventListener("change", startFrames);
+      wide.removeEventListener("change", request);
     };
   }, [chapters]);
 
@@ -157,9 +110,6 @@ export function PersonaStage({ chapters, bubbles, chips = [], alt }: Props) {
 
         <div className="relative w-[min(78%,21rem)] 2xl:w-[min(78%,24rem)]">
           <PersonaFigure alt={alt} sizes="(min-width: 1536px) 384px, 336px" eager className="persona-placeholder transition-none" />
-          {PERSONA.frames && (
-            <canvas aria-hidden className="persona-canvas absolute inset-0 size-full" style={{ aspectRatio: `${PERSONA.frames.width}/${PERSONA.frames.height}` }} />
-          )}
 
           {chapters.map((c, k) => (
             <div key={c} data-for={k} aria-hidden className="pointer-events-none absolute inset-0" style={{ opacity: k === 0 ? 1 : 0 } as CSSProperties}>

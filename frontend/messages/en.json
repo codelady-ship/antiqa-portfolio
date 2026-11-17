@@ -279,6 +279,7 @@
   "Persona": {
     "hero": "Hi, welcome!",
     "skills": "A bit about me",
-    "contact": "Write to me, I reply fast!"
+    "contact": "Write to me, I reply fast!",
+    "filmNote": "AI-generated video"
   }
 }
