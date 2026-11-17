@@ -13,6 +13,10 @@
 //              practice tasks (those stay in the database and on GitHub). With --dry-run: prints the plan.
 // Private repos (allowPrivate) need a GITHUB_TOKEN that can read them; the site shows them
 // without a code link or README (see present() in src/app.ts).
+// After any database write it expires the site's cached pages (POST <SITE_URL>/admin-revalidate with
+// "Authorization: Bearer $CRON_SECRET"), so the change shows at once instead of when the cache runs
+// out. Needs CRON_SECRET (the same value on the site's Vercel project); SITE_URL defaults to
+// https://antiqa-portfolio.vercel.app. --no-revalidate skips it.
 // Idempotent: run it again to refresh. Never prints environment values or the connection string.
 import dns from "node:dns";
 import { existsSync } from "node:fs";
@@ -210,7 +214,34 @@ async function setShowcase() {
   return 0;
 }
 
+/** Expires the site's cached profile / project data (frontend app/admin-revalidate). Never prints the secret. */
+async function revalidateSite() {
+  if (dryRun || args.includes("--no-revalidate")) return;
+  const site = (process.env.SITE_URL || "https://antiqa-portfolio.vercel.app").replace(/\/$/, "");
+  // the token only ever goes over https
+  if (!/^https:\/\//i.test(site)) {
+    console.log("site cache: not expired (SITE_URL must be https; the token is never sent over plain http)");
+    return;
+  }
+  if (!process.env.CRON_SECRET) {
+    console.log("site cache: not expired (CRON_SECRET is not set); the site shows the change within a few minutes");
+    return;
+  }
+  try {
+    const r = await fetch(`${site}/admin-revalidate`, { method: "POST", headers: { authorization: `Bearer ${process.env.CRON_SECRET}` } });
+    console.log(`site cache: ${r.ok ? "expired, the change is live" : `not expired (HTTP ${r.status})`}`);
+  } catch (e) {
+    console.log(`site cache: not expired (${errMsg(e)})`);
+  }
+}
+
 async function main() {
+  const failed = await run();
+  await revalidateSite();
+  return failed;
+}
+
+async function run() {
   if (showcase) return setShowcase();
   if (hide || show) {
     if (dryRun) throw new Error("--hide/--show write directly; there is no dry run");
