@@ -100,6 +100,8 @@ export function ProjectConveyor({
       spacing={1.6}
       curve={1.5}
       minPlate={64}
+      // measured belt sizes (width / height) for these props: phones ~1.6, tablets ~2.07, ≥ 1024 ~1.74
+      initialClass="aspect-[1.6] sm:aspect-[2.07] lg:aspect-[1.74]"
       technicalDetails
       speed={22}
       labels={{ add: t("details"), close: t("close"), previous: t("previous"), next: t("next"), pause: t("pause") }}

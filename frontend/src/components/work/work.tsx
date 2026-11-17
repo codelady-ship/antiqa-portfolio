@@ -6,7 +6,7 @@ import { Reveal, SplitWords } from "@/components/motion/reveal";
 import { sortProjects } from "@/lib/merge";
 import type { Project } from "@/lib/types";
 import { DemoModal } from "./demo-modal";
-import { onBelt, ProjectConveyor } from "./project-conveyor";
+import { blurb, onBelt, ProjectConveyor } from "./project-conveyor";
 
 /**
  * Work (#43): only her full-stack projects (owner, 2026-11-16), going round on a conveyor belt
@@ -55,6 +55,19 @@ export function Work({ projects }: { projects: Project[] }) {
         {list.length > 0 && (
           <ProjectConveyor projects={list} locale={locale} header={header} onDetails={setOpen} githubUrl={`https://github.com/${owner}?tab=repositories`} />
         )}
+        {/* the same projects as plain links in the server HTML: search engines and screen readers get
+            names, summaries and URLs without running the belt (shown when a link is focused) */}
+        <ul aria-label={t("title")} className="sr-only focus-within:not-sr-only focus-within:mx-4 focus-within:mt-4 focus-within:flex focus-within:flex-wrap focus-within:gap-3 focus-within:text-sm">
+          {list.map((p) => {
+            const href = p.demoUrl || p.repoUrl;
+            return (
+              <li key={p.id}>
+                {href ? <a href={href} className="underline">{p.title}</a> : p.title}
+                {blurb(p, locale) && <span>: {blurb(p, locale)}</span>}
+              </li>
+            );
+          })}
+        </ul>
       </div>
       <DemoModal project={open} locale={locale} onClose={() => setOpen(null)} />
     </section>

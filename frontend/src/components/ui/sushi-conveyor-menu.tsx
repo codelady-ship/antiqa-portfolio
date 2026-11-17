@@ -6,8 +6,14 @@
 /* eslint-disable react-hooks/refs, react-hooks/immutability, react-hooks/set-state-in-effect, react-hooks/exhaustive-deps, @next/next/no-img-element */
 
 /**
- * SushiConveyorMenu — a stadium-loop conveyor belt (21st.dev component pasted by the owner,
- * 2026-11-16). Adapted for the portfolio:
+ * SushiConveyorMenu — a stadium-loop conveyor belt.
+ *
+ * Source: 21st.dev, component "sushi-conveyor-menu" ("Sushi Conveyor Belt Menu – Restaurant Hero
+ * Section") by DHxWhy (@dhxwhy), https://21st.dev/@dhxwhy/components/sushi-conveyor-menu
+ * Licence: MIT, as stated on that page ("License: mit"); pasted by the owner on 2026-11-16.
+ * The original is in commit 93bd154; the changes below are ours.
+ *
+ * Adapted for the portfolio:
  * - shadcn tokens mapped to the site palette (globals.css: ink/bg/muted/line/surface, rose…);
  * - price is optional; plates can be a round-cut screenshot (`cover`) or a pastel initial;
  * - `centerpiece` stands on the island in the middle (depth-sorted between the lanes);
@@ -93,6 +99,8 @@ export interface SushiConveyorMenuProps extends React.ComponentProps<"section"> 
   curve?: number;
   /** Smallest plate diameter in px on narrow screens. */
   minPlate?: number;
+  /** classes sizing the belt before it is measured (server render), e.g. responsive aspect ratios, so it does not shift. */
+  initialClass?: string;
 }
 
 const SPACING = 1.35;
@@ -288,6 +296,7 @@ export function SushiConveyorMenu({
   spacing = 1,
   curve = 1,
   minPlate = 96,
+  initialClass = "aspect-[2]",
   className,
   ref,
   ...rest
@@ -795,7 +804,7 @@ export function SushiConveyorMenu({
   ));
 
   const captionNode = (
-    <div id={`${uid}-caption`} aria-live="polite" data-caption className={wide ? "min-h-[3.25rem]" : `mx-auto mt-2 max-w-md px-2 text-center ${narrow ? "min-h-[3.75rem]" : "min-h-[2.75rem]"}`}>
+    <div id={`${uid}-caption`} aria-live="polite" data-caption className="mx-auto mt-2 min-h-[3.75rem] max-w-md px-2 text-center sm:min-h-[2.75rem] lg:mx-0 lg:mt-0 lg:min-h-[3.25rem] lg:max-w-none lg:px-0 lg:text-left">
       <p className={`text-sm ${current ? "font-medium text-ink" : "text-muted"}`}>
         {current ? <>{current.name}{current.price && <span className="font-normal tabular-nums text-muted"> · {current.price}</span>}</> : caption}
       </p>
@@ -826,8 +835,8 @@ export function SushiConveyorMenu({
       role="group"
       aria-label={heading ?? beltLabel ?? "Sushi conveyor belt"}
       aria-roledescription="conveyor belt"
-      className="relative w-full touch-pan-y select-none"
-      style={{ height: g ? g.height : 260, overflowX: "clip" }}
+      className={`relative w-full touch-pan-y select-none ${g ? "" : initialClass}`}
+      style={g ? { height: g.height, overflowX: "clip" } : { overflowX: "clip" }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={(event) => finishPointer(event, false)}
@@ -976,27 +985,15 @@ export function SushiConveyorMenu({
       className={`relative isolate w-full overflow-hidden text-ink ${THEME} ${className ?? ""}`}
     >
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10" style={{ background: "radial-gradient(64% 52% at 50% 56%, color-mix(in oklab, var(--ink) 5%, transparent), transparent 72%)" }} />
-      {wide ? (
-        <div className="mx-auto grid w-full max-w-7xl grid-cols-[minmax(0,24rem)_minmax(0,1fr)] items-center gap-12 px-10 py-14">
-          <div className="flex flex-col items-start gap-6">
-            {header}
-            {captionNode}
-            {action}
-          </div>
-          <div className="min-w-0">
-            {stage}
-            {controls}
-          </div>
-        </div>
-      ) : (
-        <div className="flex w-full flex-col items-center px-4 pb-6 pt-6">
-          {header}
-          <div className="mt-2 w-full min-w-0">{stage}</div>
-          {controls}
-          {captionNode}
-          {action && <div className="mt-3 flex justify-center">{action}</div>}
-        </div>
-      )}
+      {/* one DOM for both layouts, switched by CSS at lg (= WIDE): the server render (before the
+          section is measured) already has the right layout, so hydration shifts nothing */}
+      <div className="mx-auto grid w-full max-w-7xl justify-items-center px-4 pt-6 pb-6 [grid-template-areas:'h''s''c''cap''a'] lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:grid-rows-[1fr_auto_auto_auto_1fr_auto] lg:items-center lg:justify-items-stretch lg:gap-x-12 lg:gap-y-6 lg:px-10 lg:py-14 lg:[grid-template-areas:'._s''h_s''cap_s''a_s''._s''._c']">
+        <div className="[grid-area:h] lg:justify-self-start">{header}</div>
+        <div className="mt-2 w-full min-w-0 [grid-area:s] lg:mt-0">{stage}</div>
+        <div className="[grid-area:c]">{controls}</div>
+        <div className="w-full [grid-area:cap]">{captionNode}</div>
+        {action && <div className="mt-3 flex justify-center [grid-area:a] lg:mt-0 lg:justify-start">{action}</div>}
+      </div>
       {openIndex !== null && items[openIndex] && (
         <DishDialog
           uid={uid}
