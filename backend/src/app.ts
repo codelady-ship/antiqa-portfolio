@@ -105,7 +105,9 @@ export function present(p: any, admin = false) {
     adminHint: p.adminUrl ? p.adminHint || "" : "",
     // false: the admin panel cannot be framed, the modal shows an "open in a new tab" card
     ...(p.adminUrl && { adminFrame: !p.adminNoFrame }),
-    demoUrl: p.comingSoon || p.demoOff ? null : demoUrl({ owner: p.owner, name: p.name, homepage: gh.homepage ?? null, hasPages: !!gh.hasPages }, p.demoOverride),
+    demoUrl: liveUrl(p),
+    // false: the live site cannot be framed, the Demo tab shows an "open in a new tab" card
+    ...(liveUrl(p) && { demoFrame: !p.demoNoFrame }),
     createdAt: gh.createdAt ?? null,
     pushedAt: gh.pushedAt ?? null,
     stars: gh.stars ?? 0,
@@ -146,14 +148,20 @@ export async function frameBlocked(url: string): Promise<boolean> {
   }
 }
 
-/** Re-checks adminNoFrame for the current adminUrl (call after adminUrl changes). */
-export async function checkAdminFrame(p: any) {
-  p.adminNoFrame = p.adminUrl ? await frameBlocked(p.adminUrl) : false;
+/** The live link the site shows (null: coming soon, switched off or none). */
+function liveUrl(p: any): string | null {
+  const gh = p.gh ?? {};
+  return p.comingSoon || p.demoOff ? null : demoUrl({ owner: p.owner, name: p.name, homepage: gh.homepage ?? null, hasPages: !!gh.hasPages }, p.demoOverride);
+}
+
+/** Re-checks whether the live demo and the admin panel can be framed (after their links change, and on every sync). */
+export async function checkFrames(p: any) {
+  const live = liveUrl(p);
+  [p.demoNoFrame, p.adminNoFrame] = await Promise.all([live ? frameBlocked(live) : false, p.adminUrl ? frameBlocked(p.adminUrl) : false]);
 }
 
 /** Refreshes and saves a project's GitHub snapshot (POST /api/projects, sync, scripts). Never throws on GitHub errors: sets syncError. */
 export async function sync(p: any) {
-  await checkAdminFrame(p);
   try {
     // private repos are read too (metadata only, no README), so a repo that turns private loses its code link
     const { private: priv, ...s } = await fetchSnapshot({ owner: p.owner, name: p.name }, { allowPrivate: true });
@@ -165,6 +173,8 @@ export async function sync(p: any) {
   } catch (e) {
     p.syncError = e instanceof Error ? e.message : "sync failed";
   }
+  // after the snapshot: the live link may come from the (new) GitHub homepage
+  await checkFrames(p);
   p.syncedAt = new Date();
   return p.save();
 }
@@ -358,8 +368,8 @@ export function createApp() {
       const patch = ProjectPatch.parse(req.body);
       const p = await Project.findByIdAndUpdate(req.params.id, patch, { new: true });
       if (!p) return res.status(404).json({ error: "not found" });
-      if (patch.adminUrl !== undefined) {
-        await checkAdminFrame(p);
+      if (patch.adminUrl !== undefined || patch.demoOverride !== undefined || patch.comingSoon !== undefined || patch.demoOff !== undefined) {
+        await checkFrames(p);
         await p.save();
       }
       res.json(present(p, true));

@@ -42,6 +42,8 @@ export type Project = {
   adminHint?: string;
   /** false: the admin panel refuses to be framed (open it in a new tab instead) */
   adminFrame?: boolean;
+  /** false: the live site refuses to be framed (the Demo tab shows an open-in-new-tab card) */
+  demoFrame?: boolean;
   demoUrl: string | null;
   createdAt: string | null;
   pushedAt: string | null;
