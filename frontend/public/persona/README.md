@@ -1,36 +1,24 @@
-# Persona assets (the figure of Antiqa that follows the scroll)
+# Persona assets (Antiqa's figure on the home page)
 
-Her photo is `src/components/persona/antiqa.webp` (677 × 800, a static import, so it is served
-once as a hashed file). It is the figure until the film exists, and the small round photo on phones.
-Prompts for Google Flow and the film script: `docs/FLOW-PERSONA-PROMPTS.md`.
+Her photo is `src/components/persona/antiqa.webp` (677 × 800, a static import, served once as a
+hashed file). Phones and tablets (< 1024 px) show it in the middle of the project belt.
 
-## 1. Film — `film/` (the figure that follows the scroll)
+## Clips — `clips/` (owner, 2026-11-17: one video per section, no travelling figure)
 
-`node scripts/persona-film.mjs clip1.mp4 clip2.mp4 …` writes:
+`node scripts/persona-clips.mjs --wave clip1.mp4 --desk clip3.mp4 [--point clip4.mp4]` (run from
+`frontend/`) writes:
 
-| file | what |
-| --- | --- |
-| `film-1280.mp4` | desktop (≥ 1024 px): H.264, every frame a keyframe (`-g 1`), CRF 27, no audio, faststart |
-| `film-854.mp4` | the same at 854 px, CRF 28: kept for a later phone version (phones show the static page for now) |
-| `poster.jpg` | the first frame, shown while the film loads |
+| file | where | encoding |
+| --- | --- | --- |
+| `wave.mp4` / `wave.webp` | hero (right) and contact: she waves | 432 × 640, CRF 28, a normal GOP, loops |
+| `desk.mp4` / `desk.webp` | About (left, sticky): she sits down at the desk and types, scrubbed by the scroll | 720 × 540, CRF 30, every frame a keyframe (`-g 1`) |
+| `point.mp4` / `point.webp` | Projects (middle of the belt): she points at the hovered plate | 360 × 534, `-g 1` (played forwards and backwards) |
 
-It then prints the `PERSONA.film` block for `config.ts`: the marks where each section's pose is reached,
-the hold, and where she stands (`focus`) / should stand (`place`). Aim for ≤ 4 MB (desktop) and
-≤ 2.5 MB (phones). A 16:9 cream studio (#FBF3EC): the edges are feathered into the page.
-The old canvas frame sequence (`frames/`) is gone: an all-keyframe video seeks just as well and is
-one request instead of a hundred.
+The `.webp` is the first frame: the server HTML shows it, and it stays the picture with reduced
+motion. The 2 px black lines at the top and bottom of the Veo clips are cropped; nothing else is
+removed. Until clip4 (pointing) exists, `point.mp4` is cut from the wave (0–1.5 s, the arm going
+out); after re-running with `--point`, set `rest` / `hold` / `faces` in `src/components/persona/config.ts`.
 
-## 2. Poses — `poses/` (the slot figures, all screen sizes)
+## Poses — `poses/` (optional stills)
 
-Transparent WebP, same 677 × 800 box, her feet at the bottom edge:
-
-| file | when |
-| --- | --- |
-| `idle.webp` | nothing hovered: standing, looking at the visitor |
-| `up.webp` | a card above her is hovered: looks and points up |
-| `down.webp` | a card below her: looks and points down |
-| `left.webp` | a card on the visitor's left: turns and points left |
-| `right.webp` | a card on the visitor's right: turns and points right |
-
-The speech bubble sits at her mouth on her right side (the visitor's right), so leave a little
-room there. ≤ 60 KB each.
+Transparent WebP, same 677 × 800 box, her feet at the bottom edge. ≤ 60 KB each.

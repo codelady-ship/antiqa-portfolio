@@ -1,10 +1,8 @@
-# Google Flow: the persona film and poses
+# Google Flow: the persona clips and poses
 
-The site shows a figure of Antiqa that follows the scroll. In the hero she waves on the right. In About she stands on the left while the text slides in from the right. In Projects she stands in the middle of the project belt.
+The site shows a video of Antiqa in each section. In the hero she waves on the right. In About she sits down at a desk on the left while the text slides in from the right. In Projects she stands in the middle of the project belt and points at the hovered plate. In Contact she waves again.
 
-Until the film exists, the figure is her photo (`frontend/src/components/persona/antiqa.webp`), moved by `persona-traveler.tsx`.
-
-The film follows the owner's "AI Character Portfolio" guide (2026-11-16). It is one video, scrubbed by the scroll, in a fixed stage behind the page (`persona-film.tsx`).
+Since 2026-11-17 (owner) there is no travelling figure and no single film: each section has its own clip (persona/clip.tsx), made by `scripts/persona-clips.mjs` (see frontend/public/persona/README.md). The clip prompts below still apply.
 
 Use **her photo** as the reference ("Ingredient") image: navy suit, light-blue shirt. The studio is **cream** like the page (not black), so the film's edges vanish into the page.
 
@@ -39,25 +37,15 @@ Tips:
 - If a clip crops her feet, add "full body, feet visible, camera at waist height" and generate again.
 - Pick the best of the two outputs. Its last frame starts the next clip.
 
-## 3. Build the film
+## 3. Build the clips
 
 You need ffmpeg (`winget install Gyan.FFmpeg`). Run this from `frontend/`:
 
 ```bash
-node scripts/persona-film.mjs C:/Users/user/Downloads/clip1.mp4 C:/Users/user/Downloads/clip2.mp4 C:/Users/user/Downloads/clip3.mp4 C:/Users/user/Downloads/clip4.mp4
+node scripts/persona-clips.mjs --wave C:/Users/user/Downloads/clip1.mp4 --desk C:/Users/user/Downloads/clip3.mp4 --point C:/Users/user/Downloads/clip4.mp4
 ```
 
-The script:
-- joins the clips with a 0.25 s cross-fade;
-- keeps the Veo watermark. To remove it, pass `--delogo x:y:w:h` (Veo's corner mark is about `1160:672:104:36`), and only after checking that your Flow/Veo plan allows it;
-- encodes `public/persona/film/film-1280.mp4` (the site) and `film-854.mp4` (kept for a later phone version). Every frame is a keyframe, so seeking is instant. There is no audio, and faststart is on;
-- warns when a file is too big for the site (over 12 MB at 1280, over 8 MB at 854);
-- makes `poster.jpg` from the first frame;
-- prints the `film: { … }` block to paste into `src/components/persona/config.ts`.
-
-With 4 clips the sections are `hero,about,-,work`; with 5 clips they are `hero,about,-,work,contact`. Use `--sections` to change this.
-
-After pasting the block, check `focus` by eye. This is where she stands in the frame at each mark: 0 is the left edge and 1 is the right edge.
+The script crops the 2 px black lines, cuts a box around her, and writes the wave / desk / point clips plus a still frame of each to `public/persona/clips/` (desk and point: every frame a keyframe). Nothing is blurred out. Without `--point` the pointing clip is cut from the wave. See `frontend/public/persona/README.md`.
 
 How the site uses the film:
 - On load the hero clip plays by itself (the turn and the wave).

@@ -11,9 +11,10 @@ import { blurb, onBelt, ProjectConveyor } from "./project-conveyor";
 /**
  * Work (#43): only her full-stack projects (owner, 2026-11-16), going round on a conveyor belt
  * around her figure (ProjectConveyor). The early practice tasks stay in the database and on GitHub
- * (link under the caption). "Details" opens the demo / README modal.
+ * (link under the caption). A plate (or "Details" in the project panel) opens the project modal
+ * (DemoModal), the same modal as before the belt (owner, 2026-11-17).
  */
-export function Work({ projects }: { projects: Project[] }) {
+export function Work({ projects, aiNote }: { projects: Project[]; aiNote?: string }) {
   const t = useTranslations("Work");
   const locale = useLocale() as "az" | "en";
   const [open, setOpen] = useState<Project | null>(null);
@@ -53,7 +54,7 @@ export function Work({ projects }: { projects: Project[] }) {
     <section id="work" data-persona="work" className="relative scroll-mt-24">
       <div className="mx-auto max-w-[1680px] pt-10 pb-16 sm:pt-14 sm:pb-24">
         {list.length > 0 && (
-          <ProjectConveyor projects={list} locale={locale} header={header} onDetails={setOpen} githubUrl={`https://github.com/${owner}?tab=repositories`} />
+          <ProjectConveyor projects={list} locale={locale} header={header} onDetails={setOpen} githubUrl={`https://github.com/${owner}?tab=repositories`} aiNote={aiNote} />
         )}
         {/* the same projects as plain links in the server HTML: search engines and screen readers get
             names, summaries and URLs without running the belt (shown when a link is focused) */}

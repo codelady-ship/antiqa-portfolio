@@ -101,6 +101,10 @@ export interface SushiConveyorMenuProps extends React.ComponentProps<"section"> 
   minPlate?: number;
   /** classes sizing the belt before it is measured (server render), e.g. responsive aspect ratios, so it does not shift. */
   initialClass?: string;
+  /** A click on a plate calls this instead of opening the built-in dialog (the site's own project modal). */
+  onPick?: (index: number) => void;
+  /** Replaces the caption (name + description of the lifted plate) with your own block, e.g. a project panel. */
+  info?: React.ReactNode;
 }
 
 const SPACING = 1.35;
@@ -297,6 +301,8 @@ export function SushiConveyorMenu({
   curve = 1,
   minPlate = 96,
   initialClass = "aspect-[2]",
+  onPick,
+  info,
   className,
   ref,
   ...rest
@@ -351,11 +357,12 @@ export function SushiConveyorMenu({
     onPausedChange: undefined as ((value: boolean) => void) | undefined,
     onOpenChange: undefined as ((index: number | null) => void) | undefined,
     onAdd: undefined as ((item: ConveyorDish) => void) | undefined,
+    onPick: undefined as ((index: number) => void) | undefined,
   });
   live.current = {
     geo, active, paused, reduced, open: openIndex !== null, count, speed: Math.max(0, speed),
     activeControlled: activeProp !== undefined, pausedControlled: pausedProp !== undefined,
-    onActiveChange, onPausedChange, onOpenChange, onAdd,
+    onActiveChange, onPausedChange, onOpenChange, onAdd, onPick,
   };
 
   const setSectionRef = React.useCallback((node: HTMLElement | null) => {
@@ -541,6 +548,8 @@ export function SushiConveyorMenu({
   const open = React.useCallback((index: number) => {
     stop();
     setActive(index);
+    const pick = live.current.onPick;
+    if (pick) { pick(index); return; }
     const s = sim.current;
     s.v = 0;
     s.mode = RUN;
@@ -804,11 +813,15 @@ export function SushiConveyorMenu({
   ));
 
   const captionNode = (
-    <div id={`${uid}-caption`} aria-live="polite" data-caption className="mx-auto mt-2 min-h-[3.75rem] max-w-md px-2 text-center sm:min-h-[2.75rem] lg:mx-0 lg:mt-0 lg:min-h-[3.25rem] lg:max-w-none lg:px-0 lg:text-left">
-      <p className={`text-sm ${current ? "font-medium text-ink" : "text-muted"}`}>
-        {current ? <>{current.name}{current.price && <span className="font-normal tabular-nums text-muted"> · {current.price}</span>}</> : caption}
-      </p>
-      {current?.description && <p className="mt-0.5 text-[13px] leading-snug text-muted">{current.description}</p>}
+    <div id={`${uid}-caption`} aria-live={info ? undefined : "polite"} data-caption className={info ? "mt-4 w-full lg:mt-0" : "mx-auto mt-2 min-h-[3.75rem] max-w-md px-2 text-center sm:min-h-[2.75rem] lg:mx-0 lg:mt-0 lg:min-h-[3.25rem] lg:max-w-none lg:px-0 lg:text-left"}>
+      {info ?? (
+        <>
+          <p className={`text-sm ${current ? "font-medium text-ink" : "text-muted"}`}>
+            {current ? <>{current.name}{current.price && <span className="font-normal tabular-nums text-muted"> · {current.price}</span>}</> : caption}
+          </p>
+          {current?.description && <p className="mt-0.5 text-[13px] leading-snug text-muted">{current.description}</p>}
+        </>
+      )}
     </div>
   );
 

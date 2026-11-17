@@ -1,11 +1,8 @@
 import { locale as rootLocale } from "next/root-params";
 import { getTranslations } from "next-intl/server";
 import { Hero } from "@/components/hero/hero";
+import { PersonaClip } from "@/components/persona/clip";
 import { PERSONA } from "@/components/persona/config";
-import { PersonaFilm } from "@/components/persona/persona-film";
-import { PersonaSlot } from "@/components/persona/slot";
-import { PersonaTraveler } from "@/components/persona/persona-traveler";
-import { PersonaStage } from "@/components/persona/persona-stage";
 import { About } from "@/components/sections/about";
 import { Contact } from "@/components/sections/contact";
 import { JsonLd } from "@/components/seo/json-ld";
@@ -14,10 +11,11 @@ import { getProfile, getProjects } from "@/lib/data";
 import { JOB_STACK, JOB_TITLE } from "@/lib/identity";
 
 /**
- * Home: the persona travels down with the scroll (persona-traveler.tsx). She stands beside the
- * hero, falls to the About section and stays there (sticky, pose 2) while it is read, then falls
- * into the middle of the project ring and stands there. The contact block has its own sticky stage.
- * Phones and tablets get the plain one-column page (no slots, no travelling figure).
+ * Home (owner, 2026-11-17): she no longer travels between sections. Each section has its own video
+ * of her (persona/clip.tsx) that appears when the section comes into view: hero (right) she waves,
+ * About (left, sticky) she sits down at the desk and types as you scroll, Projects she stands in the
+ * middle of the belt and points at the hovered plate, Contact she waves again.
+ * Phones and tablets get the plain one-column page (no videos).
  */
 // centred like .wrap (1320 px, 1680 px from 1600 px wide), so the text lines up with the header and the work section
 const GROUP = "mx-auto max-w-[1320px] min-[1600px]:max-w-[1680px] lg:grid lg:grid-cols-[minmax(0,1fr)_clamp(19rem,30vw,36rem)]";
@@ -26,12 +24,7 @@ const GROUP_LEFT = "mx-auto max-w-[1320px] min-[1600px]:max-w-[1680px] lg:grid l
 
 export default async function Home() {
   const locale = ((await rootLocale()) === "en" ? "en" : "az") as "az" | "en";
-  const [profile, projects, tp, tw] = await Promise.all([
-    getProfile(),
-    getProjects(),
-    getTranslations({ locale, namespace: "Persona" }),
-    getTranslations({ locale, namespace: "Work" }),
-  ]);
+  const [profile, projects, tp] = await Promise.all([getProfile(), getProjects(), getTranslations({ locale, namespace: "Persona" })]);
   const [first, ...rest] = profile.name.split(" ");
   const cv = profile.cv[locale] ?? profile.cv.az ?? profile.cv.en ?? null;
   // the stage and ring figures are decorative (alt=""): the photo is not announced again and again
@@ -39,8 +32,6 @@ export default async function Home() {
   return (
     <>
       <JsonLd profile={profile} projects={projects} locale={locale} />
-      {/* the "track" the travelling figure moves on: hero → About → the project ring */}
-      {/* isolate: the travelling figure (z -10) goes under the content of the track, not under the page */}
       <div className="relative isolate">
         {/* desktop: hero text | her (right); then her (left, sticky) | About (owner, 2026-11-16 #3) */}
         <div className={GROUP}>
@@ -48,28 +39,41 @@ export default async function Home() {
             <Hero first={first} last={rest.join(" ")} title={JOB_TITLE} stack={JOB_STACK} tagline={profile.tagline[locale]} location={profile.location[locale]} cvHref={cv} />
           </div>
           {/* she stands at the start of her column, close to the text (no empty middle) */}
-          <div aria-hidden className="hidden items-center justify-start pt-24 lg:flex">
-            <PersonaSlot id="hero" wave bubble={tp("hero")} className="ml-[4%] w-[78%] 2xl:-ml-[4vw] 2xl:w-[82%]" />
+          <div className="hidden flex-col items-start justify-center pt-24 lg:flex">
+            <div className="relative ml-[4%] w-[78%] 2xl:-ml-[4vw] 2xl:w-[82%]">
+              <PersonaClip clip={PERSONA.wave} mode="loop" />
+              <p
+                aria-hidden
+                className="persona-bubble hand absolute top-[4%] -right-[4%] max-w-[12rem] -rotate-3 rounded-[1.4rem] border-2 border-ink bg-surface px-4 py-2.5 text-[1.3rem] leading-tight text-ink shadow-[4px_4px_0_var(--ink)]"
+              >
+                {tp("hero")}
+              </p>
+              <AiNote text={tp("filmNote")} />
+            </div>
           </div>
         </div>
         <div className={GROUP_LEFT}>
-          <div aria-hidden className="hidden lg:block">
-            <PersonaSlot id="about" pose="right" bubble={tp("skills")} className="sticky top-32 mt-28 mr-[4%] ml-auto w-[78%] 2xl:w-[80%]" />
+          {/* only her video here (owner): she sits down at the desk and types while About scrolls by */}
+          <div className="hidden lg:block">
+            <div className="sticky top-28 mt-28 pl-[4%]">
+              <PersonaClip clip={PERSONA.desk} mode="scrub" track="#about" className="w-full" />
+              <AiNote text={tp("filmNote")} />
+            </div>
           </div>
           <div className="min-w-0" data-persona="skills">
             <About profile={profile} projects={projects} />
           </div>
         </div>
-        <Work projects={projects} />
-        {/* the film (owner's guide) once it exists; until then her photo travels */}
-        {PERSONA.film ? <PersonaFilm film={PERSONA.film} loadingLabel={tw("loading")} note={tp("filmNote")} /> : <PersonaTraveler heroBubble={tp("hero")} aboutBubble={tp("skills")} />}
+        <Work projects={projects} aiNote={tp("filmNote")} />
       </div>
-      <div className={GROUP}>
-        <div className="min-w-0" data-persona="contact">
-          <Contact profile={profile} />
-        </div>
-        <PersonaStage chapters={["contact"]} bubbles={{ contact: tp("contact") }} alt="" />
+      <div className="mx-auto max-w-[1320px] min-[1600px]:max-w-[1680px]" data-persona="contact">
+        <Contact profile={profile} bubble={tp("contact")} aiNote={tp("filmNote")} />
       </div>
     </>
   );
+}
+
+/** the clips are made with AI (Google Flow / Veo): said under each one, in the page text */
+function AiNote({ text }: { text: string }) {
+  return <p className="mt-2 text-center text-xs text-muted">{text}</p>;
 }

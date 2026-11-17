@@ -72,6 +72,10 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
   return (
     <html lang={locale} className={`${fontVars} antialiased`} suppressHydrationWarning>
       <body className="min-h-dvh">
+        {/* without JS nothing would ever reveal the scroll-in blocks: show them as they are */}
+        <noscript>
+          <style>{"[data-reveal],[data-reveal] .split-word>span{opacity:1!important;transform:none!important;filter:none!important}"}</style>
+        </noscript>
         <a
           href="#main"
           className="sr-only z-[100] rounded-full bg-ink px-5 py-3 text-bg focus:not-sr-only focus:fixed focus:top-4 focus:left-4"
