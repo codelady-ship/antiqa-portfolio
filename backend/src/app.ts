@@ -53,6 +53,9 @@ export const ProjectPatch = z.object({
   summary: loc.optional(),
   demoOverride: url.optional(),
   backendUrl: url.optional(),
+  adminUrl: url.optional(),
+  // a public demo login at most ("demo@… / demo"); one short line, no markup
+  adminHint: z.string().trim().max(120).regex(/^[^<>]*$/, "no markup").optional(),
   featured: z.boolean().optional(),
   hidden: z.boolean().optional(),
   fullStack: z.boolean().optional(),
@@ -96,6 +99,8 @@ export function present(p: any, admin = false) {
     // private repo: no code link anywhere on the site ("" = hidden)
     repoUrl: priv ? "" : gh.url || p.repoUrl,
     backendUrl: p.backendUrl || null,
+    adminUrl: p.adminUrl || null,
+    adminHint: p.adminUrl ? p.adminHint || "" : "",
     demoUrl: p.comingSoon || p.demoOff ? null : demoUrl({ owner: p.owner, name: p.name, homepage: gh.homepage ?? null, hasPages: !!gh.hasPages }, p.demoOverride),
     createdAt: gh.createdAt ?? null,
     pushedAt: gh.pushedAt ?? null,

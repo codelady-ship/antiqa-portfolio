@@ -109,6 +109,8 @@ function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => Promise<
     summary: p.summary ?? { az: "", en: "" },
     demoOverride: p.demoOverride ?? "",
     backendUrl: p.backendUrl ?? "",
+    adminUrl: p.adminUrl ?? "",
+    adminHint: p.adminHint ?? "",
     order: p.order ?? 0,
     featured: p.featured,
     hidden: p.hidden,
@@ -202,6 +204,12 @@ function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => Promise<
           <Field label={t("backendUrl")}>
             <Input type="url" pattern="https://.*" placeholder="https://github.com/…" value={f.backendUrl} onChange={(e) => setF({ ...f, backendUrl: e.target.value })} />
           </Field>
+          <Field label={t("adminUrl")}>
+            <Input type="url" pattern="https://.*" placeholder="https://…/admin" value={f.adminUrl} onChange={(e) => setF({ ...f, adminUrl: e.target.value })} />
+          </Field>
+          <Field label={t("adminHint")}>
+            <Input maxLength={120} placeholder="admin@demo.app / demo" value={f.adminHint} onChange={(e) => setF({ ...f, adminHint: e.target.value })} />
+          </Field>
           {err && (
             <p role="alert" className="text-sm text-rose sm:col-span-2">
               {err}
@@ -214,6 +222,8 @@ function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => Promise<
                   title: f.title,
                   summary: f.summary,
                   backendUrl: f.backendUrl,
+                  adminUrl: f.adminUrl, // "" removes the Admin tab
+                  adminHint: f.adminHint,
                   order: f.order,
                   demoOverride: f.demoOverride, // "" clears it
                 })

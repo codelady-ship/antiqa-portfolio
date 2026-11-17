@@ -8,7 +8,7 @@ import type { Project } from "@/lib/types";
 import { isSafeFrame } from "./frame";
 import { langColor } from "./lang-colors";
 
-type Tab = "demo" | "readme";
+type Tab = "demo" | "readme" | "admin";
 const WIDTHS = { desktop: "100%", tablet: "820px", phone: "390px" } as const;
 
 /** Native <dialog>: focus trap, Esc to close and inert background come from the browser. */
@@ -22,6 +22,10 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
   const [info, setInfo] = useState(false);
 
   const canFrame = !!p?.demoUrl && isSafeFrame(p.demoUrl);
+  // owner, 2026-11-17: projects with an admin panel open it here too (a third tab)
+  const canAdmin = !!p?.adminUrl && isSafeFrame(p.adminUrl);
+  // the page the preview frame shows: the live demo, or (Admin tab) the project's admin panel
+  const frameUrl = (tab === "admin" ? p?.adminUrl : p?.demoUrl) ?? "";
 
   // reset the view when another project opens (state adjusted during render, not in an effect)
   const [shown, setShown] = useState<Project | null>(null);
@@ -101,7 +105,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
             </div>
             <div className="flex items-center gap-2">
               <div role="tablist" aria-label={t("view")} className="flex rounded-full border border-line p-0.5 text-sm">
-                {(["demo", "readme"] as const).map((k) => (
+                {(canAdmin ? (["demo", "readme", "admin"] as const) : (["demo", "readme"] as const)).map((k) => (
                   <button
                     key={k}
                     role="tab"
@@ -116,11 +120,11 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                     }}
                     className={`min-h-11 rounded-full px-3 transition-colors disabled:opacity-35 sm:px-4 ${tab === k ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}
                   >
-                    {k === "demo" ? t("demoTab") : t("readme")}
+                    {k === "demo" ? t("demoTab") : k === "admin" ? t("adminTab") : t("readme")}
                   </button>
                 ))}
               </div>
-              {tab === "demo" && (
+              {tab !== "readme" && (
                 <div role="group" aria-label={t("viewport")} className="hidden rounded-full border border-line p-0.5 text-sm md:flex">
                   {(Object.keys(WIDTHS) as (keyof typeof WIDTHS)[]).map((k) => (
                     <button
@@ -162,7 +166,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
               aria-labelledby={`tab-${tab}`}
               className={`min-h-0 min-w-0 justify-center bg-bg-2 p-2 sm:p-5 md:flex ${info ? "max-md:hidden" : "flex"}`}
             >
-              {tab === "demo" && p.demoUrl && canFrame ? (
+              {(tab === "demo" && p.demoUrl && canFrame) || (tab === "admin" && p.adminUrl && canAdmin) ? (
                 <div
                   className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white transition-[width] duration-500 ease-out"
                   style={{ width: WIDTHS[device], maxWidth: "100%" }}
@@ -171,14 +175,19 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                     <i className="size-2.5 rounded-full bg-rose/70" />
                     <i className="size-2.5 rounded-full bg-gold/70" />
                     <i className="size-2.5 rounded-full bg-emerald-400/70" />
-                    <span translate="no" className="notranslate mx-2 flex-1 truncate rounded-full bg-bg-2 px-3 py-1">{p.demoUrl.replace(/^https?:\/\//, "")}</span>
-                    <a href={p.demoUrl} target="_blank" rel="noopener noreferrer" title={t("openNew")} className="-my-3 -mr-3 grid size-11 shrink-0 place-items-center hover:text-ink">
+                    <span translate="no" className="notranslate mx-2 flex-1 truncate rounded-full bg-bg-2 px-3 py-1">{frameUrl.replace(/^https?:\/\//, "")}</span>
+                    <a href={frameUrl} target="_blank" rel="noopener noreferrer" title={t("openNew")} className="-my-3 -mr-3 grid size-11 shrink-0 place-items-center hover:text-ink">
                       ↗
                     </a>
                   </div>
+                  {tab === "admin" && p.adminHint && (
+                    <p translate="no" className="notranslate border-b border-line bg-butter-soft px-4 py-2 text-xs text-ink">
+                      {t("adminHint")}: {p.adminHint}
+                    </p>
+                  )}
                   <iframe
-                    key={p.demoUrl}
-                    src={p.demoUrl}
+                    key={frameUrl}
+                    src={frameUrl}
                     title={t("demoFrame", { title: p.title })}
                     sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                     referrerPolicy="no-referrer"
@@ -300,7 +309,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                     {t("backend")} ↗
                   </a>
                 )}
-                {tab === "demo" && <p className="text-xs text-muted">{t("frameNote")}</p>}
+                {tab !== "readme" && <p className="text-xs text-muted">{t("frameNote")}</p>}
               </div>
             </aside>
           </div>

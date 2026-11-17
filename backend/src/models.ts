@@ -39,6 +39,10 @@ const ProjectSchema = new Schema(
     summary: localized,
     demoOverride: { type: String, default: "" },
     backendUrl: { type: String, default: "" },
+    // the project's own admin panel (https), shown as an "Admin" tab in the project modal
+    adminUrl: { type: String, default: "" },
+    // one line under it, ONLY for demo-mode admins (e.g. a public demo login); never real credentials
+    adminHint: { type: String, default: "" },
     featured: { type: Boolean, default: false },
     hidden: { type: Boolean, default: false },
     // shown on the project belt of the home page (a real full-stack project, not a practice task);
