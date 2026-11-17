@@ -34,9 +34,8 @@ export const SHOWCASE = [
   "jeparla", // Next.js + Spring Boot + PostgreSQL (coming soon)
   "masapay", // Next.js + Spring Boot + PostgreSQL + Redis
   "Curtain-shop-web-site-frontend", // Perde.az: React + Spring Boot backend repo
-  "task7-front-end-for-task6-", // Fullstack Programmers List: Next.js server actions + MongoDB
-  "antiqa-portfolio", // this site: Next.js + Express + MongoDB
   "scholarship-visa-scam-checker", // "Codelady Skills": the skills site (Next.js, Supabase, Cloudflare Workers, Gemini) + the skills
+  // owner, 2026-11-17: Programmers List (task7/task6) and this portfolio are off the belt
 ];
 
 const ENTRIES: Entry[] = [

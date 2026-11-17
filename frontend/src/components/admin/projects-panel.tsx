@@ -16,12 +16,17 @@ export function ProjectsPanel({ seedRepos }: { seedRepos: SeedRepo[] }) {
   const [busy, setBusy] = useState<"" | "sync" | "seed">("");
   const [msg, setMsg] = useState("");
 
-  const load = useCallback(() => {
-    api<AdminProject[]>("/api/projects?all=1")
-      .then(setList)
-      .catch((e) => setMsg(`${t("error")}: ${(e as Error).message}`));
-  }, [t]);
-  useEffect(load, [load]);
+  // resolves once the list is fresh (a row clears its optimistic ticks then)
+  const load = useCallback(
+    () =>
+      api<AdminProject[]>("/api/projects?all=1")
+        .then(setList)
+        .catch((e) => setMsg(`${t("error")}: ${(e as Error).message}`)),
+    [t],
+  );
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const syncAll = async () => {
     setBusy("sync");
@@ -95,7 +100,7 @@ export function ProjectsPanel({ seedRepos }: { seedRepos: SeedRepo[] }) {
   );
 }
 
-function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => void }) {
+function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => Promise<unknown> | void }) {
   const t = useTranslations("Admin");
   const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState(false);
@@ -109,14 +114,24 @@ function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => void }) 
     hidden: p.hidden,
   });
   const [err, setErr] = useState("");
+  // the ticked state shows at once (optimistic); it was only updated after the save + list reload,
+  // so a click looked like it did nothing for a second or two
+  type Flag = "featured" | "hidden" | "fullStack" | "comingSoon" | "demoOff";
+  const [opt, setOpt] = useState<Partial<Record<Flag, boolean>>>({});
+  const flag = (k: Flag, fallback: boolean) => opt[k] ?? fallback;
 
   const patch = async (body: Partial<typeof f> & { comingSoon?: boolean; demoOff?: boolean; fullStack?: boolean }) => {
     setErr("");
+    const flags = Object.fromEntries(Object.entries(body).filter(([, v]) => typeof v === "boolean")) as Partial<Record<Flag, boolean>>;
+    setOpt((o) => ({ ...o, ...flags }));
     try {
       await api(`/api/projects/${p.id}`, { method: "PATCH", body: JSON.stringify(body) });
       await refreshSite();
-      onChange();
+      await onChange();
+      // the reloaded list now has the saved values: drop the optimistic ones (review #47)
+      setOpt((o) => Object.fromEntries(Object.entries(o).filter(([k]) => !(k in flags))));
     } catch (e) {
+      setOpt((o) => Object.fromEntries(Object.entries(o).filter(([k]) => !(k in flags))));
       setErr((e as Error).message);
     }
   };
@@ -127,7 +142,7 @@ function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => void }) 
   };
 
   return (
-    <li className={`rounded-2xl border border-line bg-surface p-4 ${p.hidden ? "opacity-60" : ""}`}>
+    <li className={`rounded-2xl border border-line bg-surface p-4 ${flag("hidden", p.hidden) ? "opacity-60" : ""}`}>
       <div className="flex flex-wrap items-center gap-3">
         <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="flex min-w-0 flex-1 items-center gap-3 text-left">
           <span className="text-muted">{open ? "▾" : "▸"}</span>
@@ -142,25 +157,25 @@ function ProjectRow({ p, onChange }: { p: AdminProject; onChange: () => void }) 
           </span>
         </button>
         <label className="flex items-center gap-1.5 text-xs">
-          <input type="checkbox" checked={p.featured} onChange={(e) => patch({ featured: e.target.checked })} />
+          <input type="checkbox" checked={flag("featured", p.featured)} onChange={(e) => patch({ featured: e.target.checked })} />
           {t("featured")}
         </label>
         <label className="flex items-center gap-1.5 text-xs">
-          <input type="checkbox" checked={p.hidden} onChange={(e) => patch({ hidden: e.target.checked })} />
+          <input type="checkbox" checked={flag("hidden", p.hidden)} onChange={(e) => patch({ hidden: e.target.checked })} />
           {t("hidden")}
         </label>
       </div>
       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 pl-7 text-xs text-muted">
         <label className="flex items-center gap-1.5">
-          <input type="checkbox" checked={!!(p.fullStack ?? onBelt({ ...p, hidden: false }))} onChange={(e) => patch({ fullStack: e.target.checked })} />
+          <input type="checkbox" checked={flag("fullStack", !!(p.fullStack ?? onBelt({ ...p, hidden: false })))} onChange={(e) => patch({ fullStack: e.target.checked })} />
           {t("fullStack")}
         </label>
         <label className="flex items-center gap-1.5">
-          <input type="checkbox" checked={!!p.comingSoon} onChange={(e) => patch({ comingSoon: e.target.checked })} />
+          <input type="checkbox" checked={flag("comingSoon", !!p.comingSoon)} onChange={(e) => patch({ comingSoon: e.target.checked })} />
           {t("comingSoon")}
         </label>
         <label className="flex items-center gap-1.5">
-          <input type="checkbox" checked={!!p.demoOff} onChange={(e) => patch({ demoOff: e.target.checked })} />
+          <input type="checkbox" checked={flag("demoOff", !!p.demoOff)} onChange={(e) => patch({ demoOff: e.target.checked })} />
           {t("demoOff")}
         </label>
         {p.privateRepo && <span className="text-gold">{t("privateNote")}</span>}
