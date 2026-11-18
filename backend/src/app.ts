@@ -131,10 +131,23 @@ export function present(p: any, admin = false) {
 }
 
 /**
- * Does this page refuse to be shown in an iframe on another site? (X-Frame-Options DENY/SAMEORIGIN,
- * or a CSP frame-ancestors list without "*"). Unknown (network error) = framable: the modal still
- * has its open-in-new-tab link.
+ * Does this page refuse to be shown in an iframe on the portfolio? (X-Frame-Options DENY/SAMEORIGIN,
+ * or a CSP frame-ancestors list that allows neither "*" nor every portfolio origin). Unknown
+ * (network error) = framable: the modal still has its open-in-new-tab link.
  */
+const PORTFOLIO_ORIGINS = ["https://antiqa-portfolio.vercel.app", "https://antiqacode.vercel.app"];
+
+/** Does one frame-ancestors source ("https://x.dev", "https://*.vercel.app", "https:", "*") match the origin? */
+function sourceMatches(src: string, origin: string): boolean {
+  const s = src.replace(/\/+$/, "").toLowerCase();
+  if (s === "*" || s === "https:") return true;
+  const m = /^(https?:\/\/)?(\*\.)?([^/:]+)$/.exec(s);
+  if (!m) return false;
+  const host = new URL(origin).hostname;
+  if (m[1] && !origin.startsWith(m[1])) return false;
+  return m[2] ? host.endsWith(`.${m[3]}`) : host === m[3];
+}
+
 export async function frameBlocked(url: string): Promise<boolean> {
   try {
     const r = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(8000) });
@@ -142,7 +155,10 @@ export async function frameBlocked(url: string): Promise<boolean> {
     const xfo = (r.headers.get("x-frame-options") ?? "").toLowerCase();
     if (/deny|sameorigin/.test(xfo)) return true;
     const fa = /frame-ancestors([^;]*)/i.exec(r.headers.get("content-security-policy") ?? "")?.[1]?.trim();
-    return fa !== undefined && !/(^|\s)\*(\s|$)/.test(fa);
+    if (fa === undefined) return false;
+    const sources = fa.split(/\s+/).filter(Boolean);
+    // framable only if the portfolio can embed it under each of its domains
+    return !PORTFOLIO_ORIGINS.every((o) => sources.some((s) => sourceMatches(s, o)));
   } catch {
     return false;
   }
