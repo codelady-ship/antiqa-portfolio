@@ -54,6 +54,9 @@ const ENTRIES: Entry[] = [
     repo: "https://github.com/codelady-ship/planera",
     patch: {
       featured: true,
+      // read-only demo admin (planera #141): /panel redirects to the login page with the demo button
+      adminUrl: "https://planera-az.vercel.app/panel",
+      adminHint: "“Demo admin kimi bax” → demo@planera.az / demo1234 (read-only)",
       hidden: false,
       order: 40,
       summary: {
@@ -176,6 +179,9 @@ const ENTRIES: Entry[] = [
       hidden: false,
       order: 13,
       demoOverride: "https://my-fitness-app-tau-drab.vercel.app/",
+      // starts the read-only demo admin by itself (My-Fitness-App #8); frameable after its #7 (frame-ancestors)
+      adminUrl: "https://my-fitness-app-tau-drab.vercel.app/login?demo=admin",
+      adminHint: "Opens as the demo admin (demo-admin@pulsa.example / pulsa-demo-admin), read-only",
       summary: {
         az: "Ürək ritminə əsaslanan kardio-məşq tətbiqi: landing, proqramlar, məşqçilər, qiymətlər, giriş/qeydiyyat və istifadəçi/admin paneli (ürək göstəriciləri, gündəlik plan, üzvlər, işçilər). Next.js frontend və Node.js + Express + MongoDB API.",
         en: "A heart-rate based cardio coaching app: landing page, programmes, coaches, pricing, sign-in and a user/admin dashboard (heart metrics, daily plan, members, staff). A Next.js frontend with a Node.js + Express + MongoDB API.",
