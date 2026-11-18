@@ -27,9 +27,6 @@ export async function SiteFooter({ name, location }: { name: string; location: s
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          <Link href="/about" className="inline-flex min-h-11 items-center rounded-full px-3 font-medium transition-colors hover:bg-pink-soft hover:text-ink">
-            {t("about")}
-          </Link>
           <a href="#main" className="inline-flex min-h-11 items-center rounded-full px-3 font-medium transition-colors hover:bg-pink-soft hover:text-ink">
             {t("top")} ↑
           </a>

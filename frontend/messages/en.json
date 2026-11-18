@@ -15,7 +15,10 @@
     "language": "Language",
     "menu": "Menu",
     "main": "Main",
-    "home": "Home"
+    "home": "Home",
+    "view": "View",
+    "viewInteractive": "Interactive",
+    "viewPlain": "Plain text"
   },
   "Hero": {
     "available": "Open to new opportunities",
@@ -101,7 +104,7 @@
   },
   "Contact": {
     "kicker": "03 — Contact",
-    "title": "Let's build something together.",
+    "title": "Bring the idea — I’ll hand back a live link.",
     "lead": "A job offer, a collaboration or just hello — write to me, I reply fast.",
     "copy": "Copy",
     "copied": "Copied",

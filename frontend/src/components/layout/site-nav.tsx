@@ -86,6 +86,29 @@ export function SiteNav() {
       </Link>
     );
 
+  // owner, 2026-11-18: the "plain text / interactive" switch moves from the footer to the header
+  const plain = pathname === "/about";
+  const viewToggle = (className: string) => (
+    <div role="group" aria-label={t("view")} className={`rounded-full border border-line bg-surface text-xs font-medium ${className}`}>
+      {(
+        [
+          ["/", t("viewInteractive"), !plain],
+          ["/about", t("viewPlain"), plain],
+        ] as const
+      ).map(([href, label, active]) => (
+        <Link
+          key={href}
+          href={href}
+          aria-current={active ? "page" : undefined}
+          onClick={() => setMenu(false)}
+          className={`inline-flex min-h-11 flex-1 items-center justify-center whitespace-nowrap rounded-full px-3 transition-colors ${active ? "bg-accent text-on-accent" : "text-muted hover:text-ink"}`}
+        >
+          {label}
+        </Link>
+      ))}
+    </div>
+  );
+
   return (
     <>
       <div ref={bar} aria-hidden className="fixed inset-x-0 top-0 z-[60] h-[3px] origin-left scale-x-0 bg-accent" />
@@ -114,6 +137,7 @@ export function SiteNav() {
               ))}
             </ul>
             <div className="flex shrink-0 items-center gap-1">
+              {viewToggle("hidden lg:flex")}
               <div role="group" aria-label={t("language")} translate="no" className="notranslate flex rounded-full border border-line bg-surface text-xs">
                 {routing.locales.map((l) => (
                   <Link
@@ -153,7 +177,7 @@ export function SiteNav() {
                 aria-expanded={menu}
                 aria-controls="nav-menu"
                 aria-label={t("menu")}
-                className="grid size-11 place-items-center rounded-full border border-line bg-surface sm:hidden"
+                className="grid size-11 place-items-center rounded-full border border-line bg-surface lg:hidden"
               >
                 <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
                   {menu ? <path d="M6 6l12 12M18 6 6 18" /> : <path d="M4 8h16M4 16h16" />}
@@ -165,13 +189,14 @@ export function SiteNav() {
             ref={menuList}
             id="nav-menu"
             hidden={!menu}
-            className="mb-3 grid gap-1 rounded-3xl border border-line bg-surface p-2 shadow-[var(--shadow)] sm:hidden"
+            className="mb-3 grid gap-1 rounded-3xl border border-line bg-surface p-2 shadow-[var(--shadow)] lg:hidden"
           >
             {links.map(([hash, label]) => (
-              <li key={hash}>
+              <li key={hash} className="sm:hidden">
                 {section(hash, "block rounded-full px-4 py-3 font-medium transition-colors hover:bg-pink-soft", label, () => setMenu(false))}
               </li>
             ))}
+            <li className="p-1">{viewToggle("flex text-sm")}</li>
           </ul>
         </nav>
       </header>
