@@ -10,7 +10,9 @@ import type { L10n, Project } from "./types";
 const SHOWCASE_FALLBACK = new Set(
   // owner, 2026-11-17: Programmers List (task7/task6) and this portfolio are off the belt
   ["planera", "hypedomino", "jeparla", "masapay", "curtain-shop-web-site-frontend", "codelady-skills",
-   "ecommerse-app", "my-fitness-app", "my-quiz-app", "hello-fresh-with-react", "net-pro-group-fiqma", "afn-rent-a-car-fiqma"].map((n) => n.toLowerCase()),
+   "ecommerse-app", "my-fitness-app", "my-quiz-app", "hello-fresh-with-react", "net-pro-group-fiqma", "afn-rent-a-car-fiqma",
+   // owner, 2026-11-18: full stack now
+   "ember-olive-menu", "food-wagon-delivery-figma"].map((n) => n.toLowerCase()),
 );
 
 /** on the home page belt; also the count in About, so the two numbers always agree */

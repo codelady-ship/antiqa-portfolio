@@ -17,15 +17,25 @@ export { onBelt } from "@/lib/showcase";
  * from its own build (its first view is an animated intro); HUELINE's first view is a loading
  * screen for mShots and HypeDomino has no web demo (a Unity game), so both were captured with
  * Playwright on 2026-11-18 (HUELINE: its live site; HypeDomino: the game screen on its IdeyaNest page).
+ * Food Wagon and Ember & Olive: their live sites' first view (Playwright, 2026-11-18; Food Wagon's
+ * "demo mode" note closed, Ember & Olive's open menu book).
  */
 const THUMBS: Record<string, string> = {
   "codelady-skills": "/projects/codelady-skills.webp",
   "ecommerse-app": "/projects/hueline.webp",
   hypedomino: "/projects/hypedomino.webp",
+  "food-wagon-delivery-figma": "/projects/food-wagon.webp",
+  "ember-olive-menu": "/projects/ember-olive.webp",
 };
-/** the stack chips, where the repo behind the record is not the project's own code (its languages / topics) */
+/**
+ * the stack chips, where the repo's languages / topics do not tell it: the repo behind the record is
+ * not the project's own code (Codelady Skills), its topics are from before a rebuild (Food Wagon:
+ * "html, css, javascript") or it has no topics (Ember & Olive)
+ */
 const STACK: Record<string, string[]> = {
   "codelady-skills": ["Next.js", "TypeScript", "Supabase", "Cloudflare Workers", "Gemini API", "Claude Skills"],
+  "food-wagon-delivery-figma": ["React", "TypeScript", "Tailwind CSS", "Vite", "Node.js", "Express", "MongoDB"],
+  "ember-olive-menu": ["React", "TypeScript", "Three.js", "GSAP", "Vite", "Node.js", "Express", "MongoDB"],
 };
 
 /** topics that say nothing about the stack */

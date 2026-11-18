@@ -7,7 +7,7 @@
 //              live link, description, languages, stars, dates); owner overrides stay. Use it after
 //              repo fixes change homepages or descriptions. Warns when a demo override hides a new homepage.
 //   --hide a,b / --show a,b  only sets the "hidden" flag of these projects (no GitHub calls), e.g.
-//              --hide Food-Wagon-delivery-figma,net-pro-group-fiqma,exam-task-react
+//              --hide exam-task-react,React-Routing-task4
 //   --showcase only sets the "fullStack" flag (no GitHub calls): true for SHOWCASE, false for every
 //              other project, so the home page belt shows the full-stack work and not the early
 //              practice tasks (those stay in the database and on GitHub). With --dry-run: prints the plan.
@@ -30,7 +30,7 @@ type Entry = { repo: string; patch: Record<string, unknown>; allowPrivate?: bool
 /**
  * The projects on the home page belt (owner, 2026-11-16: "təzə vaxtlar yazdığım taskları qoyma,
  * full stack olanları qoy"): a frontend and a backend of her own. Keep in sync with
- * SHOWCASE_FALLBACK in frontend/src/components/work/project-conveyor.tsx.
+ * SHOWCASE_FALLBACK in frontend/src/lib/showcase.ts.
  */
 export const SHOWCASE = [
   "planera", // Next.js + Spring Boot + PostgreSQL
@@ -46,6 +46,9 @@ export const SHOWCASE = [
   "hello-fresh-with-react", // HelloFresh clone: React + Vite, Express + MongoDB
   "net-pro-group-fiqma", // Net Pro Group: HTML/CSS/JS, Express + MongoDB
   "AFN-rent-a-car-fiqma", // AFN Rent a Car: React + TypeScript, Express + MongoDB
+  // owner, 2026-11-18: full stack now (frontend/ + backend/ + render.yaml)
+  "ember-olive-menu", // Ember & Olive: React + Three.js + GSAP (Vite), Express + MongoDB
+  "Food-Wagon-delivery-figma", // Food Wagon: React + TypeScript + Tailwind (Vite), Express + MongoDB
   // owner, 2026-11-17: Programmers List (task7/task6) and this portfolio are off the belt
 ];
 
@@ -233,6 +236,36 @@ const ENTRIES: Entry[] = [
       summary: {
         az: "Bakı üçün avtomobil icarəsi saytı (Figma dizaynı əsasında təlim layihəsi): avtopark və filtrlər, avtomobil səhifəsi, onlayn rezervasiya (qiyməti server hesablayır, eyni günlərə ikinci rezervasiya mümkün deyil). React + TypeScript frontend və Node.js + Express + MongoDB API.",
         en: "A car rental site for Baku, built from a Figma design (practice project): fleet with filters, car pages and online booking (the server prices it and blocks double bookings). A React + TypeScript frontend with a Node.js + Express + MongoDB API.",
+      },
+    },
+  },
+  {
+    // full stack: frontend/ + Node.js / Express / MongoDB API in backend/ (owner, 2026-11-18: on the belt)
+    repo: "https://github.com/codelady-ship/ember-olive-menu",
+    patch: {
+      title: "Ember & Olive",
+      featured: true,
+      hidden: false,
+      order: 7,
+      demoOverride: "https://codelady-ship.github.io/ember-olive-menu/",
+      summary: {
+        az: "Uydurma Ember & Olive restoranı üçün sayt: menyu dəri kitabdır, səhifəni çevirəndə imza yeməkləri 3D olaraq səhifədən qalxır. Masa rezervasiyası, sifariş, bülleten və menyu idarəsi; React + Three.js + GSAP frontend və Node.js + Express + MongoDB API.",
+        en: "A site for Ember & Olive, a fictional restaurant: the menu is a leather book, and signature dishes rise off the page in 3D as you turn it. Table bookings, takeaway orders, a newsletter and menu management; a React + Three.js + GSAP frontend with a Node.js + Express + MongoDB API.",
+      },
+    },
+  },
+  {
+    // full stack since 2026-11-18: frontend/ + Node.js / Express / MongoDB API in backend/ (owner: on the belt)
+    repo: "https://github.com/codelady-ship/Food-Wagon-delivery-figma",
+    patch: {
+      title: "Food Wagon",
+      featured: true,
+      hidden: false,
+      order: 6,
+      demoOverride: "https://codelady-ship.github.io/Food-Wagon-delivery-figma/",
+      summary: {
+        az: "Bakı üçün demo yemək çatdırılması saytı: restoran axtarışı və filtrlər, səbət, sifarişin canlı izlənməsi, sevimlilər, rəylər və admin panel. Figma təlim səhifəsindən full stack layihəyə çevrilib: React + TypeScript + Tailwind frontend və Node.js + Express + MongoDB API. Demo layihədir, real sifariş yoxdur.",
+        en: "A demo food delivery site for Baku: restaurant search and filters, cart, live order tracking, favourites, reviews and an admin panel. Rebuilt from a Figma practice page into a full-stack app: a React + TypeScript + Tailwind frontend with a Node.js + Express + MongoDB API. A demo: no real orders.",
       },
     },
   },
