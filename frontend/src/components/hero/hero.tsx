@@ -57,7 +57,7 @@ export function Hero({ first, last, title, stack, tagline, location, cvHref }: P
             </span>
             <br />
             {/* tall line box = the gap below the squiggle */}
-            <span translate="no" className="notranslate text-xl leading-[2.6] font-bold sm:text-2xl xl:text-[1.75rem] xl:leading-[2.9]">
+            <span translate="no" className="notranslate inline-block pt-3 text-xl leading-[2.2] font-bold sm:text-2xl xl:pt-6 xl:text-[1.75rem] xl:leading-[2]">
               {title}
             </span>
             <br />
