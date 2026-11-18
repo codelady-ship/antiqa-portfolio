@@ -5,11 +5,12 @@ import { getTranslations } from "next-intl/server";
 import { AboutJsonLd } from "@/components/seo/json-ld";
 import { Link } from "@/i18n/navigation";
 import { getProfile, getProjects } from "@/lib/data";
+import { localizeProjects } from "@/lib/showcase";
 import { formatDate } from "@/lib/date";
 import { buildFaq } from "@/lib/faq";
 import { NoTr, withNames } from "@/components/ui/no-translate";
 import { ALT_NAME, ALT_NAME_INLINE, NAME_SPELLINGS } from "@/lib/identity";
-import photo from "@/components/persona/antiqa.webp";
+import photo from "@/components/persona/avatar.webp";
 
 /**
  * Plain-facts profile for AI answer engines and link previews: server-rendered text only,
@@ -55,7 +56,8 @@ const link = "inline-block min-w-11 py-3 font-medium underline decoration-rose/4
 
 export default async function AboutPage() {
   const locale = await currentLocale();
-  const [profile, projects, t] = await Promise.all([getProfile(), getProjects(), getTranslations({ locale, namespace: "AboutPage" })]);
+  const [profile, all, t] = await Promise.all([getProfile(), getProjects(), getTranslations({ locale, namespace: "AboutPage" })]);
+  const projects = localizeProjects(all, locale);
   const c = profile.contacts;
   const cv = profile.cv[locale] ?? profile.cv.az ?? profile.cv.en ?? null;
   const contacts = [
@@ -83,7 +85,7 @@ export default async function AboutPage() {
           src={photo}
           alt={t("photoAlt", { name: profile.name })}
           sizes="112px"
-          className="relative mb-6 size-24 rounded-full bg-[#ffd9e3] object-cover object-top ring-4 ring-surface sm:float-right sm:mb-0 sm:ml-6 sm:size-28"
+          className="relative mb-6 size-24 rounded-full bg-pink-soft object-cover ring-4 ring-surface sm:float-right sm:mb-0 sm:ml-6 sm:size-28"
         />
         <p className="kicker relative bg-surface">{t("kicker")}</p>
         <h1 className="display relative mt-4 text-[clamp(2.4rem,8vw,4.5rem)] font-bold [overflow-wrap:anywhere]">

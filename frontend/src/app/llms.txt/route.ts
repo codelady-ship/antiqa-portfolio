@@ -1,9 +1,11 @@
 import { getProfile, getProjects, SITE_URL } from "@/lib/data";
+import { localizeProjects } from "@/lib/showcase";
 import { JOB_TITLE, NAME_SPELLINGS } from "@/lib/identity";
 
 /** Plain-text summary for AI answer engines (llms.txt convention). */
 export async function GET() {
-  const [p, projects] = await Promise.all([getProfile(), getProjects()]);
+  const [p, all] = await Promise.all([getProfile(), getProjects()]);
+  const projects = localizeProjects(all, "en");
   const c = p.contacts;
   const lines = [
     `# ${p.name}`,

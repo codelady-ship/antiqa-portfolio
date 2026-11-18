@@ -81,7 +81,7 @@ export const SEED_REPOS: { url: string; featured?: boolean; backend?: string; ti
   },
   { url: "https://github.com/codelady-ship/planera", featured: true, title: "Planera — Randevum", demo: "https://randevum-seven.vercel.app" },
   { url: "https://github.com/codelady-ship/Ecommerse-app", featured: true, title: "HUELINE", demo: "https://codelady-ship.github.io/Ecommerse-app/", thumb: false },
-  { url: "https://github.com/codelady-ship/My-Quiz-App", featured: true, title: "Kod Sınağı · Code Check", demo: "https://codelady-ship.github.io/My-Quiz-App/" },
+  { url: "https://github.com/codelady-ship/My-Quiz-App", featured: true, title: "Code Check", demo: "https://codelady-ship.github.io/My-Quiz-App/" },
   { url: "https://github.com/codelady-ship/hello-fresh-with-react", featured: true, title: "HelloFresh clone (practice)", demo: "https://codelady-ship.github.io/hello-fresh-with-react/" },
   { url: "https://github.com/codelady-ship/my-portfolio", title: "Portfolio v1 (React + Three.js)", demo: "https://my-portfolio-eta-mocha-32.vercel.app", backend: "https://github.com/codelady-ship/backend-for-my-portfolio" },
   { url: "https://github.com/codelady-ship/React-Routing-task4", title: "React Routing", demo: "https://codelady-ship.github.io/React-Routing-task4/", thumb: false },

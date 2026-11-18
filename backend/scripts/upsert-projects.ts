@@ -42,7 +42,7 @@ export const SHOWCASE = [
   // owner, 2026-11-17: the finished projects with a Node.js + Express + MongoDB backend
   "Ecommerse-app", // HUELINE: React + GSAP, Express + MongoDB
   "My-Fitness-App", // Pulsa: Next.js, Express + MongoDB
-  "My-Quiz-App", // Kod Sınağı: React + Vite, Express + MongoDB
+  "My-Quiz-App", // Code Check (az: Kod Sınağı, frontend lib/showcase.ts): React + Vite, Express + MongoDB
   "hello-fresh-with-react", // HelloFresh clone: React + Vite, Express + MongoDB
   "net-pro-group-fiqma", // Net Pro Group: HTML/CSS/JS, Express + MongoDB
   "AFN-rent-a-car-fiqma", // AFN Rent a Car: React + TypeScript, Express + MongoDB
@@ -180,7 +180,7 @@ const ENTRIES: Entry[] = [
     // full stack: frontend + Node.js / Express / MongoDB API in backend/ (owner, 2026-11-17: on the belt)
     repo: "https://github.com/codelady-ship/My-Quiz-App",
     patch: {
-      title: "Kod Sınağı · Code Check",
+      title: "Code Check",
       featured: true,
       hidden: false,
       order: 12,
