@@ -8,6 +8,7 @@ import { Contact } from "@/components/sections/contact";
 import { JsonLd } from "@/components/seo/json-ld";
 import { Work } from "@/components/work/work";
 import { getProfile, getProjects } from "@/lib/data";
+import { localizeProjects } from "@/lib/showcase";
 import { JOB_STACK, JOB_TITLE } from "@/lib/identity";
 
 /**
@@ -18,13 +19,17 @@ import { JOB_STACK, JOB_TITLE } from "@/lib/identity";
  * Phones and tablets get the plain one-column page (no videos).
  */
 // centred like .wrap (1320 px, 1680 px from 1600 px wide), so the text lines up with the header and the work section
-const GROUP = "mx-auto max-w-[1320px] min-[1600px]:max-w-[1680px] lg:grid lg:grid-cols-[minmax(0,1fr)_clamp(19rem,30vw,36rem)]";
+// hero: two equal halves, so she stands next to the text and not at the far right (review
+// 2026-11-18: 500–700 px of empty middle at 1440 / 1920)
+const GROUP = "mx-auto max-w-[1320px] min-[1600px]:max-w-[1680px] lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]";
 // the same, mirrored: her column on the left (About)
 const GROUP_LEFT = "mx-auto max-w-[1320px] min-[1600px]:max-w-[1680px] lg:grid lg:grid-cols-[clamp(19rem,30vw,36rem)_minmax(0,1fr)]";
 
 export default async function Home() {
   const locale = ((await rootLocale()) === "en" ? "en" : "az") as "az" | "en";
-  const [profile, projects, tp] = await Promise.all([getProfile(), getProjects(), getTranslations({ locale, namespace: "Persona" })]);
+  const [profile, all, tp] = await Promise.all([getProfile(), getProjects(), getTranslations({ locale, namespace: "Persona" })]);
+  // names and demos in this page's language (lib/showcase.ts)
+  const projects = localizeProjects(all, locale);
   const [first, ...rest] = profile.name.split(" ");
   const cv = profile.cv[locale] ?? profile.cv.az ?? profile.cv.en ?? null;
   // the stage and ring figures are decorative (alt=""): the photo is not announced again and again
@@ -38,9 +43,9 @@ export default async function Home() {
           <div className="min-w-0" data-persona="hero">
             <Hero first={first} last={rest.join(" ")} title={JOB_TITLE} stack={JOB_STACK} tagline={profile.tagline[locale]} location={profile.location[locale]} cvHref={cv} />
           </div>
-          {/* she stands at the start of her column, close to the text (no empty middle) */}
-          <div className="hidden flex-col items-start justify-center pt-24 lg:flex">
-            <div className="relative ml-[4%] w-[78%] 2xl:-ml-[4vw] 2xl:w-[82%]">
+          {/* she stands in her half, close to the text (no empty middle) */}
+          <div className="hidden items-center justify-center pt-24 lg:flex 2xl:justify-start">
+            <div className="relative w-[min(70%,22rem)] 2xl:w-[min(72%,28rem)]">
               <PersonaClip clip={PERSONA.wave} mode="loop" />
               <p
                 aria-hidden

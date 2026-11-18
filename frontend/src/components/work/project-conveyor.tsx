@@ -4,30 +4,25 @@ import { useTranslations } from "next-intl";
 import { useCallback, useRef, useState, type ReactNode } from "react";
 import { PersonaClip } from "@/components/persona/clip";
 import { PERSONA } from "@/components/persona/config";
-import { PersonaFigure } from "@/components/persona/figure";
 import { SushiConveyorMenu, type ConveyorDish } from "@/components/ui/sushi-conveyor-menu";
 import { hasThumb } from "@/lib/seed";
 import { shot } from "@/lib/shot";
 import type { Project } from "@/lib/types";
 
-/**
- * The full-stack projects shown on the belt (owner, 2026-11-16: "təzə vaxtlar yazdığım taskları
- * qoyma, full stack olanları qoy"). The API's `fullStack` flag decides (set by
- * `upsert-projects.ts --showcase` or the admin); a project without the flag falls back to this
- * list, so the belt is right before the seed script has run. Keep in sync with SHOWCASE there.
- */
-const SHOWCASE_FALLBACK = new Set(
-  // owner, 2026-11-17: Programmers List (task7/task6) and this portfolio are off the belt
-  ["planera", "hypedomino", "jeparla", "masapay", "curtain-shop-web-site-frontend", "codelady-skills",
-   "ecommerse-app", "my-fitness-app", "my-quiz-app", "hello-fresh-with-react", "net-pro-group-fiqma", "afn-rent-a-car-fiqma"].map((n) => n.toLowerCase()),
-);
-export const onBelt = (p: Project) => !p.hidden && (p.fullStack ?? SHOWCASE_FALLBACK.has(p.name.toLowerCase()));
+// which projects go on the belt lives in lib/showcase.ts (About counts the same list)
+export { onBelt } from "@/lib/showcase";
 
 /**
  * Fixed screenshots instead of the live-site shot (mShots), by repo name: Codelady Skills was shot
- * from its own build (its first view is an animated intro).
+ * from its own build (its first view is an animated intro); HUELINE's first view is a loading
+ * screen for mShots and HypeDomino has no web demo (a Unity game), so both were captured with
+ * Playwright on 2026-11-18 (HUELINE: its live site; HypeDomino: the game screen on its IdeyaNest page).
  */
-const THUMBS: Record<string, string> = { "codelady-skills": "/projects/codelady-skills.webp" };
+const THUMBS: Record<string, string> = {
+  "codelady-skills": "/projects/codelady-skills.webp",
+  "ecommerse-app": "/projects/hueline.webp",
+  hypedomino: "/projects/hypedomino.webp",
+};
 /** the stack chips, where the repo behind the record is not the project's own code (its languages / topics) */
 const STACK: Record<string, string[]> = {
   "codelady-skills": ["Next.js", "TypeScript", "Supabase", "Cloudflare Workers", "Gemini API", "Claude Skills"],
@@ -160,13 +155,9 @@ export function ProjectConveyor({
 
   const figure = (
     <div ref={center} className="relative w-full">
-      {/* desktop: her video, pointing; smaller screens: her photo */}
-      <div className="hidden lg:block">
-        <PersonaClip clip={PERSONA.point} mode="point" point={side} />
-      </div>
-      <div className="relative aspect-[677/800] w-full lg:hidden">
-        <PersonaFigure alt="" sizes="140px" />
-      </div>
+      {/* desktop: her video, pointing; smaller screens: its still frame, the same pink-suit cut-out
+          (review 2026-11-18: phones and tablets showed a different photo in an arch) */}
+      <PersonaClip clip={PERSONA.point} mode="point" point={side} />
     </div>
   );
 
@@ -191,13 +182,14 @@ export function ProjectConveyor({
       onPick={(i) => projects[i] && onDetails(projects[i])}
       info={info}
       action={
-        <span className="flex flex-col items-center gap-1 lg:items-start">
-          <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-rose underline underline-offset-4 hover:no-underline">
-            {t("allOnGithub")} <span aria-hidden>↗</span>
-          </a>
-          {aiNote && <span className="hidden text-xs text-muted lg:block">{aiNote}</span>}
-        </span>
+        // inline-flex + min-h-11: a 44 px tall tap target without changing the text
+        <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center text-sm font-semibold text-rose underline underline-offset-4 hover:no-underline">
+          {t("allOnGithub")} <span aria-hidden>&nbsp;↗</span>
+        </a>
       }
+      // the "AI video" note sits under the belt, centred under her (review 2026-11-18: it floated at
+      // the far left under the GitHub link); desktop only, where she is a video
+      note={aiNote && <span className="hidden text-xs text-muted lg:block">{aiNote}</span>}
     />
   );
 }

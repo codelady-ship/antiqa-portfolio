@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import photo from "@/components/persona/antiqa.webp";
+import photo from "@/components/persona/avatar.webp";
 
 type Props = {
   first: string;
@@ -23,23 +23,28 @@ type Props = {
 export function Hero({ first, last, title, stack, tagline, location, cvHref }: Props) {
   const t = useTranslations("Hero");
   return (
-    <section aria-labelledby="hero-name" className="relative overflow-hidden">
-      {/* a soft mint pebble (the persona stage beside this column has its own shapes) */}
-      <div aria-hidden className="pointer-events-none absolute bottom-10 -left-24 size-56 rounded-full bg-mint-soft opacity-70 max-sm:hidden" />
-
+    <section aria-labelledby="hero-name" className="relative isolate">
       <div className="wrap relative flex items-center pt-28 pb-16 sm:pt-36 sm:pb-24 lg:min-h-[min(100svh,960px)] lg:pt-32 lg:pb-20">
         {/* the text block pops in on load, line by line (CSS .hero-pop; the name only moves, it is
             never transparent, so it stays the LCP element at first paint) */}
-        <div className="hero-pop">
-          {/* phones / tablets: a small round photo above the greeting */}
-            <Image
-              src={photo}
-              alt=""
-              width={64}
-              height={64}
-              sizes="64px"
-              className="mb-4 size-16 rounded-full bg-[#ffd9e3] object-cover object-top ring-4 ring-pink-soft lg:hidden"
-            />
+        <div className="hero-pop relative">
+          {/* a soft pebble tucked behind the buttons. Nothing clips it any more (review 2026-11-18:
+              it was cut with hard straight edges): it sits inside the text column. Mint in light mode,
+              a soft plum-rose glow in dark mode (the dark mint read as muddy green) */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -bottom-12 -left-16 -z-10 size-36 rounded-full bg-mint-soft opacity-80 max-sm:hidden xl:size-40 dark:bg-[#43284a] dark:opacity-90"
+          />
+          {/* phones / tablets: a small round photo above the greeting: the same pink-suit cut-out as
+              the desktop video (review 2026-11-18), on a pink disc */}
+          <Image
+            src={photo}
+            alt=""
+            width={64}
+            height={64}
+            sizes="64px"
+            className="mb-4 size-16 rounded-full bg-pink-soft object-cover ring-4 ring-pink-soft lg:hidden"
+          />
           {/* "Hi, I'm" + her name + her job title: one text block, the LCP element (bigger than the photo
               at every width, painted on the server, never faded in). The lines are inline (<br>), so they
               stay one block for LCP; the name and the title are never machine-translated (#21). */}
@@ -52,7 +57,7 @@ export function Hero({ first, last, title, stack, tagline, location, cvHref }: P
             </span>
             <br />
             {/* tall line box = the gap below the squiggle */}
-            <span translate="no" className="notranslate text-xl leading-[2.6] font-bold sm:text-2xl xl:text-[1.75rem]">
+            <span translate="no" className="notranslate inline-block pt-3 text-xl leading-[2.2] font-bold sm:text-2xl xl:pt-6 xl:text-[1.75rem] xl:leading-[2]">
               {title}
             </span>
             <br />

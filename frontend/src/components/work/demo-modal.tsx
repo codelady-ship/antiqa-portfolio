@@ -10,6 +10,8 @@ import { langColor } from "./lang-colors";
 
 type Tab = "demo" | "readme" | "admin";
 const WIDTHS = { desktop: "100%", tablet: "820px", phone: "390px" } as const;
+/** a README <pre> that is a Mermaid diagram (GitHub renders ```mermaid blocks; the API sends the text) */
+const MERMAID = /^\s*(flowchart|graph|sequenceDiagram|classDiagram|stateDiagram(-v2)?|erDiagram|gantt|pie|journey|mindmap|timeline|gitGraph)\b/;
 
 /** Native <dialog>: focus trap, Esc to close and inert background come from the browser. */
 export function DemoModal({ project: p, locale, onClose }: { project: Project | null; locale: "az" | "en"; onClose: () => void }) {
@@ -20,6 +22,9 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
   const [readme, setReadme] = useState<string | null>(null);
   // phones/tablets: the info sidebar is a toggle that replaces the preview, not a cramped strip
   const [info, setInfo] = useState(false);
+  // the frame URL that finished loading: a loader shows over the preview until it matches
+  const [loaded, setLoaded] = useState<string | null>(null);
+  const readmeRef = useRef<HTMLDivElement>(null);
 
   const canFrame = !!p?.demoUrl && isSafeFrame(p.demoUrl);
   // owner, 2026-11-17: projects with an admin panel open it here too (a third tab)
@@ -38,8 +43,83 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
       setDevice("desktop");
       setReadme(null);
       setInfo(false);
+      setLoaded(null);
     }
   }
+
+  // README: Mermaid diagrams arrive as plain <pre> text ("flowchart LR …"). Render them as SVG with
+  // mermaid, loaded only when a README has one; if that fails the block is folded away, not shown
+  // as raw code (review 2026-11-18). GitHub wraps each diagram's <pre> in a <section> together with
+  // a "Loading" spinner of its own: the whole wrapper is replaced (or hidden), not only the <pre>.
+  // A theme switch while the README is open draws the diagrams again in the new colours.
+  useEffect(() => {
+    const root = readmeRef.current;
+    if (!readme || tab !== "readme" || !root) return;
+    const blocks = [...root.querySelectorAll("pre")]
+      .filter((pre) => MERMAID.test(pre.textContent ?? ""))
+      .map((pre) => {
+        const wrap = pre.closest("section");
+        // only GitHub's own wrapper (inside the README, around this one diagram)
+        const box: HTMLElement = wrap && root.contains(wrap) && wrap.querySelectorAll("pre").length === 1 ? wrap : pre;
+        box.dataset.mermaid = "pending";
+        return { box: box as Element, source: pre.textContent ?? "" };
+      });
+    if (!blocks.length) return;
+    let off = false;
+    let run = 0;
+    const draw = async () => {
+      const mine = ++run;
+      try {
+        const { default: mermaid } = await import("mermaid");
+        const dark = document.documentElement.classList.contains("dark");
+        mermaid.initialize({
+          startOnLoad: false,
+          securityLevel: "strict",
+          theme: "base",
+          fontFamily: "inherit",
+          themeVariables: dark
+            ? { background: "#1c1420", primaryColor: "#3d2334", primaryTextColor: "#fbeff3", primaryBorderColor: "#ff8fb3", lineColor: "#c9b4c6", clusterBkg: "#251a2a", clusterBorder: "#6e5a70", tertiaryColor: "#251a2a" }
+            : { background: "#fffaf5", primaryColor: "#ffe1ea", primaryTextColor: "#2b1d2f", primaryBorderColor: "#c8365f", lineColor: "#6e5a70", clusterBkg: "#fdf0e8", clusterBorder: "#e7a3b8", tertiaryColor: "#fdf0e8" },
+        });
+        for (const [i, b] of blocks.entries()) {
+          if (off || mine !== run) return;
+          if ((b.box as HTMLElement).dataset?.mermaid === "failed") continue;
+          try {
+            const { svg } = await mermaid.render(`readme-mermaid-${Date.now()}-${i}`, b.source);
+            if (off || mine !== run) return;
+            const fig = document.createElement("figure");
+            fig.className = "readme-diagram";
+            fig.innerHTML = svg;
+            // its natural width (mermaid's inline max-width): phones draw it at a readable scale (globals.css)
+            const natural = fig.querySelector("svg")?.style.maxWidth;
+            if (natural) fig.style.setProperty("--natural", natural);
+            b.box.replaceWith(fig);
+            b.box = fig;
+          } catch {
+            (b.box as HTMLElement).dataset.mermaid = "failed";
+          }
+        }
+      } catch {
+        for (const b of blocks) (b.box as HTMLElement).dataset.mermaid = "failed";
+      }
+    };
+    void draw();
+    // next-themes toggles the "dark" class on <html>
+    const html = document.documentElement;
+    let dark = html.classList.contains("dark");
+    const watch = new MutationObserver(() => {
+      const now = html.classList.contains("dark");
+      if (now !== dark) {
+        dark = now;
+        void draw();
+      }
+    });
+    watch.observe(html, { attributes: true, attributeFilter: ["class"] });
+    return () => {
+      off = true;
+      watch.disconnect();
+    };
+  }, [readme, tab]);
 
   useEffect(() => {
     const d = dlg.current;
@@ -101,7 +181,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
               <p className="text-[11px] tracking-[0.18em] whitespace-nowrap text-muted uppercase">
                 {t("created")}: {p.createdAt ? formatDate(p.createdAt, locale) : "—"}
               </p>
-              <h2 id="demo-title" translate="no" lang="en" className="display notranslate text-xl break-words sm:truncate sm:text-3xl">
+              <h2 id="demo-title" translate="no" className="display notranslate text-xl break-words sm:truncate sm:text-3xl">
                 {p.title}
               </h2>
             </div>
@@ -183,7 +263,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                 </div>
               ) : (tab === "demo" && p.demoUrl && canFrame) || (tab === "admin" && p.adminUrl && canAdmin) ? (
                 <div
-                  className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white transition-[width] duration-500 ease-out"
+                  className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-white transition-[width] duration-500 ease-out"
                   style={{ width: WIDTHS[device], maxWidth: "100%" }}
                 >
                   <div className="flex items-center gap-2 border-b border-line bg-bg px-4 py-2 text-xs text-muted">
@@ -206,15 +286,25 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                     title={t("demoFrame", { title: p.title })}
                     sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                     referrerPolicy="no-referrer"
+                    onLoad={() => setLoaded(frameUrl)}
                     className="w-full flex-1 border-0 bg-white"
                   />
+                  {loaded !== frameUrl && (
+                    // the live site is loading (cold starts can take a few seconds)
+                    <div role="status" className="absolute inset-x-0 top-[2.6rem] bottom-0 grid place-items-center bg-bg-2/90">
+                      <span className="flex flex-col items-center gap-3 text-sm text-muted">
+                        <span aria-hidden className="size-9 animate-spin rounded-full border-[3px] border-pink-soft border-t-accent motion-reduce:animate-none" />
+                        {t("loading")}
+                      </span>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <article className="readme size-full min-w-0 overflow-auto rounded-2xl border border-line bg-bg p-6 sm:p-10">
                   {readme === null ? (
                     <p className="text-muted">{t("loading")}</p>
                   ) : readme ? (
-                    <div dangerouslySetInnerHTML={{ __html: readme }} />
+                    <div ref={readmeRef} dangerouslySetInnerHTML={{ __html: readme }} />
                   ) : (
                     <p className="serif-it text-xl text-muted">
                       {t("noReadme")}{" "}
@@ -308,7 +398,8 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                   </ul>
                 </section>
               )}
-              <div className="mt-auto grid gap-2">
+              {/* stays at the bottom of the panel, so the tip under the buttons is never cut off */}
+              <div className="sticky bottom-0 -mx-5 -mb-5 mt-auto grid gap-2 border-t border-line bg-bg px-5 pt-4 pb-5">
                 {p.demoUrl && (
                   <a href={p.demoUrl} target="_blank" rel="noopener noreferrer" className="rounded-full bg-ink py-3 text-center font-medium text-bg">
                     {t("openNew")} ↗

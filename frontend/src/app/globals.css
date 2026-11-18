@@ -336,6 +336,17 @@ html {
 .readme :where(td, th) { border: 1px solid var(--line); padding: 0.4em 0.8em; }
 .readme blockquote { border-left: 3px solid var(--rose); padding-left: 1em; color: var(--muted); }
 .readme .anchor, .readme .octicon { display: none; }
+/* Mermaid diagrams (demo-modal.tsx): drawn as SVG; never shown as raw code, also not while loading */
+/* the diagram's block (GitHub's wrapper with its "Loading" spinner, or the bare <pre>) while it is drawn or after it failed */
+.readme [data-mermaid] { display: none; }
+.readme .readme-diagram { margin: 0 0 1em; padding: 1rem; border-radius: 12px; background: var(--bg-2); overflow: auto; text-align: center; }
+.readme .readme-diagram svg { max-width: 100%; height: auto; display: inline-block; }
+/* phones / small tablets: never shrink a diagram below ~60 % of its natural size (labels stay ≥ ~10 px,
+   not 3–4 px): it scrolls sideways inside its card instead. --natural is set by demo-modal.tsx */
+@media (max-width: 767px) {
+  .readme .readme-diagram { text-align: left; overscroll-behavior-x: contain; }
+  .readme .readme-diagram svg { max-width: none !important; width: max(100%, 640px, calc(var(--natural, 640px) * 0.62)); }
+}
 
 /* ---------- persona (#38) ---------- */
 /* the waving hand: a slow wave from the wrist */

@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { getProfile, getProjects, SITE_URL } from "@/lib/data";
+import { localizeProjects } from "@/lib/showcase";
 import { buildFaq } from "@/lib/faq";
 import { ALT_NAME, EXPERIENCE_YEARS, JOB_TITLE, NAME_SPELLINGS } from "@/lib/identity";
 
@@ -8,7 +9,8 @@ import { ALT_NAME, EXPERIENCE_YEARS, JOB_TITLE, NAME_SPELLINGS } from "@/lib/ide
  * contact, from the same data as the site (API → seed fallback). /llms.txt stays the short version.
  */
 export async function GET() {
-  const [p, projects, t] = await Promise.all([getProfile(), getProjects(), getTranslations({ locale: "en", namespace: "AboutPage" })]);
+  const [p, all, t] = await Promise.all([getProfile(), getProjects(), getTranslations({ locale: "en", namespace: "AboutPage" })]);
+  const projects = localizeProjects(all, "en");
   const c = p.contacts;
   const cv = p.cv.en ?? p.cv.az;
   const abs = (u: string) => (u.startsWith("/") ? `${SITE_URL}${u}` : u);

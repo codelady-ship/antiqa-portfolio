@@ -3,6 +3,7 @@ import { Reveal, SplitWords } from "@/components/motion/reveal";
 import { CountUp } from "@/components/motion/count-up";
 import { withNames } from "@/components/ui/no-translate";
 import { EXPERIENCE_YEARS, NAME_SPELLINGS } from "@/lib/identity";
+import { onBelt } from "@/lib/showcase";
 import type { Profile, Project } from "@/lib/types";
 
 // stat tiles: three tints, three tilts, so the row reads hand-placed rather than generated
@@ -35,6 +36,8 @@ const ROLE_NAMES = ["Junior Full Stack Developer", "Full Stack Developer", "Back
 export async function About({ profile, projects }: { profile: Profile; projects: Project[] }) {
   const t = await getTranslations("About");
   const locale = (await getLocale()) as "az" | "en";
+  // the same projects (and so the same number) as the belt in Projects (review 2026-11-18: "24+" here vs "12" there)
+  const shown = projects.filter(onBelt).length;
   const techs = new Set(projects.flatMap((p) => p.languages.map((l) => l.name)).concat(profile.skills));
 
   return (
@@ -104,7 +107,7 @@ export async function About({ profile, projects }: { profile: Profile; projects:
       </div>
       <dl className="mt-12 grid grid-cols-3 gap-3 sm:gap-5">
         {[
-          [projects.length, t("projects")],
+          [shown, t("projects")],
           [techs.size, t("languages")],
           [EXPERIENCE_YEARS, t("years")],
         ].map(([n, label], i) => (
@@ -112,7 +115,8 @@ export async function About({ profile, projects }: { profile: Profile; projects:
             <dt className="mt-1 text-xs leading-snug font-medium break-words text-muted sm:text-sm">{label}</dt>
             <dd className="display text-4xl font-[750] sm:text-5xl">
               <CountUp to={Number(n)} />
-              <span className="text-rose">+</span>
+              {/* the project count is exact (the belt says the same number); the others are "at least" */}
+              {i > 0 && <span className="text-rose">+</span>}
             </dd>
           </Reveal>
         ))}

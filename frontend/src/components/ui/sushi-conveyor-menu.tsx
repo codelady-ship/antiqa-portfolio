@@ -63,6 +63,8 @@ export interface SushiConveyorMenuProps extends React.ComponentProps<"section"> 
   caption?: string;
   /** Call to action rendered under the caption. */
   action?: React.ReactNode;
+  /** A small note centred under the belt controls (e.g. what the centerpiece is). */
+  note?: React.ReactNode;
   /** Cruise speed of the belt in px/s, measured on the front lane. */
   speed?: number;
   /** Stops the belt (controlled). */
@@ -137,13 +139,20 @@ const TIERS = [
   { ring: "border-gold", dot: "bg-gold" },
   { ring: "border-accent", dot: "bg-accent" },
 ] as const;
+/**
+ * Belt colours (review 2026-11-18: the light-mode belt was a dark aubergine slab). Light: a blush
+ * belt with raspberry (#c8365f) rails and a cream island; dark: a deep berry belt, not muddy grey.
+ * Nothing on the belt itself carries text (the plates, chips and controls have their own surfaces),
+ * the rails are decoration; text around it keeps the page tokens (AA).
+ */
 const THEME =
-  "[--belt:color-mix(in_oklab,var(--ink)_78%,var(--bg))] dark:[--belt:color-mix(in_oklab,var(--ink)_16%,var(--bg))] " +
-  "[--belt-side:color-mix(in_oklab,var(--ink)_92%,var(--bg))] dark:[--belt-side:color-mix(in_oklab,var(--ink)_7%,var(--bg))] " +
-  "[--rail:color-mix(in_oklab,var(--muted)_45%,white)] dark:[--rail:color-mix(in_oklab,var(--muted)_72%,var(--bg))] " +
-  "[--island:color-mix(in_oklab,var(--muted)_16%,var(--bg))] dark:[--island:color-mix(in_oklab,var(--ink)_13%,var(--bg))] " +
-  "[--island-low:color-mix(in_oklab,var(--muted)_27%,var(--bg))] dark:[--island-low:color-mix(in_oklab,var(--ink)_8%,var(--bg))] " +
-  "[--island-wall:color-mix(in_oklab,var(--muted)_42%,var(--bg))] dark:[--island-wall:color-mix(in_oklab,var(--ink)_5%,var(--bg))]";
+  "[--belt:#f7c9d6] dark:[--belt:#4a2340] " +
+  "[--belt-side:#e7a3b8] dark:[--belt-side:#33172c] " +
+  "[--rail:#c8365f] dark:[--rail:#ff8fb3] " +
+  "[--seam:#a8325a] dark:[--seam:#000] " +
+  "[--island:#fffaf5] dark:[--island:#2f2133] " +
+  "[--island-low:#fde8ee] dark:[--island-low:#271b2b] " +
+  "[--island-wall:#f2c4d2] dark:[--island-wall:#1f1523]";
 
 type Geo = {
   width: number; height: number; d: number; r: number; s: number; l: number; pitch: number; n: number;
@@ -229,8 +238,16 @@ function centerpieceWidth(g: Geo, centerWidth: number, grow: boolean) {
   const base = (grow ? Math.max(g.d, Math.min(g.d * 1.75, 140)) : g.d) * centerWidth;
   return Math.min(base, (g.ym + g.d * 0.3) / PORTRAIT);
 }
-/** height / width of the centerpiece portrait (her photo is 677 × 800, the clip a little taller) */
-const PORTRAIT = 1.25;
+/** height / width of the centerpiece portrait (her clip still / video is 360 × 534) */
+const PORTRAIT = 1.48;
+
+/** pastel tile for a plate without a picture: soft fill + its matching text colour (AA) */
+const TILE_TINTS = ["bg-pink-soft text-rose", "bg-lilac-soft text-violet", "bg-peach-soft text-gold", "bg-mint-soft text-mint", "bg-butter-soft text-gold"];
+function tileTint(name: string) {
+  let h = 0;
+  for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return TILE_TINTS[h % TILE_TINTS.length];
+}
 
 /** autoDensity: closest pitch (in SPACING units) at which a lifted plate (×1.08) still clears its neighbours */
 const MIN_GAP = 1.24 / SPACING;
@@ -315,6 +332,7 @@ export function SushiConveyorMenu({
   heading,
   caption,
   action,
+  note,
   speed = 26,
   paused: pausedProp,
   onPausedChange,
@@ -434,6 +452,9 @@ export function SushiConveyorMenu({
     const q = pose(g, s.offset, i);
     const e = s.lift[i] ?? 0;
     button.style.transform = `translate3d(${(q.x - g.d / 2).toFixed(2)}px,${(q.y - (g.d * TILT) / 2).toFixed(2)}px,0) scale(${q.k.toFixed(4)})`;
+    // the tap area (::before) stays ≥ 44 px on screen however small the plate is drawn
+    const hit = `${Math.ceil(44 / q.k)}px`;
+    if (button.dataset.hit !== hit) { button.dataset.hit = hit; button.style.setProperty("--hit", hit); }
     const z = i === L.active ? 2000 : 100 + Math.round(q.y);
     if (s.z[i] !== z) { s.z[i] = z; button.style.zIndex = String(z); }
     const lane = q.depth >= 0.5 ? "front" : "back";
@@ -480,8 +501,9 @@ export function SushiConveyorMenu({
       const q = pose(g, s.offset, i);
       const e = clamp(s.lift[i] ?? 0, 0, 1.2);
       const grow = (1 + LIFT_SCALE * e) * (i === L.active ? 1.1 : 1);
-      const rx = (g.d * q.k * grow) / 2;
-      const ry = (g.d * TILT * q.k * grow) / 2;
+      // never smaller than a 44 px tap target (small plates on phones)
+      const rx = Math.max(22, (g.d * q.k * grow) / 2);
+      const ry = Math.max(22, (g.d * TILT * q.k * grow) / 2);
       const dx = (px - q.x) / rx;
       const dy = (py - (q.y + (LIFT_Y / 100) * g.d * TILT * q.k * e)) / ry;
       if (dx * dx + dy * dy > 1) continue;
@@ -847,7 +869,8 @@ export function SushiConveyorMenu({
   const roving = active ?? center;
   const tiers = legendEntries(items, legend);
   const g = geo;
-  const control = "inline-flex size-8 items-center justify-center rounded-full border border-line bg-surface text-muted shadow-sm outline-none transition-colors hover:text-ink focus-visible:ring-2 focus-visible:ring-rose motion-reduce:transition-none";
+  // 44 × 44 px tap targets (review 2026-11-18)
+  const control = "inline-flex size-11 items-center justify-center rounded-full border border-line bg-surface text-ink/80 shadow-sm outline-none transition-colors hover:border-rose hover:text-rose focus-visible:ring-2 focus-visible:ring-rose motion-reduce:transition-none";
 
   const header = headerProp ?? ((eyebrow || heading || tiers.length > 0) && (
     <div className={wide ? "flex flex-col items-start gap-4 text-left" : "flex flex-col items-center gap-2 px-2 text-center"}>
@@ -939,10 +962,10 @@ export function SushiConveyorMenu({
                 <stop offset="1" style={{ stopColor: "var(--island-low)" }} />
               </linearGradient>
             </defs>
-            <path d={paths.outer} transform={`translate(0 ${(g.side + g.d * 0.07).toFixed(1)})`} fill="black" className="opacity-[0.18] dark:opacity-60" filter={`url(#${uid}-soft)`} />
+            <path d={paths.outer} transform={`translate(0 ${(g.side + g.d * 0.07).toFixed(1)})`} fill="#7a2a48" className="opacity-[0.14] dark:opacity-60 dark:[fill:black]" filter={`url(#${uid}-soft)`} />
             <path d={`${paths.outer}${paths.inner}`} fillRule="evenodd" transform={`translate(0 ${g.side.toFixed(1)})`} style={{ fill: "var(--belt-side)" }} />
             <path d={`${paths.outer}${paths.inner}`} fillRule="evenodd" style={{ fill: "var(--belt)" }} />
-            <path ref={seamRef} fill="none" stroke="black" strokeOpacity={0.42} strokeWidth={Math.max(1, g.d * 0.013)} strokeLinecap="round" />
+            <path ref={seamRef} fill="none" style={{ stroke: "var(--seam)" }} strokeOpacity={0.3} strokeWidth={Math.max(1, g.d * 0.013)} strokeLinecap="round" />
             <path ref={glintRef} fill="none" stroke="white" strokeOpacity={0.14} strokeWidth={Math.max(0.8, g.d * 0.009)} strokeLinecap="round" />
             <path d={paths.outer} fill="none" style={{ stroke: "var(--rail)" }} strokeWidth={Math.max(2, g.d * 0.026)} />
             <path d={paths.outer} fill="none" stroke="white" strokeOpacity={0.55} strokeWidth={Math.max(0.8, g.d * 0.008)} transform="translate(0 -0.8)" />
@@ -985,7 +1008,7 @@ export function SushiConveyorMenu({
             aria-describedby={`${uid}-caption`}
             aria-haspopup="dialog"
             aria-current={isActive || undefined}
-            className="absolute left-0 top-0 cursor-pointer rounded-[50%] outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rose"
+            className="absolute left-0 top-0 cursor-pointer rounded-[50%] outline-none before:absolute before:left-1/2 before:top-1/2 before:size-[max(100%,var(--hit,44px))] before:-translate-x-1/2 before:-translate-y-1/2 before:rounded-full before:content-[''] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rose"
             style={{ width: g.d, height: g.d * TILT, visibility: lifted === i ? "hidden" : undefined }}
             onFocus={() => { if (pointer.current.id < 0) { stop(); setActive(i); } }}
             onClick={(event) => { const pending = pendingOpen.current; pendingOpen.current = -1; if (event.detail === 0 || pending === i) open(i); }}
@@ -996,8 +1019,10 @@ export function SushiConveyorMenu({
             <span ref={(node) => { lifts.current[i] = node; }} data-lift className="absolute inset-0">
               <span aria-hidden="true" data-placeholder className={`absolute rounded-[50%] border border-line bg-surface ${broken || round ? "inset-[3%] shadow-sm" : "inset-[6%]"}`}>
                 {broken && item.initial ? (
-                  <span className="display absolute inset-[9%] grid place-items-center rounded-[50%] bg-pink-soft leading-none font-[750] text-rose" style={{ fontSize: g.d * 0.34 }}>
-                    {item.initial}
+                  // no screenshot: a soft pastel tile with the initial, its tint picked by the name
+                  // (so neighbours differ), meant to look like a plate of its own, not a broken image
+                  <span className={`display absolute inset-[9%] grid place-items-center rounded-[50%] leading-none font-[650] ${tileTint(item.name)}`} style={{ fontSize: g.d * 0.3 }}>
+                    <span className="-translate-y-[4%] -rotate-6">{item.initial}</span>
                   </span>
                 ) : (
                   !round && <span className="absolute inset-[30%] rounded-[50%] bg-muted/20" />
@@ -1057,10 +1082,14 @@ export function SushiConveyorMenu({
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10" style={{ background: "radial-gradient(64% 52% at 50% 56%, color-mix(in oklab, var(--ink) 5%, transparent), transparent 72%)" }} />
       {/* one DOM for both layouts, switched by CSS at lg (= WIDE): the server render (before the
           section is measured) already has the right layout, so hydration shifts nothing */}
-      <div className="mx-auto grid w-full max-w-7xl justify-items-center px-4 pt-6 pb-6 [grid-template-areas:'h''s''c''cap''a'] lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:grid-rows-[1fr_auto_auto_auto_1fr_auto] lg:items-center lg:justify-items-stretch lg:gap-x-12 lg:gap-y-6 lg:px-10 lg:py-14 lg:[grid-template-areas:'._s''h_s''cap_s''a_s''._s''._c']">
-        <div className="[grid-area:h] lg:justify-self-start">{header}</div>
+      <div className="mx-auto grid w-full max-w-7xl justify-items-center px-4 pt-6 pb-2 [grid-template-areas:'h''s''c''cap''a'] sm:px-8 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] lg:grid-rows-[1fr_auto_auto_auto_1fr_auto] lg:items-center lg:justify-items-stretch lg:gap-x-12 lg:gap-y-6 lg:px-10 lg:pt-14 lg:pb-4 lg:[grid-template-areas:'._s''h_s''cap_s''a_s''._s''._c']">
+        {/* full width below lg, so the heading lines up with the card under the belt (review 2026-11-18: indented at 768) */}
+        <div className="w-full [grid-area:h] lg:w-auto lg:justify-self-start">{header}</div>
         <div className="mt-2 w-full min-w-0 [grid-area:s] lg:mt-0">{stage}</div>
-        <div className="[grid-area:c]">{controls}</div>
+        <div className="flex flex-col items-center gap-2 [grid-area:c] lg:-mt-6">
+          {controls}
+          {note}
+        </div>
         <div className="w-full [grid-area:cap]">{captionNode}</div>
         {action && <div className="mt-3 flex justify-center [grid-area:a] lg:mt-0 lg:justify-start">{action}</div>}
       </div>
@@ -1205,8 +1234,8 @@ function DishDialog({ uid, item, index, total, labels, reduced, broken, source, 
         <div ref={figureRef} data-dish-figure className={`relative mx-auto w-full ${item.cover && !broken ? "aspect-[16/10] max-w-[min(52vh,26rem)]" : "aspect-square max-w-[min(42vh,22rem)]"}`}>
           <span aria-hidden="true" className="absolute inset-x-[8%] bottom-[-4%] top-[14%] rounded-full bg-black opacity-25 blur-2xl dark:opacity-70" />
           {broken ? (
-            <span aria-hidden="true" className="absolute inset-[3%] grid place-items-center rounded-full border border-line bg-pink-soft">
-              {item.initial ? <span className="display text-[7rem] leading-none font-[750] text-rose">{item.initial}</span> : <span className="absolute inset-[30%] rounded-full bg-muted/25" />}
+            <span aria-hidden="true" className={`absolute inset-[3%] grid place-items-center rounded-full border border-line ${tileTint(item.name)}`}>
+              {item.initial ? <span className="display -rotate-6 text-[7rem] leading-none font-[650]">{item.initial}</span> : <span className="absolute inset-[30%] rounded-full bg-muted/25" />}
             </span>
           ) : item.cover ? (
             <img src={item.image} alt={item.name} draggable={false} className="relative size-full select-none rounded-[1.4rem] border border-line object-cover object-top shadow-xl" />

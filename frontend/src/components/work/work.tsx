@@ -52,7 +52,7 @@ export function Work({ projects, aiNote }: { projects: Project[]; aiNote?: strin
 
   return (
     <section id="work" data-persona="work" className="relative scroll-mt-24">
-      <div className="mx-auto max-w-[1680px] pt-10 pb-16 sm:pt-14 sm:pb-24">
+      <div className="mx-auto max-w-[1680px] pt-10 pb-4 sm:pt-14 sm:pb-6">
         {list.length > 0 && (
           <ProjectConveyor projects={list} locale={locale} header={header} onDetails={setOpen} githubUrl={`https://github.com/${owner}?tab=repositories`} aiNote={aiNote} />
         )}
