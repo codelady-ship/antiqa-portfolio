@@ -49,15 +49,26 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
 
   // README: Mermaid diagrams arrive as plain <pre> text ("flowchart LR …"). Render them as SVG with
   // mermaid, loaded only when a README has one; if that fails the block is folded away, not shown
-  // as raw code (review 2026-11-18)
+  // as raw code (review 2026-11-18). GitHub wraps each diagram's <pre> in a <section> together with
+  // a "Loading" spinner of its own: the whole wrapper is replaced (or hidden), not only the <pre>.
+  // A theme switch while the README is open draws the diagrams again in the new colours.
   useEffect(() => {
     const root = readmeRef.current;
     if (!readme || tab !== "readme" || !root) return;
-    const blocks = [...root.querySelectorAll("pre")].filter((pre) => MERMAID.test(pre.textContent ?? ""));
+    const blocks = [...root.querySelectorAll("pre")]
+      .filter((pre) => MERMAID.test(pre.textContent ?? ""))
+      .map((pre) => {
+        const wrap = pre.closest("section");
+        // only GitHub's own wrapper (inside the README, around this one diagram)
+        const box: HTMLElement = wrap && root.contains(wrap) && wrap.querySelectorAll("pre").length === 1 ? wrap : pre;
+        box.dataset.mermaid = "pending";
+        return { box: box as Element, source: pre.textContent ?? "" };
+      });
     if (!blocks.length) return;
     let off = false;
-    for (const pre of blocks) pre.dataset.mermaid = "pending";
-    (async () => {
+    let run = 0;
+    const draw = async () => {
+      const mine = ++run;
       try {
         const { default: mermaid } = await import("mermaid");
         const dark = document.documentElement.classList.contains("dark");
@@ -70,25 +81,43 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
             ? { background: "#1c1420", primaryColor: "#3d2334", primaryTextColor: "#fbeff3", primaryBorderColor: "#ff8fb3", lineColor: "#c9b4c6", clusterBkg: "#251a2a", clusterBorder: "#6e5a70", tertiaryColor: "#251a2a" }
             : { background: "#fffaf5", primaryColor: "#ffe1ea", primaryTextColor: "#2b1d2f", primaryBorderColor: "#c8365f", lineColor: "#6e5a70", clusterBkg: "#fdf0e8", clusterBorder: "#e7a3b8", tertiaryColor: "#fdf0e8" },
         });
-        for (const [i, pre] of blocks.entries()) {
-          if (off) return;
+        for (const [i, b] of blocks.entries()) {
+          if (off || mine !== run) return;
+          if ((b.box as HTMLElement).dataset?.mermaid === "failed") continue;
           try {
-            const { svg } = await mermaid.render(`readme-mermaid-${Date.now()}-${i}`, pre.textContent ?? "");
-            if (off) return;
+            const { svg } = await mermaid.render(`readme-mermaid-${Date.now()}-${i}`, b.source);
+            if (off || mine !== run) return;
             const fig = document.createElement("figure");
             fig.className = "readme-diagram";
             fig.innerHTML = svg;
-            pre.replaceWith(fig);
+            // its natural width (mermaid's inline max-width): phones draw it at a readable scale (globals.css)
+            const natural = fig.querySelector("svg")?.style.maxWidth;
+            if (natural) fig.style.setProperty("--natural", natural);
+            b.box.replaceWith(fig);
+            b.box = fig;
           } catch {
-            pre.dataset.mermaid = "failed";
+            (b.box as HTMLElement).dataset.mermaid = "failed";
           }
         }
       } catch {
-        for (const pre of blocks) pre.dataset.mermaid = "failed";
+        for (const b of blocks) (b.box as HTMLElement).dataset.mermaid = "failed";
       }
-    })();
+    };
+    void draw();
+    // next-themes toggles the "dark" class on <html>
+    const html = document.documentElement;
+    let dark = html.classList.contains("dark");
+    const watch = new MutationObserver(() => {
+      const now = html.classList.contains("dark");
+      if (now !== dark) {
+        dark = now;
+        void draw();
+      }
+    });
+    watch.observe(html, { attributes: true, attributeFilter: ["class"] });
     return () => {
       off = true;
+      watch.disconnect();
     };
   }, [readme, tab]);
 
