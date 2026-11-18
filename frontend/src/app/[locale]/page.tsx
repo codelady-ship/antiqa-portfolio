@@ -41,7 +41,7 @@ export default async function Home() {
         {/* desktop: hero text | her (right); then her (left, sticky) | About (owner, 2026-11-16 #3) */}
         <div className={GROUP}>
           <div className="min-w-0" data-persona="hero">
-            <Hero first={first} last={rest.join(" ")} title={JOB_TITLE} stack={JOB_STACK} tagline={profile.tagline[locale]} location={profile.location[locale]} cvHref={cv} />
+            <Hero locale={locale} first={first} last={rest.join(" ")} title={JOB_TITLE} stack={JOB_STACK} tagline={profile.tagline[locale]} location={profile.location[locale]} cvHref={cv} />
           </div>
           {/* she stands in her half, close to the text (no empty middle) */}
           <div className="hidden items-center justify-center pt-24 lg:flex 2xl:justify-start">

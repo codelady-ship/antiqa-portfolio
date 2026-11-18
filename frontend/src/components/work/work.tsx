@@ -1,12 +1,16 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { Reveal, SplitWords } from "@/components/motion/reveal";
 import { sortProjects } from "@/lib/merge";
 import type { Project } from "@/lib/types";
-import { DemoModal } from "./demo-modal";
 import { blurb, onBelt, ProjectConveyor } from "./project-conveyor";
+
+// the project dialog is closed on load (a closed <dialog> shows nothing): its code is fetched after
+// the page has hydrated, not with the first scripts (perf, 2026-11-18)
+const DemoModal = dynamic(() => import("./demo-modal").then((m) => m.DemoModal), { ssr: false });
 
 /**
  * Work (#43): only her full-stack projects (owner, 2026-11-16), going round on a conveyor belt
