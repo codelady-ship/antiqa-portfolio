@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { locale as rootLocale } from "next/root-params";
 import { getTranslations } from "next-intl/server";
 import { Hero } from "@/components/hero/hero";
@@ -69,10 +70,16 @@ export default async function Home() {
             <About profile={profile} projects={projects} />
           </div>
         </div>
-        <Work projects={projects} aiNote={tp("filmNote")} />
+        {/* each below-the-fold client section is its own Suspense boundary: React hydrates them one
+            by one and yields in between, instead of one long hydration task (perf, 2026-11-18) */}
+        <Suspense>
+          <Work projects={projects} aiNote={tp("filmNote")} />
+        </Suspense>
       </div>
       <div className="mx-auto max-w-[1320px] min-[1600px]:max-w-[1680px]" data-persona="contact">
-        <Contact profile={profile} bubble={tp("contact")} aiNote={tp("filmNote")} />
+        <Suspense>
+          <Contact profile={profile} bubble={tp("contact")} aiNote={tp("filmNote")} />
+        </Suspense>
       </div>
     </>
   );

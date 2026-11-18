@@ -679,7 +679,10 @@ export function SushiConveyorMenu({
       const next = { section: Math.round(section.clientWidth), stage: Math.round(stage.clientWidth) };
       setSize((old) => (old.section === next.section && old.stage === next.stage ? old : next));
     };
-    measure();
+    // perf (2026-11-18): the first build of the belt (plates, lanes, SVG) is a transition, so React
+    // renders it in small slices after hydration instead of one long blocking task on page load;
+    // the server HTML already holds the belt's box (initialClass), so nothing moves meanwhile
+    React.startTransition(measure);
     const observer = new ResizeObserver(measure);
     observer.observe(section);
     observer.observe(stage);
