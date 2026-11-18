@@ -1,12 +1,16 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { Reveal, SplitWords } from "@/components/motion/reveal";
 import { sortProjects } from "@/lib/merge";
 import type { Project } from "@/lib/types";
-import { DemoModal } from "./demo-modal";
 import { blurb, onBelt, ProjectConveyor } from "./project-conveyor";
+
+// the project dialog is closed on load (a closed <dialog> shows nothing): its code is fetched after
+// the page has hydrated, not with the first scripts (perf, 2026-11-18)
+const DemoModal = dynamic(() => import("./demo-modal").then((m) => m.DemoModal), { ssr: false });
 
 /**
  * Work (#43): only her full-stack projects (owner, 2026-11-16), going round on a conveyor belt
@@ -14,7 +18,7 @@ import { blurb, onBelt, ProjectConveyor } from "./project-conveyor";
  * (link under the caption). A plate (or "Details" in the project panel) opens the project modal
  * (DemoModal), the same modal as before the belt (owner, 2026-11-17).
  */
-export function Work({ projects, aiNote }: { projects: Project[]; aiNote?: string }) {
+export function Work({ projects, aiNote, countLabel }: { projects: Project[]; aiNote?: string; countLabel: string }) {
   const t = useTranslations("Work");
   const locale = useLocale() as "az" | "en";
   const [open, setOpen] = useState<Project | null>(null);
@@ -37,7 +41,7 @@ export function Work({ projects, aiNote }: { projects: Project[]; aiNote?: strin
         <SplitWords text={t("title")} />
       </Reveal>
       <p className="mt-4 text-sm font-medium text-muted">
-        {t("beltNote")} · {t("count", { n: list.length })}
+        {t("beltNote")} · {countLabel}
       </p>
       <ul aria-hidden className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
         {legend.map(({ k, c }) => (

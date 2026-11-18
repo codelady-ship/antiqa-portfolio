@@ -1,10 +1,9 @@
-"use client";
-
 import Image from "next/image";
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import photo from "@/components/persona/avatar.webp";
 
 type Props = {
+  locale: "az" | "en";
   first: string;
   last: string;
   /** static job title + stack (identity.ts), shown under the name */
@@ -19,9 +18,11 @@ type Props = {
  * Hero: her name (the LCP element, painted on the server, never faded in), what she does and
  * two calls to action. On desktop the persona stage (components/persona) stands to the right of
  * this column and waves; phones and tablets get a small round photo above the greeting.
+ * A server component (perf, 2026-11-18): nothing here needs the browser, so the hero ships no
+ * JavaScript and is not hydrated.
  */
-export function Hero({ first, last, title, stack, tagline, location, cvHref }: Props) {
-  const t = useTranslations("Hero");
+export async function Hero({ locale, first, last, title, stack, tagline, location, cvHref }: Props) {
+  const t = await getTranslations({ locale, namespace: "Hero" });
   return (
     <section aria-labelledby="hero-name" className="relative isolate">
       <div className="wrap relative flex items-center pt-28 pb-16 sm:pt-36 sm:pb-24 lg:min-h-[min(100svh,960px)] lg:pt-32 lg:pb-20">

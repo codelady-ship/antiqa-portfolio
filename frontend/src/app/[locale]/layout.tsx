@@ -67,7 +67,8 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
     getTranslations({ locale, namespace: "Meta" }),
     getProfile(),
   ]);
-  const clientMessages = { Nav: messages.Nav, Work: messages.Work, Contact: messages.Contact, Hero: messages.Hero };
+  // the hero is a server component now: its strings are not sent to the browser
+  const clientMessages = { Nav: messages.Nav, Work: messages.Work, Contact: messages.Contact };
 
   return (
     <html lang={locale} className={`${fontVars} antialiased`} suppressHydrationWarning>
