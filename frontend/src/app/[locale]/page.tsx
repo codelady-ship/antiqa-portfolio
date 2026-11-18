@@ -9,7 +9,7 @@ import { Contact } from "@/components/sections/contact";
 import { JsonLd } from "@/components/seo/json-ld";
 import { Work } from "@/components/work/work";
 import { getProfile, getProjects } from "@/lib/data";
-import { localizeProjects } from "@/lib/showcase";
+import { localizeProjects, onBelt } from "@/lib/showcase";
 import { JOB_STACK, JOB_TITLE } from "@/lib/identity";
 
 /**
@@ -28,7 +28,12 @@ const GROUP_LEFT = "mx-auto max-w-[1320px] min-[1600px]:max-w-[1680px] lg:grid l
 
 export default async function Home() {
   const locale = ((await rootLocale()) === "en" ? "en" : "az") as "az" | "en";
-  const [profile, all, tp] = await Promise.all([getProfile(), getProjects(), getTranslations({ locale, namespace: "Persona" })]);
+  const [profile, all, tp, tw] = await Promise.all([
+    getProfile(),
+    getProjects(),
+    getTranslations({ locale, namespace: "Persona" }),
+    getTranslations({ locale, namespace: "Work" }),
+  ]);
   // names and demos in this page's language (lib/showcase.ts)
   const projects = localizeProjects(all, locale);
   const [first, ...rest] = profile.name.split(" ");
@@ -73,7 +78,9 @@ export default async function Home() {
         {/* each below-the-fold client section is its own Suspense boundary: React hydrates them one
             by one and yields in between, instead of one long hydration task (perf, 2026-11-18) */}
         <Suspense>
-          <Work projects={projects} aiNote={tp("filmNote")} />
+          {/* "{n} projects" is formatted here: an ICU message formatted in the browser costs a slow
+              first Intl locale lookup during hydration (perf, 2026-11-18) */}
+          <Work projects={projects} aiNote={tp("filmNote")} countLabel={tw("count", { n: projects.filter(onBelt).length })} />
         </Suspense>
       </div>
       <div className="mx-auto max-w-[1320px] min-[1600px]:max-w-[1680px]" data-persona="contact">
