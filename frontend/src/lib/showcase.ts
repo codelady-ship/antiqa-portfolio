@@ -12,7 +12,9 @@ const SHOWCASE_FALLBACK = new Set(
   ["planera", "hypedomino", "jeparla", "masapay", "curtain-shop-web-site-frontend", "codelady-skills",
    "ecommerse-app", "my-fitness-app", "my-quiz-app", "hello-fresh-with-react", "net-pro-group-fiqma", "afn-rent-a-car-fiqma",
    // owner, 2026-11-18: full stack now
-   "ember-olive-menu", "food-wagon-delivery-figma"].map((n) => n.toLowerCase()),
+   "ember-olive-menu", "food-wagon-delivery-figma",
+   // owner, 2026-11-21: her new project
+   "kirayla-rental"].map((n) => n.toLowerCase()),
 );
 
 /** on the home page belt; also the count in About, so the two numbers always agree */
@@ -31,6 +33,7 @@ const TITLES: Record<string, L10n> = {
 /** a demo in the visitor's language, where the project has one (Planera: its README links both) */
 const DEMOS: Record<string, Partial<L10n>> = {
   planera: { az: "https://planera-az.vercel.app" },
+  "kirayla-rental": { en: "https://kirayla-rental.vercel.app/en" },
 };
 
 /** The project as the given locale shows it: its name in that language and its localized demo. */

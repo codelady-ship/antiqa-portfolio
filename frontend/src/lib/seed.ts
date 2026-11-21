@@ -79,6 +79,7 @@ export const SEED_REPOS: { url: string; featured?: boolean; backend?: string; ti
     demo: "https://codelady-ship.github.io/codelady-skills/az/",
     links: [],
   },
+  { url: "https://github.com/codelady-ship/kirayla-rental", featured: true, title: "Kirayla", demo: "https://kirayla-rental.vercel.app/az" },
   { url: "https://github.com/codelady-ship/planera", featured: true, title: "Planera — Randevum", demo: "https://randevum-seven.vercel.app" },
   { url: "https://github.com/codelady-ship/Ecommerse-app", featured: true, title: "HUELINE", demo: "https://codelady-ship.github.io/Ecommerse-app/", thumb: false },
   { url: "https://github.com/codelady-ship/My-Quiz-App", featured: true, title: "Code Check", demo: "https://codelady-ship.github.io/My-Quiz-App/" },
