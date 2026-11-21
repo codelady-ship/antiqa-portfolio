@@ -57,6 +57,9 @@ const ENTRIES: Entry[] = [
     repo: "https://github.com/codelady-ship/planera",
     patch: {
       featured: true,
+      // read-only demo admin (planera #141): /panel redirects to the login page with the demo button
+      adminUrl: "https://planera-az.vercel.app/panel",
+      adminHint: "“Demo admin kimi bax” → demo@planera.az / demo1234 (read-only)",
       hidden: false,
       order: 40,
       summary: {
@@ -122,6 +125,8 @@ const ENTRIES: Entry[] = [
       hidden: false,
       order: 15,
       demoOverride: "https://codelady-ship.github.io/Curtain-shop-web-site-frontend/",
+      adminUrl: "https://codelady-ship.github.io/Curtain-shop-web-site-frontend/admin/", // public demo admin (read-only role or in-browser sandbox)
+      adminHint: "“Demo admin” → demo / demo1234 (read-only)",
       backendUrl: "https://github.com/codelady-ship/Curtain-shop-web-site-backend",
       summary: {
         az: "Pərdə mağazası üçün sayt: məhsul kataloqu, kampaniya və müraciət formaları, məhsulları, müraciətləri və promo kodları idarə edən admin paneli. Frontend React + Vite, backend Java Spring Boot və PostgreSQL üzərində qurulub.",
@@ -141,6 +146,8 @@ const ENTRIES: Entry[] = [
       hidden: false,
       comingSoon: false,
       demoOverride: "https://codelady-ship.github.io/codelady-skills/az/",
+      adminUrl: "https://codelady-ship.github.io/codelady-skills/az/admin/?demo=1", // signs in as the demo admin (in-browser sample data)
+      adminHint: "Opens as the demo admin (admin@mock.test): sample data, changes are not saved",
       order: 10,
       summary: {
         az: "Claude AI skill-lərim üçün sayt: hər skill-in öz iş paneli var (səsləndirmə, fırıldaq yoxlaması, xaricdə təhsil, viza, iş müraciəti), müəlliflər üçün marketplace və ödəniş. Next.js + TypeScript, Supabase, Cloudflare Workers və Gemini API üzərində qurulur.",
@@ -158,6 +165,8 @@ const ENTRIES: Entry[] = [
       hidden: false,
       order: 14,
       demoOverride: "https://codelady-ship.github.io/Ecommerse-app/",
+      adminUrl: "https://codelady-ship.github.io/Ecommerse-app/admin/", // public demo admin (read-only role or in-browser sandbox)
+      adminHint: "“Demo admin” → demo@hueline.az / demo1234 (read-only)",
       summary: {
         az: "Uydurma qadın geyimi brendi HUELINE üçün lookbook və mağaza: kataloq, səbət, seçilmişlər, demo sifariş və bülleten. Hərəkətli React frontend (GSAP, Lenis) və Node.js + Express + MongoDB API. Demo layihədir, real ödəniş yoxdur.",
         en: "A lookbook and shop for HUELINE, a fictional womenswear label: catalogue, bag, saved list, demo checkout and newsletter. A motion-heavy React frontend (GSAP, Lenis) with a Node.js + Express + MongoDB API. A demo: nothing is for sale.",
@@ -173,6 +182,9 @@ const ENTRIES: Entry[] = [
       hidden: false,
       order: 13,
       demoOverride: "https://my-fitness-app-tau-drab.vercel.app/",
+      // starts the read-only demo admin by itself (My-Fitness-App #8); frameable after its #7 (frame-ancestors)
+      adminUrl: "https://my-fitness-app-tau-drab.vercel.app/login?demo=admin",
+      adminHint: "Opens as the demo admin (demo-admin@pulsa.example / pulsa-demo-admin), read-only",
       summary: {
         az: "Ürək ritminə əsaslanan kardio-məşq tətbiqi: landing, proqramlar, məşqçilər, qiymətlər, giriş/qeydiyyat və istifadəçi/admin paneli (ürək göstəriciləri, gündəlik plan, üzvlər, işçilər). Next.js frontend və Node.js + Express + MongoDB API.",
         en: "A heart-rate based cardio coaching app: landing page, programmes, coaches, pricing, sign-in and a user/admin dashboard (heart metrics, daily plan, members, staff). A Next.js frontend with a Node.js + Express + MongoDB API.",
@@ -188,6 +200,8 @@ const ENTRIES: Entry[] = [
       hidden: false,
       order: 12,
       demoOverride: "https://codelady-ship.github.io/My-Quiz-App/",
+      adminUrl: "https://codelady-ship.github.io/My-Quiz-App/#/admin", // public demo admin (read-only role or in-browser sandbox)
+      adminHint: "“Demo admin” → demo@codecheck.az / demo1234 (read-only)",
       summary: {
         az: "HTML, CSS, JavaScript və React üzrə iki dilli (az/en) viktorina: hər raundda 10 təsadüfi sual, taymer, cavabların təhlili və onlayn liderlər cədvəli. React + Vite frontend və Node.js + Express + MongoDB API.",
         en: "A bilingual (az/en) web-development quiz on HTML, CSS, JavaScript and React: 10 random questions a round, a timer, answer review and an online leaderboard. A React + Vite frontend with a Node.js + Express + MongoDB API.",
@@ -203,6 +217,8 @@ const ENTRIES: Entry[] = [
       hidden: false,
       order: 11,
       demoOverride: "https://codelady-ship.github.io/hello-fresh-with-react/",
+      adminUrl: "https://codelady-ship.github.io/hello-fresh-with-react/#/admin", // public demo admin (read-only role or in-browser sandbox)
+      adminHint: "“Demo admin” → demo@hellofresh-clone.az / demo1234 (read-only)",
       summary: {
         az: "Təlim layihəsi: HelloFresh saytının çoxsəhifəli klonu: planlar, reseptlər, abunə və hədiyyə kartları. React, React Router, Vite və Tailwind CSS frontend, Node.js + Express + MongoDB API. HelloFresh ilə əlaqəsi yoxdur.",
         en: "Practice project: a multi-page clone of the HelloFresh meal-kit site with plans, recipes, subscriptions and gift cards. A React, React Router, Vite and Tailwind CSS frontend with a Node.js + Express + MongoDB API. Not affiliated with HelloFresh.",
@@ -218,6 +234,8 @@ const ENTRIES: Entry[] = [
       hidden: false,
       order: 9,
       demoOverride: "https://codelady-ship.github.io/net-pro-group-fiqma/",
+      adminUrl: "https://codelady-ship.github.io/net-pro-group-fiqma/admin.html", // public demo admin (read-only role or in-browser sandbox)
+      adminHint: "“Demo admin” → demo@netprogroup.az / demo1234 (read-only)",
       summary: {
         az: "Figma dizaynı əsasında İT və şəbəkə avadanlıqları şirkəti üçün çoxsəhifəli, responsiv sayt (təlim layihəsi). Əlaqə və məhsul sorğuları Node.js + Express + MongoDB API-yə yazılır; admin üçün status, qeyd və statistika.",
         en: "A multi-page, responsive site for an IT and network equipment company, built from a Figma design (practice project). Contact and product requests go to a Node.js + Express + MongoDB API, with statuses, notes and stats for the admin.",
@@ -233,6 +251,8 @@ const ENTRIES: Entry[] = [
       hidden: false,
       order: 8,
       demoOverride: "https://codelady-ship.github.io/AFN-rent-a-car-fiqma/",
+      adminUrl: "https://codelady-ship.github.io/AFN-rent-a-car-fiqma/admin", // public demo admin (read-only role or in-browser sandbox)
+      adminHint: "“Demo admin” → admin@afn.demo / demo12345 (read-only)",
       summary: {
         az: "Bakı üçün avtomobil icarəsi saytı (Figma dizaynı əsasında təlim layihəsi): avtopark və filtrlər, avtomobil səhifəsi, onlayn rezervasiya (qiyməti server hesablayır, eyni günlərə ikinci rezervasiya mümkün deyil). React + TypeScript frontend və Node.js + Express + MongoDB API.",
         en: "A car rental site for Baku, built from a Figma design (practice project): fleet with filters, car pages and online booking (the server prices it and blocks double bookings). A React + TypeScript frontend with a Node.js + Express + MongoDB API.",
@@ -324,19 +344,25 @@ const safeDbError = (e: unknown) =>
  * Run the script again once the site is up.
  */
 async function liveOrSkip(label: string, patch: Record<string, unknown>) {
-  const url = patch.demoOverride;
-  if (typeof url !== "string" || !url) return patch;
-  const status = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(15_000) })
-    .then((r) => {
-      void r.body?.cancel();
-      return r.status;
-    })
-    .catch(() => 0);
-  if (status === 200) return patch;
-  console.log(`${label}: live link ${url} answered ${status || "no response"}; left out (run again when it is up)`);
-  const { demoOverride: _skip, ...rest } = patch;
-  void _skip;
-  return rest;
+  let out = patch;
+  // the admin link the same way: an admin page whose PR is not deployed yet gets no Admin tab (adminHint goes with it)
+  for (const [key, name, drop] of [
+    ["demoOverride", "live link", ["demoOverride"]],
+    ["adminUrl", "admin link", ["adminUrl", "adminHint"]],
+  ] as const) {
+    const url = out[key];
+    if (typeof url !== "string" || !url) continue;
+    const status = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(15_000) })
+      .then((r) => {
+        void r.body?.cancel();
+        return r.status;
+      })
+      .catch(() => 0);
+    if (status === 200) continue;
+    console.log(`${label}: ${name} ${url} answered ${status || "no response"}; left out (run again when it is up)`);
+    out = Object.fromEntries(Object.entries(out).filter(([k]) => !(drop as readonly string[]).includes(k)));
+  }
+  return out;
 }
 
 /** --hide / --show: flip the hidden flag only (case-insensitive repo names). */

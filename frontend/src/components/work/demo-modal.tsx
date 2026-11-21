@@ -200,14 +200,25 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                       setTab(k);
                       setInfo(false);
                     }}
-                    className={`min-h-11 rounded-full px-3 transition-colors disabled:opacity-35 sm:px-4 ${tab === k ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}
+                    className={`min-h-11 rounded-full px-3 whitespace-nowrap transition-colors disabled:opacity-35 sm:px-4 ${tab === k ? "bg-ink text-bg" : "text-muted hover:text-ink"}`}
                   >
-                    {k === "demo" ? t("demoTab") : k === "admin" ? t("adminTab") : t("readme")}
+                    {k === "demo" ? (
+                      t("demoTab")
+                    ) : k === "admin" ? (
+                      // phones: "Admin" keeps the three tabs, Details and ✕ on one row
+                      <>
+                        <span className="sm:hidden">Admin</span>
+                        <span className="max-sm:hidden">{t("adminTab")}</span>
+                      </>
+                    ) : (
+                      t("readme")
+                    )}
                   </button>
                 ))}
               </div>
               {tab !== "readme" && !blocked && (
-                <div role="group" aria-label={t("viewport")} className="hidden rounded-full border border-line p-0.5 text-sm md:flex">
+                // from lg: below it the preview column is already about phone width (the info column takes 300px)
+                <div role="group" aria-label={t("viewport")} className="hidden rounded-full border border-line p-0.5 text-sm lg:flex">
                   {(Object.keys(WIDTHS) as (keyof typeof WIDTHS)[]).map((k) => (
                     <button
                       key={k}
@@ -280,24 +291,27 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                       {t("adminHint")}: {p.adminHint}
                     </p>
                   )}
-                  <iframe
-                    key={frameUrl}
-                    src={frameUrl}
-                    title={t("demoFrame", { title: p.title })}
-                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                    referrerPolicy="no-referrer"
-                    onLoad={() => setLoaded(frameUrl)}
-                    className="w-full flex-1 border-0 bg-white"
-                  />
-                  {loaded !== frameUrl && (
-                    // the live site is loading (cold starts can take a few seconds)
-                    <div role="status" className="absolute inset-x-0 top-[2.6rem] bottom-0 grid place-items-center bg-bg-2/90">
-                      <span className="flex flex-col items-center gap-3 text-sm text-muted">
-                        <span aria-hidden className="size-9 animate-spin rounded-full border-[3px] border-pink-soft border-t-accent motion-reduce:animate-none" />
-                        {t("loading")}
-                      </span>
-                    </div>
-                  )}
+                  {/* the loader covers only the frame, so the demo-login line above stays readable */}
+                  <div className="relative flex min-h-0 flex-1 flex-col">
+                    <iframe
+                      key={frameUrl}
+                      src={frameUrl}
+                      title={t("demoFrame", { title: p.title })}
+                      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                      referrerPolicy="no-referrer"
+                      onLoad={() => setLoaded(frameUrl)}
+                      className="w-full flex-1 border-0 bg-white"
+                    />
+                    {loaded !== frameUrl && (
+                      // the live site is loading (cold starts can take a few seconds)
+                      <div role="status" className="absolute inset-0 grid place-items-center bg-bg-2/90">
+                        <span className="flex flex-col items-center gap-3 text-sm text-muted">
+                          <span aria-hidden className="size-9 animate-spin rounded-full border-[3px] border-pink-soft border-t-accent motion-reduce:animate-none" />
+                          {t("loading")}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ) : (
                 <article className="readme size-full min-w-0 overflow-auto rounded-2xl border border-line bg-bg p-6 sm:p-10">
