@@ -85,7 +85,8 @@ const ENTRIES: Entry[] = [
     },
   },
   {
-    // private repo (no code link); live since 2026-11-17: the merchant area (it opens on its login page)
+    // private repo (no code link); live since 2026-11-17. Owner, 2026-11-21: the demo opens on the home page
+    // (its hero), not on the merchant area, which starts with a login page
     repo: "https://github.com/codelady-ship/jeparla",
     allowPrivate: true,
     patch: {
@@ -93,7 +94,7 @@ const ENTRIES: Entry[] = [
       featured: true,
       hidden: false,
       comingSoon: false,
-      demoOverride: "https://jeparla.duckdns.org/az/merchant",
+      demoOverride: "https://jeparla.duckdns.org/az",
       order: 25,
       summary: {
         az: "Qızıl, gümüş və brilyant zərgərlik mağazaları üçün çoxmağazalı kataloq: əyar, çəki, qiymət və brilyant filtrləri, AMB-nin gündəlik metal məzənnəsinə bağlı avtomatik qiymət, “Jeparla Verified” yoxlama statusları, mağaza kabineti və admin paneli. Next.js + TypeScript, Java Spring Boot və PostgreSQL üzərində qurulur.",

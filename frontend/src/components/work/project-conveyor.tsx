@@ -26,6 +26,8 @@ const THUMBS: Record<string, string> = {
   hypedomino: "/projects/hypedomino.webp",
   "food-wagon-delivery-figma": "/projects/food-wagon.webp",
   "ember-olive-menu": "/projects/ember-olive.webp",
+  // the hero of its home page (Playwright, 2026-11-21; owner: the card shows the main screen, not the login)
+  jeparla: "/projects/jeparla.webp",
 };
 /**
  * the stack chips, where the repo's languages / topics do not tell it: the repo behind the record is
