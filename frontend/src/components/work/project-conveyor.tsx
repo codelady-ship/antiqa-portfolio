@@ -28,6 +28,8 @@ const THUMBS: Record<string, string> = {
   "ember-olive-menu": "/projects/ember-olive.webp",
   // the hero of its home page (Playwright, 2026-11-21; owner: the card shows the main screen, not the login)
   jeparla: "/projects/jeparla.webp",
+  // the first view of its live home page: the listing cards, the wordmark and the search (Playwright, 2026-11-21)
+  "kirayla-rental": "/projects/kirayla.webp",
 };
 /**
  * the stack chips, where the repo's languages / topics do not tell it: the repo behind the record is
@@ -38,6 +40,8 @@ const STACK: Record<string, string[]> = {
   "codelady-skills": ["Next.js", "TypeScript", "Supabase", "Cloudflare Workers", "Gemini API", "Claude Skills"],
   "food-wagon-delivery-figma": ["React", "TypeScript", "Tailwind CSS", "Vite", "Node.js", "Express", "MongoDB"],
   "ember-olive-menu": ["React", "TypeScript", "Three.js", "GSAP", "Vite", "Node.js", "Express", "MongoDB"],
+  // no topics, and its languages alone read "TypeScript, Java, JavaScript"
+  "kirayla-rental": ["Next.js", "TypeScript", "Tailwind CSS", "Java 21", "Spring Boot", "PostgreSQL", "Flyway", "JWT", "Playwright"],
 };
 
 /** topics that say nothing about the stack */
