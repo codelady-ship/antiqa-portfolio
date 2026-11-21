@@ -268,6 +268,8 @@ const ENTRIES: Entry[] = [
       hidden: false,
       order: 7,
       demoOverride: "https://codelady-ship.github.io/ember-olive-menu/",
+      adminUrl: "https://codelady-ship.github.io/ember-olive-menu/#/admin", // public demo admin (read-only role or in-browser sandbox)
+      adminHint: "“Demo admin” → demo@ember-olive.demo / demo1234 (read-only)",
       summary: {
         az: "Uydurma Ember & Olive restoranı üçün sayt: menyu dəri kitabdır, səhifəni çevirəndə imza yeməkləri 3D olaraq səhifədən qalxır. Masa rezervasiyası, sifariş, bülleten və menyu idarəsi; React + Three.js + GSAP frontend və Node.js + Express + MongoDB API.",
         en: "A site for Ember & Olive, a fictional restaurant: the menu is a leather book, and signature dishes rise off the page in 3D as you turn it. Table bookings, takeaway orders, a newsletter and menu management; a React + Three.js + GSAP frontend with a Node.js + Express + MongoDB API.",
@@ -283,6 +285,8 @@ const ENTRIES: Entry[] = [
       hidden: false,
       order: 6,
       demoOverride: "https://codelady-ship.github.io/Food-Wagon-delivery-figma/",
+      adminUrl: "https://codelady-ship.github.io/Food-Wagon-delivery-figma/admin.html", // public demo admin (read-only role or in-browser sandbox)
+      adminHint: "“Demo admin” → admin@foodwagon.demo / demo-admin (read-only)",
       summary: {
         az: "Bakı üçün demo yemək çatdırılması saytı: restoran axtarışı və filtrlər, səbət, sifarişin canlı izlənməsi, sevimlilər, rəylər və admin panel. Figma təlim səhifəsindən full stack layihəyə çevrilib: React + TypeScript + Tailwind frontend və Node.js + Express + MongoDB API. Demo layihədir, real sifariş yoxdur.",
         en: "A demo food delivery site for Baku: restaurant search and filters, cart, live order tracking, favourites, reviews and an admin panel. Rebuilt from a Figma practice page into a full-stack app: a React + TypeScript + Tailwind frontend with a Node.js + Express + MongoDB API. A demo: no real orders.",
