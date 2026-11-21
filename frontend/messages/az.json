@@ -15,7 +15,10 @@
     "language": "Dil",
     "menu": "Menyu",
     "main": "Əsas menyu",
-    "home": "Ana səhifə"
+    "home": "Ana səhifə",
+    "view": "Görünüş",
+    "viewInteractive": "İnteraktiv",
+    "viewPlain": "Sadə mətn"
   },
   "Hero": {
     "available": "Yeni imkanlara açığam",
@@ -101,7 +104,7 @@
   },
   "Contact": {
     "kicker": "03 — Əlaqə",
-    "title": "Gəlin birlikdə nəsə quraq.",
+    "title": "İdeyanı gətir — canlı linklə qaytarım.",
     "lead": "İş təklifi, əməkdaşlıq və ya sadəcə salam — yazın, tez cavab verirəm.",
     "copy": "Kopyala",
     "copied": "Kopyalandı",
