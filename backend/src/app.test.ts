@@ -106,6 +106,18 @@ describe("admin panel url", () => {
       expect(await frameBlocked("https://x.dev")).toBe(true);
       reply({ "content-security-policy": "frame-ancestors *" });
       expect(await frameBlocked("https://x.dev")).toBe(false);
+      // an allow-list that names the portfolio (Pulsa, 2026-11-18) is framable
+      reply({ "content-security-policy": "default-src 'self'; frame-ancestors 'self' https://antiqa-portfolio.vercel.app https://antiqacode.vercel.app" });
+      expect(await frameBlocked("https://x.dev")).toBe(false);
+      reply({ "content-security-policy": "frame-ancestors 'self' https://*.vercel.app" });
+      expect(await frameBlocked("https://x.dev")).toBe(false);
+      // an allow-list without the portfolio, or with only one of its domains, is not
+      reply({ "content-security-policy": "frame-ancestors 'self' https://other.example" });
+      expect(await frameBlocked("https://x.dev")).toBe(true);
+      reply({ "content-security-policy": "frame-ancestors https://antiqa-portfolio.vercel.app" });
+      expect(await frameBlocked("https://x.dev")).toBe(true);
+      reply({ "content-security-policy": "frame-ancestors http://antiqa-portfolio.vercel.app http://antiqacode.vercel.app" });
+      expect(await frameBlocked("https://x.dev")).toBe(true);
       reply({});
       expect(await frameBlocked("https://x.dev")).toBe(false);
     } finally {
