@@ -29,6 +29,8 @@ const THUMBS: Record<string, string> = {
   // the hero of its home page (Playwright, 2026-11-21; owner: the card shows the main screen, not the login)
   jeparla: "/projects/jeparla.webp",
   // the first view of its live home page: the listing cards, the wordmark and the search (Playwright, 2026-11-21)
+  "share-rental": "/projects/kirayla.webp",
+  // the same project under its old repo name (renamed Kirayla → Share, 2026-11-22), until that record is hidden
   "kirayla-rental": "/projects/kirayla.webp",
 };
 /**
@@ -41,6 +43,7 @@ const STACK: Record<string, string[]> = {
   "food-wagon-delivery-figma": ["React", "TypeScript", "Tailwind CSS", "Vite", "Node.js", "Express", "MongoDB"],
   "ember-olive-menu": ["React", "TypeScript", "Three.js", "GSAP", "Vite", "Node.js", "Express", "MongoDB"],
   // no topics, and its languages alone read "TypeScript, Java, JavaScript"
+  "share-rental": ["Next.js", "TypeScript", "Tailwind CSS", "Java 21", "Spring Boot", "PostgreSQL", "Flyway", "JWT", "Playwright"],
   "kirayla-rental": ["Next.js", "TypeScript", "Tailwind CSS", "Java 21", "Spring Boot", "PostgreSQL", "Flyway", "JWT", "Playwright"],
 };
 
