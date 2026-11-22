@@ -2,7 +2,7 @@
 /**
  * Keeps the project belt's fixed screenshots in step with the live sites.
  *
- *   node capture.mjs [--dry-run] [--only jeparla,kirayla-rental] [--out <dir>]
+ *   node capture.mjs [--dry-run] [--only jeparla,share-rental] [--out <dir>]
  *
  * For every project in THUMBS (frontend/src/components/work/project-conveyor.tsx) it opens the live
  * demo in headless Chromium, as set in thumbs.config.mjs, and takes the picture twice. The file in

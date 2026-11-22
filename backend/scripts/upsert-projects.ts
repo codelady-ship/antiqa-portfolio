@@ -50,7 +50,10 @@ export const SHOWCASE = [
   "ember-olive-menu", // Ember & Olive: React + Three.js + GSAP (Vite), Express + MongoDB
   "Food-Wagon-delivery-figma", // Food Wagon: React + TypeScript + Tailwind (Vite), Express + MongoDB
   // owner, 2026-11-21: her new project
-  "kirayla-rental", // Kirayla: Next.js + Spring Boot + PostgreSQL
+  "share-rental", // Share (formerly Kirayla): Next.js + Spring Boot + PostgreSQL
+  // the same project under its old repo name: keeps the belt right until the renamed record exists;
+  // hide the old record after the rename (--hide kirayla-rental)
+  "kirayla-rental",
   // owner, 2026-11-17: Programmers List (task7/task6) and this portfolio are off the belt
 ];
 
@@ -74,13 +77,14 @@ const ENTRIES: Entry[] = [
     // owner, 2026-11-21: on the belt. The live site is browse-only for now (the API is not deployed yet:
     // it shows the bundled snapshot of the seed), so no adminUrl / adminHint until the API is up. It can
     // be framed (its CSP frame-ancestors names the portfolio). English demo: /en (frontend lib/showcase.ts)
-    repo: "https://github.com/codelady-ship/kirayla-rental",
+    // owner, 2026-11-22: renamed Kirayla → Share (repo kirayla-rental → share-rental, demo share-rental.vercel.app)
+    repo: "https://github.com/codelady-ship/share-rental",
     patch: {
-      title: "Kirayla",
+      title: "Share",
       featured: true,
       hidden: false,
       order: 35,
-      demoOverride: "https://kirayla-rental.vercel.app/az",
+      demoOverride: "https://share-rental.vercel.app/az",
       summary: {
         az: "Bakı, Gəncə və Sumqayıt üçün əşya kirayəsi platforması: fotoaparat, drel, çadır və ya velosipedini günlük kirayəyə ver; kirayəçi tarix seçir, sahibi qəbul və ya rədd edir. Filtrli axtarış, boş günlər təqvimi, rəylər, mesajlaşma, elan sahibi və admin panelləri. Next.js + TypeScript frontend, Java 21 + Spring Boot və PostgreSQL API.",
         en: "A peer-to-peer rental marketplace for Baku, Ganja and Sumgait: list a camera, a drill, a tent or a bike by the day; renters pick dates and the owner accepts or declines. Search with filters, an availability calendar, reviews, messaging, and host and admin dashboards. A Next.js + TypeScript frontend with a Java 21 + Spring Boot + PostgreSQL API.",

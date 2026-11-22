@@ -29,6 +29,8 @@ const THUMBS: Record<string, string> = {
   // the hero of its home page (Playwright, 2026-11-21; owner: the card shows the main screen, not the login)
   jeparla: "/projects/jeparla.webp",
   // the first view of its live home page: the listing cards, the wordmark and the search (Playwright, 2026-11-21)
+  "share-rental": "/projects/kirayla.webp",
+  // the same project under its old repo name (renamed Kirayla → Share, 2026-11-22), until that record is hidden
   "kirayla-rental": "/projects/kirayla.webp",
 };
 /**
@@ -41,6 +43,7 @@ const STACK: Record<string, string[]> = {
   "food-wagon-delivery-figma": ["React", "TypeScript", "Tailwind CSS", "Vite", "Node.js", "Express", "MongoDB"],
   "ember-olive-menu": ["React", "TypeScript", "Three.js", "GSAP", "Vite", "Node.js", "Express", "MongoDB"],
   // no topics, and its languages alone read "TypeScript, Java, JavaScript"
+  "share-rental": ["Next.js", "TypeScript", "Tailwind CSS", "Java 21", "Spring Boot", "PostgreSQL", "Flyway", "JWT", "Playwright"],
   "kirayla-rental": ["Next.js", "TypeScript", "Tailwind CSS", "Java 21", "Spring Boot", "PostgreSQL", "Flyway", "JWT", "Playwright"],
 };
 
@@ -133,7 +136,7 @@ export function ProjectConveyor({
         <span aria-hidden className={`size-2.5 rounded-full ${TIER_DOT[tierOf(p)]}`} />
         {p.comingSoon ? t("legendSoon") : p.demoUrl ? t("legendLive") : t("legendCode")}
       </p>
-      <h3 className="display mt-2 text-2xl leading-tight font-semibold text-balance">{p.title}</h3>
+      <h3 translate="no" className="display mt-2 text-2xl leading-tight font-semibold text-balance">{p.title}</h3>
       {blurb(p, locale) && <p className="mt-2 text-[0.95rem] leading-relaxed text-pretty text-muted">{blurb(p, locale)}</p>}
       {stack.length > 0 && (
         <ul translate="no" lang="en" className="notranslate mt-4 flex flex-wrap gap-1.5">
