@@ -34,7 +34,9 @@ concurrency:
 
 jobs:
   refresh:
-    runs-on: ubuntu-24.04
+    # Windows on purpose: the sites' system-font stacks (Segoe UI, …) render there as most visitors see
+    # them and as the hand-made pictures were taken; on Linux the fallback fonts redraw and rewrap the text
+    runs-on: windows-2025
     timeout-minutes: 15
     permissions:
       contents: write
@@ -42,6 +44,7 @@ jobs:
       COMMIT: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && inputs.dry_run != true }}
     defaults:
       run:
+        shell: bash
         working-directory: tools/thumbs
     steps:
       - uses: actions/checkout@v7
@@ -61,7 +64,7 @@ jobs:
         id: browser
         uses: actions/cache@v6
         with:
-          path: ~/.cache/ms-playwright
+          path: ~/AppData/Local/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('tools/thumbs/package-lock.json') }}
 
       - name: Install Chromium
