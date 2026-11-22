@@ -19,6 +19,7 @@ export default function GlobalNotFound() {
   return (
     <html lang="az" className={`${fontVars} antialiased`} suppressHydrationWarning>
       <head>
+        <meta name="darkreader-lock" />
         <script dangerouslySetInnerHTML={{ __html: THEME }} />
       </head>
       <body className="min-h-dvh">
