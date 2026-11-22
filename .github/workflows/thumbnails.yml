@@ -1,0 +1,124 @@
+# Keeps the project belt's fixed screenshots (frontend/public/projects/*.webp) in step with the live
+# sites: once a day it captures every project's demo (tools/thumbs) and commits the pictures that
+# really changed, so Vercel redeploys the site. No secrets: it only reads public pages and pushes
+# with the workflow's own token. Run it by hand: Actions → Project thumbnails → Run workflow, or
+#   gh workflow run thumbnails.yml [-f only=jeparla] [-f dry_run=true]
+name: Project thumbnails
+
+on:
+  schedule:
+    # 05:17 UTC, after the API's own GitHub sync (Vercel Cron, 04:00 UTC)
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Only these projects (repo names, comma-separated); empty = all"
+        required: false
+        default: ""
+      dry_run:
+        description: "Capture and report only, commit nothing"
+        type: boolean
+        default: false
+  # a change to the tool itself: tests and a dry run on the pull request (never commits)
+  pull_request:
+    paths:
+      - "tools/thumbs/**"
+      - ".github/workflows/thumbnails.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: thumbnails-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    env:
+      COMMIT: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && inputs.dry_run != true }}
+    defaults:
+      run:
+        working-directory: tools/thumbs
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # the token is not left in the checkout: only the push step gets it
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tools/thumbs/package-lock.json
+
+      - run: npm ci
+
+      - name: Browser cache
+        id: browser
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('tools/thumbs/package-lock.json') }}
+
+      - name: Install Chromium
+        if: steps.browser.outputs.cache-hit != 'true'
+        run: npx playwright install --only-shell chromium
+
+      - name: Tests
+        if: github.event_name == 'pull_request'
+        run: npm test
+
+      - name: Capture
+        id: capture
+        env:
+          ONLY: ${{ inputs.only }}
+        run: |
+          set +e
+          args=()
+          [ "$COMMIT" = "true" ] || args+=(--dry-run)
+          [ -z "$ONLY" ] || args+=(--only "$ONLY")
+          node capture.mjs "${args[@]}"
+          code=$?
+          [ -f out/summary.md ] && cat out/summary.md >> "$GITHUB_STEP_SUMMARY"
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          # 1 = some picture was kept because its page could not be checked: commit the others first, fail at the end
+          [ "$code" -le 1 ] || exit "$code"
+
+      - name: Report (before / after pictures)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: thumbnails-report
+          path: tools/thumbs/out
+          retention-days: 14
+          if-no-files-found: ignore
+
+      - name: Commit changed pictures
+        if: env.COMMIT == 'true'
+        working-directory: .
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          git add -- frontend/public/projects
+          if git diff --cached --quiet; then
+            echo "No picture changed: nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "chore(work): refresh project thumbnails ($(cat tools/thumbs/out/changed.txt))" -m "Captured from the live sites by .github/workflows/thumbnails.yml (run $GITHUB_RUN_ID)."
+          remote="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          # main may have moved while the browser was busy
+          git pull -q --rebase "$remote" main
+          git push -q "$remote" HEAD:main
+          echo "Committed: $(git log -1 --format=%h) $(cat tools/thumbs/out/changed.txt)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Some pictures were kept and need a look
+        if: steps.capture.outputs.code == '1'
+        run: |
+          echo "A project's page could not be checked, so its picture was kept. See the run summary."
+          exit 1
