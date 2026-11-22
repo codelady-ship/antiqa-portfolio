@@ -4,7 +4,10 @@ import helmet from "helmet";
 import sanitizeHtml from "sanitize-html";
 import { z } from "zod";
 import { randomBytes } from "node:crypto";
-import { checkCredentials, COOKIE, deviceId, isAdmin, issueDevice, issueSession, requireAdmin } from "./auth.js";
+import bcrypt from "bcryptjs";
+import { type AuthStore, checkCredentials, COOKIE, deviceId, isAdmin, issueDevice, issueSession, mongoAuth, requireAdminWith } from "./auth.js";
+import { MailError, type Mailer, resendMailer } from "./mailer.js";
+import { BCRYPT_COST, changedMail, hashToken, newToken, passwordProblem, RESET_TTL_MS, resetLink, resetMail, resetSiteUrl, safeEqual } from "./reset.js";
 import { type Limit, type LimitStore, reserveAll } from "./limiter.js";
 import { isValidObjectId } from "mongoose";
 import { connectDb, Cv, LoginAttempt, Profile, Project } from "./models.js";
@@ -201,12 +204,13 @@ const MAX_PER_CLIENT = 5;
 const MAX_GLOBAL = 100;
 
 const mongoLimits: LimitStore = {
-  async reserve(key, max) {
+  async reserve(key, max, windowMs = WINDOW) {
+    await connectDb();
     const filter = { _id: key, n: { $lt: max } };
     try {
       return !!(await LoginAttempt.findOneAndUpdate(
         filter,
-        { $inc: { n: 1 }, $setOnInsert: { expireAt: new Date(Date.now() + WINDOW) } },
+        { $inc: { n: 1 }, $setOnInsert: { expireAt: new Date(Date.now() + windowMs) } },
         { upsert: true, new: true },
       ).lean());
     } catch (e) {
@@ -217,9 +221,11 @@ const mongoLimits: LimitStore = {
     }
   },
   async release(key) {
+    await connectDb();
     await LoginAttempt.updateOne({ _id: key, n: { $gt: 0 } }, { $inc: { n: -1 } });
   },
   async reset(key) {
+    await connectDb();
     await LoginAttempt.deleteOne({ _id: key });
   },
 };
@@ -233,7 +239,50 @@ function loginLimits(req: Request, dev: string | null): Limit[] {
   return dev ? [[`dev:${dev}`, MAX_PER_CLIENT]] : [[`ip:${req.ip || "?"}`, MAX_PER_CLIENT], ["global", MAX_GLOBAL]];
 }
 
-export function createApp() {
+/* ---------- password reset by e-mail: limits (counters live in the login limiter's collection, 1 h) ---------- */
+const HOUR = 60 * 60_000;
+/** "send me a link" requests of one client / of everybody who is not a known device */
+const RESET_REQ_PER_CLIENT = 3;
+const RESET_REQ_GLOBAL = 20;
+/** reset mails really sent, whoever asked: the hard cap on what can land in her inbox */
+const RESET_MAILS = 5;
+/** wrong / expired tokens of one client / of everybody */
+const RESET_TRY_PER_CLIENT = 10;
+const RESET_TRY_GLOBAL = 100;
+/** every "send me a link" answer leaves at this moment, whether a mail went out or not */
+const RESET_ANSWER_MS = 2000;
+
+function resetLimits(req: Request, dev: string | null, kind: "req" | "try"): Limit[] {
+  const [perClient, global] = kind === "req" ? [RESET_REQ_PER_CLIENT, RESET_REQ_GLOBAL] : [RESET_TRY_PER_CLIENT, RESET_TRY_GLOBAL];
+  return dev
+    ? [[`reset-${kind}:dev:${dev}`, perClient, HOUR]]
+    : [[`reset-${kind}:ip:${req.ip || "?"}`, perClient, HOUR], [`reset-${kind}:global`, global, HOUR]];
+}
+
+/** Lets work finish after the answer was sent on Vercel (the platform's waitUntil); false = not available, await it instead. */
+function keepAlive(work: Promise<unknown>): boolean {
+  const ctx = (globalThis as Record<symbol, any>)[Symbol.for("@vercel/request-context")]?.get?.();
+  if (typeof ctx?.waitUntil !== "function") return false;
+  ctx.waitUntil(work);
+  return true;
+}
+
+/** Server log line of the reset flow: never a token, a password, an address or a key. */
+const resetLog = (what: string, e?: unknown) =>
+  console.error(`[password-reset] ${what}${e === undefined ? "" : `: ${e instanceof MailError ? e.message : e instanceof Error ? e.name : "error"}`}`);
+
+export interface AppDeps {
+  auth: AuthStore;
+  limits: LimitStore;
+  mailer: Mailer;
+  /** ms after which a reset request is answered (tests: 0) */
+  resetAnswerMs: number;
+}
+
+export function createApp(deps: Partial<AppDeps> = {}) {
+  const { auth = mongoAuth, limits = mongoLimits, mailer = resendMailer, resetAnswerMs = RESET_ANSWER_MS } = deps;
+  const admin = (req: Request) => isAdmin(req, auth);
+  const requireAdmin = requireAdminWith(auth);
   const app = express();
   app.set("trust proxy", 1);
   app.use(helmet());
@@ -251,20 +300,20 @@ export function createApp() {
 
   app.get("/api/health", (_req, res) => res.json({ ok: true }));
 
-  /* ---------- auth (no database needed) ---------- */
+  /* ---------- auth ---------- */
   app.post(
     "/api/auth/login",
     wrap(async (req, res) => {
-      await connectDb();
       const { email, password } = z.object({ email: z.string().max(200), password: z.string().max(200) }).parse(req.body);
       const dev = deviceId(req);
-      const limits = loginLimits(req, dev);
+      const keys = loginLimits(req, dev);
       // the slot is taken BEFORE the slow bcrypt check, so parallel requests cannot all slip through
-      if (!(await reserveAll(mongoLimits, limits))) return res.status(429).json({ error: "too many attempts" });
-      if (!(await checkCredentials(email, password))) return res.status(401).json({ error: "invalid credentials" });
+      if (!(await reserveAll(limits, keys))) return res.status(429).json({ error: "too many attempts" });
+      const ok = await checkCredentials(email, password, auth);
+      if (!ok) return res.status(401).json({ error: "invalid credentials" });
       // success: forget this client's failures and give back the global slot (only failures count)
-      await Promise.all(limits.map(([k]) => (k === "global" ? mongoLimits.release(k) : mongoLimits.reset(k))));
-      issueSession(res);
+      await Promise.all(keys.map(([k]) => (k === "global" ? limits.release(k) : limits.reset(k))));
+      issueSession(res, ok.sessionVersion);
       issueDevice(res, dev ?? randomBytes(16).toString("hex"));
       res.json({ ok: true });
     }),
@@ -273,7 +322,94 @@ export function createApp() {
     res.clearCookie(COOKIE, { path: "/" });
     res.json({ ok: true });
   });
-  app.get("/api/auth/me", (req, res) => res.json({ admin: isAdmin(req) }));
+  app.get(
+    "/api/auth/me",
+    wrap(async (req, res) => res.json({ admin: await admin(req) })),
+  );
+
+  /* ---------- forgotten password: a single-use link mailed to ADMIN_EMAIL ---------- */
+  const adminEmail = () => (process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+
+  /** Mails a fresh link if the address is the admin's and mail is set up. Tells the caller nothing. */
+  async function sendResetLink(email: string, locale: "az" | "en") {
+    const problem = mailer.problem();
+    if (problem) return resetLog(`no mail sent, ${problem}`);
+    const site = resetSiteUrl(PORTFOLIO_ORIGINS);
+    if (!site) return resetLog("no mail sent, SITE_URL is not one of the site's own addresses");
+    const to = adminEmail();
+    if (!to || !safeEqual(email.trim().toLowerCase(), to)) return;
+    if (!(await limits.reserve("reset-mail", RESET_MAILS, HOUR))) return resetLog("no mail sent, hourly mail cap reached");
+    const { token, hash } = newToken();
+    // replaces the pending token: an earlier link stops working
+    await auth.setReset(hash, new Date(Date.now() + RESET_TTL_MS));
+    await mailer.send(resetMail(resetLink(site, locale, token)));
+  }
+
+  app.post(
+    "/api/auth/reset/request",
+    wrap(async (req, res) => {
+      const { email, locale } = z.object({ email: z.string().max(200), locale: z.enum(["az", "en"]).default("az") }).parse(req.body);
+      res.setHeader("Cache-Control", "no-store");
+      // by client only, before the address is looked at: a 429 says nothing about the address
+      if (!(await reserveAll(limits, resetLimits(req, deviceId(req), "req")))) return res.status(429).json({ error: "too many attempts" });
+      let done = false;
+      const work = sendResetLink(email, locale)
+        .catch((e) => resetLog("request failed", e))
+        .finally(() => (done = true));
+      // one answer at one moment for every address, sent or not, configured or not
+      await new Promise((r) => setTimeout(r, resetAnswerMs));
+      if (!done && !keepAlive(work)) await work;
+      res.json({ ok: true });
+    }),
+  );
+
+  /** Is this the pending, unexpired token? Compared in constant time against the stored hash. */
+  async function tokenPending(token: string) {
+    const { reset } = await auth.get();
+    const same = safeEqual(hashToken(token), reset?.hash ?? "");
+    return same && !!reset && reset.expiresAt.getTime() > Date.now();
+  }
+  const Token = z.string().min(20).max(200);
+
+  // the reset page asks this first, to show "link expired" instead of a form that cannot work
+  app.post(
+    "/api/auth/reset/verify",
+    wrap(async (req, res) => {
+      const { token } = z.object({ token: Token }).parse(req.body);
+      res.setHeader("Cache-Control", "no-store");
+      const keys = resetLimits(req, deviceId(req), "try");
+      if (!(await reserveAll(limits, keys))) return res.status(429).json({ error: "too many attempts" });
+      const valid = await tokenPending(token);
+      // only wrong tokens count
+      if (valid) await Promise.all(keys.map(([k]) => limits.release(k)));
+      res.json({ valid });
+    }),
+  );
+
+  app.post(
+    "/api/auth/reset/confirm",
+    wrap(async (req, res) => {
+      const { token, password, confirm } = z.object({ token: Token, password: z.string().max(200), confirm: z.string().max(200) }).parse(req.body);
+      res.setHeader("Cache-Control", "no-store");
+      const keys = resetLimits(req, deviceId(req), "try");
+      if (!(await reserveAll(limits, keys))) return res.status(429).json({ error: "too many attempts" });
+      if (!(await tokenPending(token))) return res.status(400).json({ error: "invalid token" });
+      const release = () => Promise.all(keys.map(([k]) => limits.release(k)));
+      const weak = passwordProblem(password, confirm, adminEmail());
+      if (weak) {
+        await release();
+        return res.status(400).json({ error: `weak password: ${weak}`, reason: weak });
+      }
+      const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
+      // one atomic update: of two parallel submits (or a replay) only one can win
+      if (!(await auth.consumeReset(hashToken(token), new Date(), passwordHash))) return res.status(400).json({ error: "invalid token" });
+      await release();
+      // every session is signed out (session version + 1); this browser's cookie goes too
+      res.clearCookie(COOKIE, { path: "/" });
+      if (!mailer.problem()) await mailer.send(changedMail()).catch((e) => resetLog("password changed, notice not sent", e));
+      res.json({ ok: true });
+    }),
+  );
 
   // admin-only GitHub helpers: refuse before touching the database
   app.use("/api/github", requireAdmin);
@@ -337,7 +473,7 @@ export function createApp() {
   app.get(
     "/api/projects",
     wrap(async (req, res) => {
-      const all = req.query.all === "1" && isAdmin(req);
+      const all = req.query.all === "1" && (await admin(req));
       const list = await Project.find(all ? {} : { hidden: false }, { "gh.readmeHtml": 0 })
         .sort({ featured: -1, order: -1, "gh.createdAt": -1 })
         .lean();
@@ -452,7 +588,7 @@ export function createApp() {
   const syncAll = wrap(async (req, res) => {
       // admin, or Vercel Cron with CRON_SECRET
       const cron = process.env.CRON_SECRET && req.get("authorization") === `Bearer ${process.env.CRON_SECRET}`;
-      if (!cron && !isAdmin(req)) return res.status(401).json({ error: "unauthorized" });
+      if (!cron && !(await admin(req))) return res.status(401).json({ error: "unauthorized" });
       const list = await Project.find();
       // 4 at a time: fast enough for the function timeout, gentle on the GitHub limit
       for (let i = 0; i < list.length; i += 4) await Promise.allSettled(list.slice(i, i + 4).map(sync));

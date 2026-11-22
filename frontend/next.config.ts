@@ -28,6 +28,8 @@ const nextConfig: NextConfig = {
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
         ],
       },
+      // the password reset page (opened from the mailed link) never sends a Referer anywhere
+      { source: "/:locale/admin/reset", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
     ];
   },
   turbopack: {

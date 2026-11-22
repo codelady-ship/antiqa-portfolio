@@ -4,21 +4,21 @@
  * login gives the slots back, a failed one keeps them until the window expires.
  */
 export interface LimitStore {
-  /** atomically add 1 if the counter is below max; false = blocked */
-  reserve(key: string, max: number): Promise<boolean>;
+  /** atomically add 1 if the counter is below max; false = blocked. windowMs: life of a new counter (default 15 min) */
+  reserve(key: string, max: number, windowMs?: number): Promise<boolean>;
   /** give one slot back */
   release(key: string): Promise<void>;
   /** forget the key */
   reset(key: string): Promise<void>;
 }
 
-export type Limit = readonly [key: string, max: number];
+export type Limit = readonly [key: string, max: number, windowMs?: number];
 
 /** Reserve all limits or none. */
 export async function reserveAll(store: LimitStore, limits: readonly Limit[]) {
   const taken: string[] = [];
-  for (const [key, max] of limits) {
-    if (!(await store.reserve(key, max))) {
+  for (const [key, max, windowMs] of limits) {
+    if (!(await store.reserve(key, max, windowMs))) {
       await Promise.all(taken.map((k) => store.release(k)));
       return false;
     }

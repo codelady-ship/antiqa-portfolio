@@ -109,6 +109,22 @@ const LoginAttemptSchema = new Schema({ _id: String, n: { type: Number, default:
 LoginAttemptSchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 });
 export const LoginAttempt = mongoose.models.LoginAttempt || mongoose.model("LoginAttempt", LoginAttemptSchema);
 
+/**
+ * Login state of the single admin once she has reset her password in the panel (one document, _id "admin").
+ * No document / no passwordHash = the password is still the ADMIN_PASSWORD_HASH environment variable.
+ */
+const AdminAuthSchema = new Schema({
+  _id: { type: String, default: "admin" },
+  // bcrypt hash set by a password reset; wins over ADMIN_PASSWORD_HASH
+  passwordHash: String,
+  passwordChangedAt: Date,
+  // every session cookie carries the version it was issued under; a reset adds 1, which signs every device out
+  sessionVersion: { type: Number, default: 0 },
+  // the one pending reset link: SHA-256 of the mailed token (never the token itself) and its expiry
+  reset: { type: new Schema({ hash: String, expiresAt: Date }, { _id: false }), default: undefined },
+});
+export const AdminAuth = mongoose.models.AdminAuth || mongoose.model("AdminAuth", AdminAuthSchema);
+
 let connecting: Promise<typeof mongoose> | null = null;
 /** Reuses one connection across serverless invocations. */
 export function connectDb() {
