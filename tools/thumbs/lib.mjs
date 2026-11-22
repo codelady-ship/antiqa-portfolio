@@ -42,22 +42,36 @@ export async function signature(input) {
   return sharp(input).removeAlpha().resize(SIG.width, SIG.height, { fit: "fill", kernel: "cubic" }).raw().toBuffer();
 }
 
+// the picture cut into 6 × 5 regions (160×120 px of the 960×600 thumbnail each) for `tile` below
+const GRID = { cols: 6, rows: 5 };
+
 /**
  * How different two signatures are: `share` = the part of the picture (0…1) whose colour moved by
- * more than `step` levels (of 255) on some channel, `mean` = the average move. Text that is drawn a
- * little differently (anti-aliasing, lossy WebP) barely registers; a new hero, layout or headline does.
+ * more than `step` levels (of 255) on some channel, `tile` = the same for the most-changed of the
+ * 6 × 5 regions, `mean` = the average move. Text that is drawn a little differently (anti-aliasing,
+ * lossy WebP) barely registers; a new hero, layout or headline does, and so does a change confined to
+ * one part of the picture (a redrawn side menu, a new logo) through `tile`.
  */
 export function difference(a, b, step = 40) {
   if (a.length !== b.length) throw new Error("signatures differ in size");
+  if (a.length !== SIG.width * SIG.height * 3) throw new Error("not a signature");
+  const movedIn = new Array(GRID.cols * GRID.rows).fill(0);
+  const sizeOf = new Array(GRID.cols * GRID.rows).fill(0);
   let moved = 0;
   let sum = 0;
   for (let i = 0; i < a.length; i += 3) {
     const d = Math.max(Math.abs(a[i] - b[i]), Math.abs(a[i + 1] - b[i + 1]), Math.abs(a[i + 2] - b[i + 2]));
+    const px = i / 3;
+    const region = Math.floor((Math.floor(px / SIG.width) * GRID.rows) / SIG.height) * GRID.cols + Math.floor(((px % SIG.width) * GRID.cols) / SIG.width);
+    sizeOf[region]++;
     sum += d;
-    if (d > step) moved++;
+    if (d > step) {
+      moved++;
+      movedIn[region]++;
+    }
   }
   const n = a.length / 3;
-  return { share: moved / n, mean: sum / n };
+  return { share: moved / n, tile: Math.max(...movedIn.map((m, r) => m / sizeOf[r])), mean: sum / n };
 }
 
 /** Is it a picture of nothing? (one flat colour, or close to it: a blank page, a white error screen) */
@@ -127,12 +141,13 @@ export function wrongPlace(asked, final) {
  */
 export function decide({ problems, pair, old, limits }) {
   if (problems.length) return { action: "keep", reason: problems.join("; ") };
-  if (pair.share > limits.stableShare) {
-    return { action: "keep", reason: `two captures in a row differ (${pct(pair.share)} of the picture): the page is still moving, see "freeze" / "settleMs" in the config` };
+  if (pair.share > limits.stableShare || (pair.tile ?? 0) > limits.stableTile) {
+    return { action: "keep", reason: `two captures in a row differ (${pct(pair.share)} of the picture, ${pct(pair.tile ?? 0)} of one part): the page is still moving, see "settleMs" / "animationsAt" / "videoAt" in the config` };
   }
   if (!old) return { action: "create", reason: "no picture yet" };
-  if (old.share > limits.changeShare) return { action: "replace", reason: `${pct(old.share)} of the picture changed (limit ${pct(limits.changeShare)})` };
-  return { action: "keep", reason: `same as the committed picture (${pct(old.share)} differs, limit ${pct(limits.changeShare)})` };
+  const numbers = `${pct(old.share)} of the picture, ${pct(old.tile ?? 0)} of its most-changed part; limits ${pct(limits.changeShare)} / ${pct(limits.changeTile)}`;
+  if (old.share > limits.changeShare || (old.tile ?? 0) > limits.changeTile) return { action: "replace", reason: `changed (${numbers})` };
+  return { action: "keep", reason: `same as the committed picture (${numbers})` };
 }
 
 export const pct = (x) => `${(x * 100).toFixed(1)}%`;

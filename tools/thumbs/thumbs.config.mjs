@@ -13,6 +13,8 @@
 //                   { press: "Escape" } · { wait: 1500 } · { waitFor: "css" }
 //   hide          css selectors taken out of the picture (display: none), e.g. a notice bar
 //   videoAt       pause every <video> at this second, so a playing hero gives the same frame every day
+//   animationsAt  pause every CSS animation at this millisecond of its run, for parts that never stop
+//                 moving (floating cards); finished entrance animations stay finished
 //   settleMs      wait before the picture is taken (entrance animations)
 //   clip          { x, y, width, height } of the viewport to keep; must be 16:10, it is scaled to 960×600
 //   expectText    a word the page must show (default: the first word of the project's title);
@@ -25,6 +27,7 @@ export const DEFAULTS = {
   steps: [],
   hide: [],
   videoAt: null,
+  animationsAt: null,
   settleMs: 4000,
   clip: null,
 };
@@ -34,8 +37,13 @@ export const LIMITS = {
   step: 40,
   // replace the committed picture only when more of it than this has moved
   changeShare: 0.02,
+  // … or when this much of one of its 6 × 5 parts has moved: a change in one corner (a redrawn side
+  // menu, a new logo) is small in the whole picture. Today's captures: real redesign of a side menu 26%,
+  // a looping hero video 8%, the rest under 3%
+  changeTile: 0.2,
   // two captures taken in a row must agree this closely, or the page is still moving and nothing is replaced
   stableShare: 0.01,
+  stableTile: 0.05,
 };
 
 export const PROJECTS = {
@@ -45,9 +53,9 @@ export const PROJECTS = {
     clip: { x: 420, y: 280, width: 832, height: 520 },
   },
   // the first view without the announcement bar and the side rail: the listing cards, the wordmark, the search.
-  // Its cards float: the calm version holds them still, so every day gives the same picture
+  // Its cards float all the time: held at one moment of the loop, so every day gives the same picture
   "kirayla-rental": {
-    reducedMotion: true,
+    animationsAt: 2500,
     clip: { x: 96, y: 72, width: 1152, height: 720 },
   },
   // the "demo mode" note closed

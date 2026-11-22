@@ -11,7 +11,8 @@
  *     cookie or modal layer over it, the project's name on it, not a blank picture (a host that is
  *     asleep gets two more tries, 20 s and 40 s later), and
  *   - both captures agree (the page has stopped moving), and
- *   - the picture differs from the committed one by more than LIMITS.changeShare.
+ *   - the picture differs from the committed one by more than LIMITS.changeShare, or one of its
+ *     6 × 5 parts by more than LIMITS.changeTile.
  * In every other case the committed picture stays. Same size, format and file name: 960×600 WebP.
  *
  *   --dry-run  never writes into frontend/public (the report and the before / after pictures still go to --out)
@@ -99,6 +100,15 @@ async function shoot(browser, url, cfg, want) {
     if (cfg.hide.length) await page.addStyleTag({ content: `${cfg.hide.join(",")}{display:none!important}` });
     await page.mouse.move(0, 0);
     await page.waitForTimeout(cfg.settleMs);
+    if (cfg.animationsAt !== null) {
+      await page.evaluate((at) => {
+        for (const a of document.getAnimations()) {
+          a.pause();
+          a.currentTime = at;
+        }
+      }, cfg.animationsAt);
+      await page.waitForTimeout(200);
+    }
     if (cfg.videoAt !== null) {
       await page.evaluate(
         (at) =>
@@ -159,7 +169,7 @@ async function capture(browser, url, cfg, want) {
       const f = flatness(sigA);
       if (f.contrast < 6 || f.topShare > 0.97 || f.colours < 4) a.problems.push(`the picture is blank or one flat colour (contrast ${f.contrast.toFixed(1)}, ${pct(f.topShare)} one colour)`);
     }
-    last = { ...a, sig: sigA, pair: { share: 0, mean: 0 }, tries: i + 1 };
+    last = { ...a, sig: sigA, pair: { share: 0, tile: 0, mean: 0 }, tries: i + 1 };
     if (a.problems.length) continue;
     const b = await shoot(browser, url, cfg, want);
     if (b.problems.length || !b.png) {
@@ -167,7 +177,7 @@ async function capture(browser, url, cfg, want) {
       continue;
     }
     last.pair = difference(sigA, await signature(b.png), LIMITS.step);
-    if (last.pair.share <= LIMITS.stableShare) break;
+    if (last.pair.share <= LIMITS.stableShare && last.pair.tile <= LIMITS.stableTile) break;
     last.problems = []; // unstable is decided (and worded) by decide(); try again in case it was a late animation
   }
   return last;
@@ -227,9 +237,9 @@ async function main() {
       const webp = shot.png && (await toWebp(shot.png));
       // compared as the visitor would get it: the new WebP against the committed WebP
       const old = oldBytes && webp ? difference(await signature(oldBytes), await signature(webp), LIMITS.step) : null;
-      const verdict = decide({ problems: shot.problems, pair: shot.pair, old: oldBytes ? (old ?? { share: 0, mean: 0 }) : null, limits: LIMITS });
+      const verdict = decide({ problems: shot.problems, pair: shot.pair, old: oldBytes ? (old ?? { share: 0, tile: 0, mean: 0 }) : null, limits: LIMITS });
       Object.assign(row, { action: verdict.action, reason: verdict.reason, tries: shot.tries, vsOld: old, pair: shot.pair });
-      row.attention = verdict.action === "keep" && (shot.problems.length > 0 || shot.pair.share > LIMITS.stableShare);
+      row.attention = verdict.action === "keep" && (shot.problems.length > 0 || shot.pair.share > LIMITS.stableShare || shot.pair.tile > LIMITS.stableTile);
 
       if (oldBytes) await sharp(oldBytes).png().toFile(path.join(outDir, `${path.parse(file).name}.before.png`));
       if (webp) await sharp(webp).png().toFile(path.join(outDir, `${path.parse(file).name}.after.png`));
@@ -243,7 +253,7 @@ async function main() {
 
   const changed = rows.filter((r) => r.action !== "keep");
   const attention = rows.filter((r) => r.attention);
-  const num = (d) => (d ? pct(d.share) : "–");
+  const num = (d) => (d ? `${pct(d.share)} (part ${pct(d.tile ?? 0)})` : "–");
   const summary = [
     `### Project thumbnails${dryRun ? " (dry run)" : ""}`,
     "",

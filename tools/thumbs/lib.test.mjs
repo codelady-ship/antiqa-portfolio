@@ -73,6 +73,16 @@ test("a new headline block is a change, a one-pixel shift is not", async () => {
   assert.ok(difference(base, redesigned, LIMITS.step).share > LIMITS.changeShare);
 });
 
+test("a change confined to one part of the picture (a redrawn side menu) counts through `tile`", async () => {
+  const base = await signature(await page());
+  const menu = await signature(await picture("#f5f0e8", [{ left: 100, top: 80, width: 500, height: 90, color: "#222222" }, { left: 100, top: 300, width: 300, height: 200, color: "#c8963c" }, { left: 820, top: 20, width: 100, height: 60, color: "#3050c0" }]));
+  const d = difference(base, menu, LIMITS.step);
+  assert.ok(d.share <= LIMITS.changeShare, `share ${d.share}`);
+  assert.ok(d.tile > LIMITS.changeTile, `tile ${d.tile}`);
+  assert.equal(decide({ problems: [], pair: { share: 0, tile: 0 }, old: d, limits: LIMITS }).action, "replace");
+  assert.equal(difference(base, base, LIMITS.step).tile, 0);
+});
+
 test("flatness tells a blank page from a real one", async () => {
   const blank = flatness(await signature(await picture("#ffffff")));
   assert.ok(blank.contrast < 6 && blank.topShare > 0.97);
@@ -110,6 +120,10 @@ test("decide: keep on any doubt, replace only a steady and really different pict
   assert.equal(decide({ problems: [], pair: { share: limits.stableShare * 2 }, old: { share: 0.9 }, limits }).action, "keep");
   assert.equal(decide({ problems: [], pair: steady, old: { share: limits.changeShare / 2 }, limits }).action, "keep");
   assert.equal(decide({ problems: [], pair: steady, old: { share: limits.changeShare * 2 }, limits }).action, "replace");
+  assert.equal(decide({ problems: [], pair: steady, old: { share: 0, tile: limits.changeTile / 2 }, limits }).action, "keep");
+  assert.equal(decide({ problems: [], pair: steady, old: { share: 0, tile: limits.changeTile * 2 }, limits }).action, "replace");
+  // one part still moving (a carousel) is not steady
+  assert.equal(decide({ problems: [], pair: { share: 0, tile: limits.stableTile * 2 }, old: { share: 0.9 }, limits }).action, "keep");
   assert.equal(decide({ problems: [], pair: steady, old: null, limits }).action, "create");
   assert.equal(decide({ problems: ["HTTP 503"], pair: steady, old: null, limits }).action, "keep");
 });
