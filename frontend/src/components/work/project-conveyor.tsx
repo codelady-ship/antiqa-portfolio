@@ -136,7 +136,7 @@ export function ProjectConveyor({
         <span aria-hidden className={`size-2.5 rounded-full ${TIER_DOT[tierOf(p)]}`} />
         {p.comingSoon ? t("legendSoon") : p.demoUrl ? t("legendLive") : t("legendCode")}
       </p>
-      <h3 className="display mt-2 text-2xl leading-tight font-semibold text-balance">{p.title}</h3>
+      <h3 translate="no" className="display mt-2 text-2xl leading-tight font-semibold text-balance">{p.title}</h3>
       {blurb(p, locale) && <p className="mt-2 text-[0.95rem] leading-relaxed text-pretty text-muted">{blurb(p, locale)}</p>}
       {stack.length > 0 && (
         <ul translate="no" lang="en" className="notranslate mt-4 flex flex-wrap gap-1.5">

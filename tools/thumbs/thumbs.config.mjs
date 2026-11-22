@@ -53,10 +53,18 @@ export const PROJECTS = {
     clip: { x: 420, y: 280, width: 832, height: 520 },
   },
   // the first view without the announcement bar and the side rail: the listing cards, the wordmark, the search.
-  // Its cards float all the time: held at one moment of the loop, so every day gives the same picture
+  // Its cards float all the time: held at one moment of the loop, so every day gives the same picture.
+  // Renamed Kirayla → Share (2026-11-22): the page says "share" whatever title the record has
+  "share-rental": {
+    animationsAt: 2500,
+    clip: { x: 96, y: 72, width: 1152, height: 720 },
+    expectText: "share",
+  },
+  // the same project under its old repo name, until that record is hidden (same picture file)
   "kirayla-rental": {
     animationsAt: 2500,
     clip: { x: 96, y: 72, width: 1152, height: 720 },
+    expectText: "share",
   },
   // the "demo mode" note closed
   "food-wagon-delivery-figma": {
