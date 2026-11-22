@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import type { Profile } from "@/lib/types";
@@ -131,6 +131,9 @@ function Login({ onDone }: { onDone: () => void }) {
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [forgot, setForgot] = useState(false);
+
+  if (forgot) return <Forgot seedEmail={email} onBack={() => setForgot(false)} />;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,7 +166,76 @@ function Login({ onDone }: { onDone: () => void }) {
         <button type="submit" disabled={busy} className="rounded-full bg-ink py-3 text-sm font-medium text-bg disabled:opacity-50">
           {t("login")}
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            setErr("");
+            setForgot(true);
+          }}
+          className="min-h-11 w-fit justify-self-center text-sm text-muted underline underline-offset-4 hover:text-ink"
+        >
+          {t("forgot")}
+        </button>
       </form>
+    </Card>
+  );
+}
+
+/** "Forgot password?": asks the API to mail a reset link. The answer is the same for every address. */
+function Forgot({ seedEmail, onBack }: { seedEmail: string; onBack: () => void }) {
+  const t = useTranslations("Admin");
+  const locale = useLocale();
+  const [email, setEmail] = useState(seedEmail);
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setErr("");
+    try {
+      await api("/api/auth/reset/request", { method: "POST", body: JSON.stringify({ email, locale }) });
+      setSent(true);
+    } catch (e) {
+      setErr((e as { status?: number }).status === 429 ? t("forgotTooMany") : t("forgotError"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const back = (
+    <button type="button" onClick={onBack} className={`min-h-11 w-fit text-sm text-muted underline underline-offset-4 hover:text-ink ${sent ? "" : "justify-self-center"}`}>
+      {t("backToLogin")}
+    </button>
+  );
+
+  return (
+    <Card title={t("forgotTitle")}>
+      {sent ? (
+        <div className="grid max-w-sm gap-4">
+          <p role="status" className="text-sm">
+            {t("forgotSent")}
+          </p>
+          {back}
+        </div>
+      ) : (
+        <form onSubmit={submit} className="grid max-w-sm gap-4">
+          <p className="text-sm text-muted">{t("forgotText")}</p>
+          <Field label={t("email")}>
+            <Input type="email" autoComplete="username" required maxLength={200} value={email} onChange={(e) => setEmail(e.target.value)} />
+          </Field>
+          {err && (
+            <p role="alert" className="text-sm text-rose">
+              {err}
+            </p>
+          )}
+          <button type="submit" disabled={busy} className="rounded-full bg-ink py-3 text-sm font-medium text-bg disabled:opacity-50">
+            {busy ? t("forgotSending") : t("forgotSend")}
+          </button>
+          {back}
+        </form>
+      )}
     </Card>
   );
 }

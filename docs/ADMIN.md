@@ -4,6 +4,11 @@
 The site has no public link to it on purpose — bookmark it. It is `noindex`.
 Log in with the admin email and password (set as `ADMIN_EMAIL` / `ADMIN_PASSWORD_HASH` on the API).
 
+**Forgot the password?** Press "Forgot password?" under the sign-in form, enter the admin email and open the
+link that arrives (valid 30 minutes, works once). Set the new password twice: every device is signed out and
+you sign in with the new password. From then on the password lives in the database, not in `ADMIN_PASSWORD_HASH`
+(which stays only as the password used until the first reset). This needs `RESEND_API_KEY` on the API, see below.
+
 At the top you see three big buttons:
 
 ## 1. Add a project from GitHub
@@ -35,6 +40,13 @@ Name, about text, work experience (role, company, period, summary — AZ and EN)
 - `GITHUB_TOKEN` — read access to your repos (fine-grained: Contents + Metadata read-only; add private repos you want to show).
 - `GITHUB_OWNER` — optional, defaults to the GitHub user in your profile (`codelady-ship`).
 - `VERCEL_TOKEN`, `VERCEL_TEAM_ID` — optional, lets "Add from GitHub" find Vercel live links.
+- `RESEND_API_KEY` — needed for "Forgot password?" (Production only). Create a free account at resend.com **with the
+  same address as `ADMIN_EMAIL`** (without an own domain Resend delivers only to the account's address), then
+  API Keys → Create API key → "Sending access". Until it is set, the reset flow sends nothing.
+- `MAIL_FROM`, `SITE_URL` — optional: sender after verifying a domain in Resend; site address for the reset link
+  (default `https://antiqa-portfolio.vercel.app`).
+- Emergency (no mail, password lost): in MongoDB, collection `adminauths`, document `admin`, remove the
+  `passwordHash` field — the login falls back to `ADMIN_PASSWORD_HASH`.
 
 ## Scripts (from `backend/`)
 - `GITHUB_TOKEN=$(gh auth token) npx tsx scripts/upsert-projects.ts --env .env [--only jeparla]` — featured projects with their AZ/EN texts.
