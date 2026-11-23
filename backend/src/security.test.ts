@@ -180,17 +180,44 @@ describe("frame check never fetches private or own hosts", () => {
     expect(await hostKind("https://x.dev/", async () => Promise.reject(new Error("ENOTFOUND")))).toBe("unresolved");
   });
 
+  it("IPv4 hidden in IPv6 (every spelling) and IPv6 transition ranges are private", async () => {
+    const hidden = [
+      "::ffff:127.0.0.1", "::ffff:7f00:1", "0:0:0:0:0:ffff:127.0.0.1", "0:0:0:0:0:ffff:7f00:1", "::FFFF:7F00:0001",
+      "::ffff:169.254.169.254", "::ffff:a9fe:a9fe", "::ffff:0:a9fe:a9fe", "::ffff:0:127.0.0.1",
+      "::127.0.0.1", "::7f00:1", "::", "0:0:0:0:0:0:0:1", "0::1", "::a9fe:a9fe",
+      "64:ff9b::7f00:1", "64:ff9b::169.254.169.254", "64:ff9b:1::1", "2002:7f00:1::", "2002:a9fe:a9fe::1",
+      "2001:0:4136:e378:8000:63bf:3fff:fdd2", "2001:db8::1", "fe80::1%eth0", "fec0::1", "100::1",
+      "192.0.0.1", "198.51.100.7", "203.0.113.9", "255.255.255.255",
+    ];
+    for (const ip of hidden) expect(isPrivateAddress(ip), ip).toBe(true);
+    for (const ip of ["::ffff:8.8.8.8", "::ffff:808:808", "2606:4700:4700::1111", "2a00:1450:4001::200e"]) expect(isPrivateAddress(ip), ip).toBe(false);
+    // the URL parser rewrites these literals (e.g. [::ffff:127.0.0.1] -> [::ffff:7f00:1]); the host check still sees them
+    for (const u of [
+      "http://[::ffff:127.0.0.1]/", "http://[::ffff:169.254.169.254]/", "http://[0:0:0:0:0:ffff:127.0.0.1]/",
+      "http://[::127.0.0.1]/", "http://[::ffff:0:a9fe:a9fe]/", "http://[2002:7f00:1::]/", "http://[64:ff9b::7f00:1]/",
+      "http://0x7f.1/", "http://2130706433/", "http://[::]/", "http://192.0.0.1/",
+    ])
+      expect(await hostKind(u, pub), u).toBe("private");
+  });
+
   it("own and private hosts count as blocked without a request", async () => {
     const f = fetchMock();
     expect(await frameBlocked("https://antiqacode.vercel.app/", pub)).toBe(true);
     expect(await frameBlocked("https://169.254.169.254/latest/meta-data/", pub)).toBe(true);
     expect(await frameBlocked("https://internal.example/", async () => ["10.0.0.7"])).toBe(true);
+    expect(await frameBlocked("http://[::ffff:127.0.0.1]:8080/", pub)).toBe(true);
+    expect(await frameBlocked("http://[::ffff:169.254.169.254]/latest/meta-data/", pub)).toBe(true);
+    expect(await frameBlocked("https://rebind.example/", async () => ["::ffff:7f00:1"])).toBe(true);
     expect(f).not.toHaveBeenCalled();
   });
 
   it("checks every redirect hop before following it, and caps the hops", async () => {
     const redirect = (to: string) => new Response(null, { status: 302, headers: { location: to } });
     let f = fetchMock(redirect("http://127.0.0.1/admin"));
+    expect(await frameBlocked("https://x.dev/", pub)).toBe(true);
+    expect(f).toHaveBeenCalledTimes(1);
+    // a hop to an IPv4-mapped IPv6 literal is not fetched either
+    f = fetchMock(redirect("http://[::ffff:127.0.0.1]:3000/"));
     expect(await frameBlocked("https://x.dev/", pub)).toBe(true);
     expect(f).toHaveBeenCalledTimes(1);
 

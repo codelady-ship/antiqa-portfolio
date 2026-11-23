@@ -1,6 +1,6 @@
 /** Which hosts a project link may point to: never the portfolio itself, never a private network. */
 import { lookup } from "node:dns/promises";
-import { isIP } from "node:net";
+import { BlockList, isIP } from "node:net";
 
 /** The portfolio's production addresses (also the allowed reset-link sites and frame-ancestors check). */
 export const PORTFOLIO_ORIGINS = ["https://antiqa-portfolio.vercel.app", "https://antiqacode.vercel.app"];
@@ -28,26 +28,56 @@ export function isOwnHost(url: string): boolean {
   return own.includes(host) || OWN_PREVIEW.test(host);
 }
 
-/** Loopback, private, link-local, CGNAT, unspecified, multicast/reserved (IPv4 and IPv6). */
+/** Never fetched: loopback, private, link-local, CGNAT, documentation, benchmark, multicast, reserved. */
+const V4_BLOCKED: [string, number][] = [
+  ["0.0.0.0", 8], ["10.0.0.0", 8], ["100.64.0.0", 10], ["127.0.0.0", 8], ["169.254.0.0", 16], ["172.16.0.0", 12],
+  ["192.0.0.0", 24], ["192.0.2.0", 24], ["192.168.0.0", 16], ["198.18.0.0", 15], ["198.51.100.0", 24],
+  ["203.0.113.0", 24], ["224.0.0.0", 4], ["240.0.0.0", 4],
+];
+/**
+ * IPv6 ranges that are private or can carry an arbitrary IPv4 address (so could reach a private one):
+ * ::/96 (unspecified, loopback, IPv4-compatible), ::ffff:0:0:0/96 (SIIT), NAT64 (64:ff9b::/96, 64:ff9b:1::/48),
+ * discard 100::/64, Teredo 2001::/32, documentation 2001:db8::/32, 6to4 2002::/16, ULA, link-/site-local, multicast.
+ * IPv4-mapped ::ffff:0:0/96 is not listed: it is turned into its IPv4 address and checked against V4_BLOCKED.
+ */
+const V6_BLOCKED: [string, number][] = [
+  ["::", 96], ["::ffff:0:0:0", 96], ["64:ff9b::", 96], ["64:ff9b:1::", 48], ["100::", 64], ["2001::", 32],
+  ["2001:db8::", 32], ["2002::", 16], ["fc00::", 7], ["fe80::", 10], ["fec0::", 10], ["ff00::", 8],
+];
+const blocked = new BlockList();
+for (const [net, bits] of V4_BLOCKED) blocked.addSubnet(net, bits, "ipv4");
+for (const [net, bits] of V6_BLOCKED) blocked.addSubnet(net, bits, "ipv6");
+
+/** An IPv6 address as its 8 numeric groups (any spelling: "::", embedded dotted IPv4, leading zeros); null if invalid. */
+function ipv6Groups(a: string): number[] | null {
+  if (isIP(a) !== 6) return null;
+  let s = a;
+  const v4 = /(\d+\.\d+\.\d+\.\d+)$/.exec(s)?.[1];
+  if (v4) {
+    const [w, x, y, z] = v4.split(".").map(Number);
+    s = s.slice(0, -v4.length) + ((w << 8) | x).toString(16) + ":" + ((y << 8) | z).toString(16);
+  }
+  const [head, tail] = s.split("::");
+  const h = head ? head.split(":") : [];
+  const t = tail ? tail.split(":") : [];
+  const groups = tail === undefined ? h : [...h, ...Array(8 - h.length - t.length).fill("0"), ...t];
+  return groups.length === 8 ? groups.map((g) => parseInt(g, 16)) : null;
+}
+
+/**
+ * Loopback, private, link-local, CGNAT, unspecified, multicast/reserved (IPv4 and IPv6), in every spelling:
+ * IPv4-mapped IPv6 ("::ffff:127.0.0.1", which the URL parser turns into "::ffff:7f00:1", "0:0:0:0:0:ffff:7f00:1")
+ * is checked as the IPv4 address it carries.
+ */
 export function isPrivateAddress(ip: string): boolean {
-  const a = ip.toLowerCase().replace(/^\[|\]$/g, "");
-  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(a)?.[1];
-  if (mapped) return isPrivateAddress(mapped);
-  if (isIP(a) === 4) {
-    const [x, y] = a.split(".").map(Number);
-    return (
-      x === 0 || x === 10 || x === 127 || x >= 224 ||
-      (x === 100 && y >= 64 && y <= 127) ||
-      (x === 169 && y === 254) ||
-      (x === 172 && y >= 16 && y <= 31) ||
-      (x === 192 && y === 168) ||
-      (x === 198 && (y === 18 || y === 19))
-    );
-  }
-  if (isIP(a) === 6) {
-    return a === "::" || a === "::1" || /^f[cd]/.test(a) || /^fe[89ab]/.test(a) || /^ff/.test(a) || a.startsWith("64:ff9b:");
-  }
-  return false;
+  const a = ip.toLowerCase().replace(/^\[|\]$/g, "").replace(/%.*$/, "");
+  if (isIP(a) === 4) return blocked.check(a, "ipv4");
+  const g = ipv6Groups(a);
+  if (!g) return false;
+  // ::ffff:a.b.c.d (any spelling): the IPv4 address decides
+  if (g.slice(0, 5).every((n) => n === 0) && g[5] === 0xffff)
+    return blocked.check([g[6] >> 8, g[6] & 255, g[7] >> 8, g[7] & 255].join("."), "ipv4");
+  return blocked.check(g.map((n) => n.toString(16)).join(":"), "ipv6");
 }
 
 export type Lookup = (host: string) => Promise<string[]>;
