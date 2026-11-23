@@ -7,6 +7,7 @@ import type { Profile } from "@/lib/types";
 import { CvPanel } from "./cv-panel";
 import { ProfileForm } from "./profile-form";
 import { ProjectsPanel } from "./projects-panel";
+import { SignOutEverywhere } from "./sign-out-everywhere";
 import { api, Button, Card, Field, Input } from "./ui";
 
 type SeedRepo = { url: string; featured?: boolean; backend?: string; title?: string; demo?: string };
@@ -43,6 +44,7 @@ export function AdminApp({ seedProfile, seedRepos, hasApi }: { seedProfile: Prof
               {t("logout")}
             </Button>
           )}
+          {admin && <SignOutEverywhere onDone={() => setAdmin(false)} />}
         </div>
       </div>
 

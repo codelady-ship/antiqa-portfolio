@@ -5,10 +5,11 @@ import sanitizeHtml from "sanitize-html";
 import { z } from "zod";
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
-import { type AuthStore, checkCredentials, COOKIE, deviceId, isAdmin, issueDevice, issueSession, mongoAuth, requireAdminWith } from "./auth.js";
+import { type AuthStore, checkCredentials, clearSession, deviceId, isAdmin, issueDevice, issueSession, mongoAuth, requireAdminWith } from "./auth.js";
 import { MailError, type Mailer, resendMailer } from "./mailer.js";
 import { BCRYPT_COST, changedMail, hashToken, newToken, passwordProblem, RESET_TTL_MS, resetLink, resetMail, resetSiteUrl, safeEqual } from "./reset.js";
-import { type Limit, type LimitStore, reserveAll } from "./limiter.js";
+import { clientIp, type Limit, type LimitStore, reserveAll } from "./limiter.js";
+import { dnsLookup, hostKind, isOwnHost, type Lookup, PORTFOLIO_ORIGINS } from "./hosts.js";
 import { isValidObjectId } from "mongoose";
 import { connectDb, Cv, LoginAttempt, Profile, Project } from "./models.js";
 import { demoUrl, fetchReadmeText, fetchSnapshot, GithubError, listRepos, parseRepoUrl, readmeExcerpt } from "./services/github.js";
@@ -22,6 +23,8 @@ const loc = z.object({ az: z.string().max(4000).default(""), en: z.string().max(
 // only https links: these end up in href, iframe src and JSON-LD
 const httpsUrl = z.string().url().max(500).refine((u) => /^https:\/\//i.test(u), "https only");
 const url = z.union([z.literal(""), httpsUrl]);
+// an admin-panel link is always framed by the demo modal (allow-scripts + allow-same-origin): never the portfolio itself
+const framedUrl = z.union([z.literal(""), httpsUrl.refine((u) => !isOwnHost(u), "the portfolio's own address cannot be framed")]);
 
 export const ProfileInput = z.object({
   name: z.string().min(1).max(120),
@@ -56,9 +59,10 @@ export const ProjectLinks = z.array(z.object({ label: z.string().trim().min(1).m
 export const ProjectPatch = z.object({
   title: z.string().max(120).optional(),
   summary: loc.optional(),
+  // the portfolio may list itself (its own card links to the site): allowed, but never framed (see present / frameBlocked)
   demoOverride: url.optional(),
   backendUrl: url.optional(),
-  adminUrl: url.optional(),
+  adminUrl: framedUrl.optional(),
   // a public demo login at most ("demo@… / demo"); one short line, no markup
   adminHint: z.string().trim().max(120).regex(/^[^<>]*$/, "no markup").optional(),
   featured: z.boolean().optional(),
@@ -107,10 +111,11 @@ export function present(p: any, admin = false) {
     adminUrl: p.adminUrl || null,
     adminHint: p.adminUrl ? p.adminHint || "" : "",
     // false: the admin panel cannot be framed, the modal shows an "open in a new tab" card
-    ...(p.adminUrl && { adminFrame: !p.adminNoFrame }),
+    ...(p.adminUrl && { adminFrame: !p.adminNoFrame && !isOwnHost(p.adminUrl) }),
     demoUrl: liveUrl(p),
     // false: the live site cannot be framed, the Demo tab shows an "open in a new tab" card
-    ...(liveUrl(p) && { demoFrame: !p.demoNoFrame }),
+    // the portfolio itself is never framed inside itself (it also refuses framing: X-Frame-Options DENY)
+    ...(liveUrl(p) && { demoFrame: !p.demoNoFrame && !isOwnHost(liveUrl(p)!) }),
     createdAt: gh.createdAt ?? null,
     pushedAt: gh.pushedAt ?? null,
     stars: gh.stars ?? 0,
@@ -137,8 +142,8 @@ export function present(p: any, admin = false) {
  * Does this page refuse to be shown in an iframe on the portfolio? (X-Frame-Options DENY/SAMEORIGIN,
  * or a CSP frame-ancestors list that allows neither "*" nor every portfolio origin). Unknown
  * (network error) = framable: the modal still has its open-in-new-tab link.
+ * The portfolio's own address and private-network hosts count as blocked and are never fetched.
  */
-const PORTFOLIO_ORIGINS = ["https://antiqa-portfolio.vercel.app", "https://antiqacode.vercel.app"];
 
 /** Does one frame-ancestors source ("https://x.dev", "https://*.vercel.app", "https:", "*") match the origin? */
 function sourceMatches(src: string, origin: string): boolean {
@@ -151,9 +156,26 @@ function sourceMatches(src: string, origin: string): boolean {
   return m[2] ? host.endsWith(`.${m[3]}`) : host === m[3];
 }
 
-export async function frameBlocked(url: string): Promise<boolean> {
+const MAX_REDIRECTS = 5;
+
+export async function frameBlocked(url: string, resolve: Lookup = dnsLookup): Promise<boolean> {
   try {
-    const r = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(8000) });
+    // redirects are followed by hand, so every hop is checked before it is fetched
+    let at = url;
+    let r: Awaited<ReturnType<typeof fetch>>;
+    for (let hop = 0; ; hop++) {
+      if (isOwnHost(at)) return true;
+      const kind = await hostKind(at, resolve);
+      if (kind === "private") return true;
+      if (kind === "unresolved") return false;
+      r = await fetch(at, { redirect: "manual", signal: AbortSignal.timeout(8000) });
+      const next = r.status >= 300 && r.status < 400 ? r.headers.get("location") : null;
+      if (!next) break;
+      void r.body?.cancel();
+      // too many hops: unknown, like a network error
+      if (hop >= MAX_REDIRECTS) return false;
+      at = new URL(next, at).href;
+    }
     void r.body?.cancel();
     const xfo = (r.headers.get("x-frame-options") ?? "").toLowerCase();
     if (/deny|sameorigin/.test(xfo)) return true;
@@ -232,11 +254,20 @@ const mongoLimits: LimitStore = {
 
 /**
  * Known device (signed cookie from an earlier login): its own key, no global cap.
- * Otherwise per IP + global. req.ip honours "trust proxy" (the hop the platform proxy added);
- * the leftmost X-Forwarded-For entry is client-controlled and is not used.
+ * Otherwise per client address + global. clientIp() (limiter.ts) explains which address that is:
+ * the hop the platform's proxy vouches for, never the client-controlled leftmost X-Forwarded-For entry.
  */
 function loginLimits(req: Request, dev: string | null): Limit[] {
-  return dev ? [[`dev:${dev}`, MAX_PER_CLIENT]] : [[`ip:${req.ip || "?"}`, MAX_PER_CLIENT], ["global", MAX_GLOBAL]];
+  return dev ? [[`dev:${dev}`, MAX_PER_CLIENT]] : [[`ip:${clientIp(req)}`, MAX_PER_CLIENT], ["global", MAX_GLOBAL]];
+}
+
+/**
+ * After a successful password reset (she proved she owns the mailbox): forget the failed logins of this
+ * browser, its address and the global counter, so a lockout (also one caused by someone else) ends at once.
+ */
+function clearLoginLockout(limits: LimitStore, req: Request, dev: string | null) {
+  const keys = new Set([...loginLimits(req, null), ...(dev ? loginLimits(req, dev) : [])].map(([k]) => k));
+  return Promise.all([...keys].map((k) => limits.reset(k)));
 }
 
 /* ---------- password reset by e-mail: limits (counters live in the login limiter's collection, 1 h) ---------- */
@@ -256,7 +287,7 @@ function resetLimits(req: Request, dev: string | null, kind: "req" | "try"): Lim
   const [perClient, global] = kind === "req" ? [RESET_REQ_PER_CLIENT, RESET_REQ_GLOBAL] : [RESET_TRY_PER_CLIENT, RESET_TRY_GLOBAL];
   return dev
     ? [[`reset-${kind}:dev:${dev}`, perClient, HOUR]]
-    : [[`reset-${kind}:ip:${req.ip || "?"}`, perClient, HOUR], [`reset-${kind}:global`, global, HOUR]];
+    : [[`reset-${kind}:ip:${clientIp(req)}`, perClient, HOUR], [`reset-${kind}:global`, global, HOUR]];
 }
 
 /** Lets work finish after the answer was sent on Vercel (the platform's waitUntil); false = not available, await it instead. */
@@ -319,9 +350,19 @@ export function createApp(deps: Partial<AppDeps> = {}) {
     }),
   );
   app.post("/api/auth/logout", (_req, res) => {
-    res.clearCookie(COOKIE, { path: "/" });
+    clearSession(res);
     res.json({ ok: true });
   });
+  // "sign out everywhere": every session cookie issued so far (other browsers, a stolen one) stops working
+  app.post(
+    "/api/auth/logout-all",
+    requireAdmin,
+    wrap(async (_req, res) => {
+      await auth.bumpSession();
+      clearSession(res);
+      res.json({ ok: true });
+    }),
+  );
   app.get(
     "/api/auth/me",
     wrap(async (req, res) => res.json({ admin: await admin(req) })),
@@ -404,8 +445,10 @@ export function createApp(deps: Partial<AppDeps> = {}) {
       // one atomic update: of two parallel submits (or a replay) only one can win
       if (!(await auth.consumeReset(hashToken(token), new Date(), passwordHash))) return res.status(400).json({ error: "invalid token" });
       await release();
+      // the reset proves she owns the mailbox: a login lockout ends now
+      await clearLoginLockout(limits, req, deviceId(req));
       // every session is signed out (session version + 1); this browser's cookie goes too
-      res.clearCookie(COOKIE, { path: "/" });
+      clearSession(res);
       if (!mailer.problem()) await mailer.send(changedMail()).catch((e) => resetLog("password changed, notice not sent", e));
       res.json({ ok: true });
     }),
@@ -413,6 +456,25 @@ export function createApp(deps: Partial<AppDeps> = {}) {
 
   // admin-only GitHub helpers: refuse before touching the database
   app.use("/api/github", requireAdmin);
+
+  /* ---------- full GitHub sync: checked before the database is touched ---------- */
+  const syncAll = wrap(async (_req, res) => {
+    await connectDb();
+    const list = await Project.find();
+    // 4 at a time: fast enough for the function timeout, gentle on the GitHub limit
+    for (let i = 0; i < list.length; i += 4) await Promise.allSettled(list.slice(i, i + 4).map(sync));
+    res.json({ synced: list.length, errors: list.filter((p: any) => p.syncError).map((p: any) => `${p.name}: ${p.syncError}`) });
+  });
+  /** Vercel Cron (GET with "Authorization: Bearer CRON_SECRET"), compared in constant time. */
+  const requireCron = (req: Request, res: Response, next: NextFunction) => {
+    const secret = process.env.CRON_SECRET;
+    if (secret && safeEqual(req.get("authorization") ?? "", `Bearer ${secret}`)) return next();
+    res.status(401).json({ error: "unauthorized" });
+  };
+  // the admin button: POST only (a GET could be fired cross-site by an <img> while she is signed in)
+  app.post("/api/projects/sync", requireAdmin, syncAll);
+  // Vercel Cron always uses GET: the secret only, an admin cookie does not count here
+  app.get("/api/projects/sync", requireCron, syncAll);
 
   app.use("/api", (_req, _res, next) => {
     connectDb().then(() => next(), next);
@@ -500,10 +562,20 @@ export function createApp(deps: Partial<AppDeps> = {}) {
       const { repoUrl, allowPrivate, ...patch } = ProjectCreate.parse(req.body);
       const ref = parseRepoUrl(repoUrl);
       if (!ref) return res.status(400).json({ error: "Not a GitHub repository URL" });
-      const exists = await Project.findOne(ref).collation({ locale: "en", strength: 2 });
-      if (exists) return res.status(409).json({ error: "Already added", project: present(exists, true) });
+      const existing = () => Project.findOne(ref).collation({ locale: "en", strength: 2 });
+      const already = async () => {
+        const e = await existing();
+        return res.status(409).json({ error: "Already added", ...(e && { project: present(e, true) }) });
+      };
+      if (await existing()) return already();
       const p = new Project({ ...ref, repoUrl: `https://github.com/${ref.owner}/${ref.name}`, ...patch });
-      await sync(p);
+      try {
+        await sync(p);
+      } catch (e) {
+        // a parallel add of the same repo won the unique index: same answer as the check above
+        if ((e as { code?: number }).code === 11000) return already();
+        throw e;
+      }
       const refuse = p.syncError || (p.privateRepo && !allowPrivate ? PRIVATE_MSG : "");
       if (refuse) {
         await p.deleteOne();
@@ -584,18 +656,6 @@ export function createApp(deps: Partial<AppDeps> = {}) {
       });
     }),
   );
-
-  const syncAll = wrap(async (req, res) => {
-      // admin, or Vercel Cron with CRON_SECRET
-      const cron = process.env.CRON_SECRET && req.get("authorization") === `Bearer ${process.env.CRON_SECRET}`;
-      if (!cron && !(await admin(req))) return res.status(401).json({ error: "unauthorized" });
-      const list = await Project.find();
-      // 4 at a time: fast enough for the function timeout, gentle on the GitHub limit
-      for (let i = 0; i < list.length; i += 4) await Promise.allSettled(list.slice(i, i + 4).map(sync));
-      res.json({ synced: list.length, errors: list.filter((p: any) => p.syncError).map((p: any) => `${p.name}: ${p.syncError}`) });
-  });
-  app.post("/api/projects/sync", syncAll);
-  app.get("/api/projects/sync", syncAll); // Vercel Cron uses GET
 
   /* ---------- errors ---------- */
   app.use((_req: Request, res: Response) => res.status(404).json({ error: "not found" }));

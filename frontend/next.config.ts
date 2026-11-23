@@ -26,8 +26,15 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          // no other site may frame the portfolio (clickjacking of the admin panel). This only limits who
+          // embeds US: the demo modal framing the projects' own sites is governed by THEIR headers.
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Content-Security-Policy", value: "frame-ancestors 'none'" },
         ],
       },
+      // the admin pages are never stored by the browser or a shared cache
+      { source: "/:locale/admin", headers: [{ key: "Cache-Control", value: "no-store" }] },
+      { source: "/:locale/admin/:path*", headers: [{ key: "Cache-Control", value: "no-store" }] },
       // the password reset page (opened from the mailed link) never sends a Referer anywhere
       { source: "/:locale/admin/reset", headers: [{ key: "Referrer-Policy", value: "no-referrer" }] },
     ];
