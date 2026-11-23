@@ -1,41 +1,62 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
-import { api, Card, refreshSite } from "./ui";
+import { useCallback, useEffect, useState } from "react";
+import { api, Card, ConfirmButton, useFail, useSaved, useToast } from "./ui";
 
 export function CvPanel() {
   const t = useTranslations("Admin");
+  const toast = useToast();
+  const fail = useFail();
+  const saved = useSaved();
   const [cv, setCv] = useState<Partial<Record<"az" | "en", string>>>({});
-  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const load = () =>
-    api<{ cv?: Partial<Record<"az" | "en", string>> }>("/api/profile")
-      .then((p) => setCv(p.cv ?? {}))
-      .catch(() => {});
+  const load = useCallback(
+    () =>
+      api<{ cv?: Partial<Record<"az" | "en", string>> }>("/api/profile")
+        .then((p) => setCv(p.cv ?? {}))
+        .catch((e) => fail(e)),
+    [fail],
+  );
   useEffect(() => {
-    load();
-  }, []);
+    void load();
+  }, [load]);
 
   const upload = async (lang: "az" | "en", file: File | undefined) => {
     if (!file) return;
     // some Windows setups report an empty MIME type: check the extension too
     const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
-    if (!isPdf || file.size > 2 * 1024 * 1024) return setMsg(t("pdfOnly"));
-    setMsg(t("saving"));
+    if (!isPdf || file.size > 2 * 1024 * 1024) return toast({ kind: "error", text: t("pdfOnly") });
+    setBusy(true);
+    toast({ kind: "info", text: t("saving") });
     try {
-      const r = await fetch(`/api/cv/${lang}`, {
+      // the CV is sent as the raw PDF (not JSON); api() keeps these headers
+      await api(`/api/cv/${lang}`, {
         method: "PUT",
-        credentials: "same-origin",
         headers: { "Content-Type": "application/pdf", "X-File-Name": encodeURIComponent(file.name) },
         body: file,
       });
-      if (!r.ok) throw new Error(((await r.json().catch(() => ({}))) as { error?: string }).error || `HTTP ${r.status}`);
-      await refreshSite();
-      setMsg(t("saved"));
-      load();
+      await load();
+      await saved();
     } catch (e) {
-      setMsg(`${t("error")}: ${(e as Error).message}`);
+      fail(e);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (lang: "az" | "en") => {
+    setBusy(true);
+    toast(null);
+    try {
+      await api(`/api/cv/${lang}`, { method: "DELETE" });
+      await load();
+      await saved(t("cvRemoved"));
+    } catch (e) {
+      fail(e);
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -53,20 +74,30 @@ export function CvPanel() {
               t("none")
             )}
           </p>
-          <label className="inline-flex cursor-pointer rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-bg focus-within:ring-2 focus-within:ring-rose focus-within:ring-offset-2">
-            {t("upload")}
-            <input type="file" accept="application/pdf" className="sr-only" onChange={(e) => {
-                upload(lang, e.target.files?.[0]);
-                e.target.value = ""; // allow choosing the same file again
-              }} />
-          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <label
+              className={`inline-flex cursor-pointer rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-bg focus-within:ring-2 focus-within:ring-rose focus-within:ring-offset-2 ${busy ? "pointer-events-none opacity-50" : ""}`}
+            >
+              {t("upload")}
+              <input
+                type="file"
+                accept="application/pdf"
+                className="sr-only"
+                disabled={busy}
+                onChange={(e) => {
+                  void upload(lang, e.target.files?.[0]);
+                  e.target.value = ""; // allow choosing the same file again
+                }}
+              />
+            </label>
+            {cv[lang] && (
+              <ConfirmButton disabled={busy} hint={t("cvRemoveHint")} onConfirm={() => void remove(lang)}>
+                {t("cvRemove")}
+              </ConfirmButton>
+            )}
+          </div>
         </Card>
       ))}
-      {msg && (
-        <p role="status" className="text-sm text-muted sm:col-span-2">
-          {msg}
-        </p>
-      )}
     </div>
   );
 }

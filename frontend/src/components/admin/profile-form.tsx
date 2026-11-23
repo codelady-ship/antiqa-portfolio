@@ -1,29 +1,49 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Profile } from "@/lib/types";
-import { api, Area, Button, Card, Field, Input, refreshSite } from "./ui";
+import { ApiError, api, Area, Button, Card, ConfirmButton, Field, Input, useDirty, useFail, useSaved, useToast } from "./ui";
 
 type Form = Omit<Profile, "cv">;
+/** Keep in step with ProfileInput in backend/src/app.ts (the server checks again) */
+const MAX = { roles: 8, skills: 40, skillLen: 40, items: 10, socials: 6 } as const;
 
 export function ProfileForm({ seed }: { seed: Profile }) {
   const t = useTranslations("Admin");
+  const toast = useToast();
+  const fail = useFail();
+  const saved = useSaved();
   const [f, setF] = useState<Form | null>(null);
-  const [status, setStatus] = useState<"" | "saving" | "saved" | string>("");
+  // what the form was loaded from: the unsaved-changes check, and the version a save must still match (409 otherwise)
+  const [base, setBase] = useState<{ json: string; updatedAt: string | null }>({ json: "", updatedAt: null });
+  const [saving, setSaving] = useState(false);
+  const [loadErr, setLoadErr] = useState(false);
+  const dirty = !!f && JSON.stringify(f) !== base.json;
+  useDirty("profile", dirty);
 
+  const load = useCallback(
+    () =>
+      api<Partial<Profile> & { updatedAt?: string }>("/api/profile")
+        .then((p) => {
+          // first run: database is empty → start from the current site data
+          const { name, initials, roles, tagline, about, location, openToWork, skills, education, experience, socials, contacts } = p?.name ? ({ ...seed, ...p } as Profile) : seed;
+          const form: Form = { name, initials, roles, tagline, about, location, openToWork, skills, education, experience: experience ?? [], contacts, socials: socials ?? [] };
+          setF(form);
+          setBase({ json: JSON.stringify(form), updatedAt: p?.updatedAt ?? null });
+          setLoadErr(false);
+        })
+        .catch((e) => {
+          setLoadErr(true);
+          fail(e);
+        }),
+    [seed, fail],
+  );
   useEffect(() => {
-    api<Partial<Profile>>("/api/profile")
-      .then((p) => {
-        // first run: database is empty → start from the current site data
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { cv, ...rest } = p?.name ? ({ ...seed, ...p } as Profile) : seed;
-        setF({ ...rest, experience: rest.experience ?? [], socials: rest.socials ?? [] });
-      })
-      .catch((e) => setStatus(`${t("error")}: ${(e as Error).message}`));
-  }, [seed, t]);
+    void load();
+  }, [load]);
 
-  if (!f) return <p className="text-muted">{status || t("loading")}</p>;
+  if (!f) return <p className="text-muted">{loadErr ? t("err_server_error") : t("loading")}</p>;
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF({ ...f, [k]: v });
   const setL = (k: "tagline" | "about" | "location", lang: "az" | "en", v: string) => set(k, { ...f[k], [lang]: v });
@@ -32,22 +52,41 @@ export function ProfileForm({ seed }: { seed: Profile }) {
   const clean = (xs: string[]) => xs.map((x) => x.trim()).filter(Boolean);
 
   const save = async () => {
-    setStatus("saving");
+    setSaving(true);
+    toast(null);
     try {
       const { name, initials, tagline, about, location, openToWork, education, experience, contacts } = f;
       const socials = (f.socials ?? []).map((s) => ({ label: s.label.trim(), url: s.url.trim() })).filter((s) => s.label && s.url);
       const roles = { az: clean(f.roles.az), en: clean(f.roles.en) };
       const skills = clean(f.skills);
-      await api("/api/profile", {
+      const p = await api<{ updatedAt?: string }>("/api/profile", {
         method: "PUT",
-        body: JSON.stringify({ name, initials, roles, tagline, about, location, openToWork, skills, education, experience, contacts, socials }),
+        body: JSON.stringify({ name, initials, roles, tagline, about, location, openToWork, skills, education, experience, contacts, socials, expectedUpdatedAt: base.updatedAt }),
       });
-      await refreshSite();
-      setStatus("saved");
+      const form: Form = { ...f, roles, skills, socials };
+      setF(form);
+      setBase({ json: JSON.stringify(form), updatedAt: p?.updatedAt ?? null });
+      await saved();
     } catch (e) {
-      setStatus(`${t("error")}: ${(e as Error).message}`);
+      // saved elsewhere meanwhile (another tab or device): nothing was overwritten; she chooses to load that version
+      if (e instanceof ApiError && e.code === "stale_profile")
+        toast({
+          kind: "error",
+          text: t("err_stale_profile"),
+          action: {
+            label: t("loadLatest"),
+            run: () => {
+              toast(null);
+              void load();
+            },
+          },
+        });
+      else fail(e);
+    } finally {
+      setSaving(false);
     }
   };
+  const removeHint = t("removeHint");
 
   return (
     <div className="grid gap-6">
@@ -59,10 +98,10 @@ export function ProfileForm({ seed }: { seed: Profile }) {
           <Field label={t("initials")}>
             <Input value={f.initials} maxLength={4} onChange={(e) => set("initials", e.target.value)} />
           </Field>
-          <Field label={t("rolesAz")}>
+          <Field label={`${t("rolesAz")} · ${t("maxN", { n: MAX.roles })}`}>
             <Area rows={3} value={f.roles.az.join("\n")} onChange={(e) => set("roles", { ...f.roles, az: e.target.value.split("\n") })} />
           </Field>
-          <Field label={t("rolesEn")}>
+          <Field label={`${t("rolesEn")} · ${t("maxN", { n: MAX.roles })}`}>
             <Area rows={3} value={f.roles.en.join("\n")} onChange={(e) => set("roles", { ...f.roles, en: e.target.value.split("\n") })} />
           </Field>
           {(["tagline", "about"] as const).map((k) =>
@@ -77,7 +116,7 @@ export function ProfileForm({ seed }: { seed: Profile }) {
               <Input value={f.location[l]} onChange={(e) => setL("location", l, e.target.value)} />
             </Field>
           ))}
-          <Field label={t("skills")} wide>
+          <Field label={`${t("skills")} · ${t("skillsLimit", { n: MAX.skills, len: MAX.skillLen })}`} wide>
             <Input
               value={f.skills.join(", ")}
               onChange={(e) =>
@@ -101,11 +140,13 @@ export function ProfileForm({ seed }: { seed: Profile }) {
         actions={
           <Button
             variant="ghost"
+            disabled={f.experience.length >= MAX.items}
+            title={t("maxN", { n: MAX.items })}
             onClick={() =>
               set("experience", [...f.experience, { title: { az: "", en: "" }, place: "", period: { az: "", en: "" }, summary: { az: "", en: "" } }])
             }
           >
-            + {t("add")}
+            + {t("add")} ({f.experience.length}/{MAX.items})
           </Button>
         }
       >
@@ -135,9 +176,9 @@ export function ProfileForm({ seed }: { seed: Profile }) {
                 <Field label={t("expSummaryEn")}>
                   <Area rows={3} value={e.summary.en} onChange={(ev) => upd({ summary: { ...e.summary, en: ev.target.value } })} />
                 </Field>
-                <Button variant="danger" className="w-fit" onClick={() => set("experience", f.experience.filter((_, j) => j !== i))}>
+                <ConfirmButton className="sm:col-span-2" hint={removeHint} onConfirm={() => set("experience", f.experience.filter((_, j) => j !== i))}>
                   {t("remove")}
-                </Button>
+                </ConfirmButton>
               </div>
             );
           })}
@@ -147,8 +188,13 @@ export function ProfileForm({ seed }: { seed: Profile }) {
       <Card
         title={t("education")}
         actions={
-          <Button variant="ghost" onClick={() => set("education", [...f.education, { title: { az: "", en: "" }, place: "", period: "" }])}>
-            + {t("add")}
+          <Button
+            variant="ghost"
+            disabled={f.education.length >= MAX.items}
+            title={t("maxN", { n: MAX.items })}
+            onClick={() => set("education", [...f.education, { title: { az: "", en: "" }, place: "", period: "" }])}
+          >
+            + {t("add")} ({f.education.length}/{MAX.items})
           </Button>
         }
       >
@@ -169,9 +215,9 @@ export function ProfileForm({ seed }: { seed: Profile }) {
                 <Field label={t("eduPeriod")}>
                   <Input value={e.period} onChange={(ev) => upd({ period: ev.target.value })} />
                 </Field>
-                <Button variant="danger" className="w-fit" onClick={() => set("education", f.education.filter((_, j) => j !== i))}>
+                <ConfirmButton className="sm:col-span-2" hint={removeHint} onConfirm={() => set("education", f.education.filter((_, j) => j !== i))}>
                   {t("remove")}
-                </Button>
+                </ConfirmButton>
               </div>
             );
           })}
@@ -204,17 +250,19 @@ export function ProfileForm({ seed }: { seed: Profile }) {
         </div>
         {/* other socials: shown in Contact and About (https links only, up to 6) */}
         <div className="mt-6 grid gap-3">
-          <p className="text-sm font-semibold">{t("socials")}</p>
+          <p className="text-sm font-semibold">
+            {t("socials")} <span className="font-normal text-muted">· {t("maxN", { n: MAX.socials })}</span>
+          </p>
           {(f.socials ?? []).map((s, i) => (
             <div key={i} className="grid gap-2 sm:grid-cols-[12rem_1fr_auto]">
               <Input aria-label={t("socialLabel")} placeholder="YouTube" maxLength={40} value={s.label} onChange={(e) => set("socials", (f.socials ?? []).map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))} />
               <Input aria-label={t("socialUrl")} type="url" pattern="https://.*" placeholder="https://" value={s.url} onChange={(e) => set("socials", (f.socials ?? []).map((x, j) => (j === i ? { ...x, url: e.target.value } : x)))} />
-              <Button variant="ghost" onClick={() => set("socials", (f.socials ?? []).filter((_, j) => j !== i))}>
+              <ConfirmButton variant="ghost" hint={removeHint} onConfirm={() => set("socials", (f.socials ?? []).filter((_, j) => j !== i))}>
                 {t("remove")}
-              </Button>
+              </ConfirmButton>
             </div>
           ))}
-          {(f.socials ?? []).length < 6 && (
+          {(f.socials ?? []).length < MAX.socials && (
             <div>
               <Button variant="ghost" onClick={() => set("socials", [...(f.socials ?? []), { label: "", url: "" }])}>
                 + {t("addSocial")}
@@ -225,10 +273,8 @@ export function ProfileForm({ seed }: { seed: Profile }) {
       </Card>
 
       <div className="sticky bottom-4 flex flex-wrap items-center gap-4 rounded-full border border-line bg-bg/80 p-2 pl-5 backdrop-blur-xl">
-        <p role="status" className="flex-1 text-sm text-muted">
-          {status === "saving" ? t("saving") : status === "saved" ? t("saved") : status}
-        </p>
-        <Button onClick={save} disabled={status === "saving"}>
+        <p className={`flex-1 text-sm ${dirty ? "text-gold" : "text-muted"}`}>{saving ? t("saving") : dirty ? `● ${t("unsaved")}` : ""}</p>
+        <Button onClick={save} disabled={saving}>
           {t("save")}
         </Button>
       </div>
