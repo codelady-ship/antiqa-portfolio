@@ -7,6 +7,7 @@ import type { Profile } from "@/lib/types";
 import { CvPanel } from "./cv-panel";
 import { ProfileForm } from "./profile-form";
 import { ProjectsPanel } from "./projects-panel";
+import { SignOutEverywhere } from "./sign-out-everywhere";
 import { api, Button, Card, DirtyProvider, EXPIRED_EVENT, Field, Input, ToastProvider, useToast } from "./ui";
 
 type SeedRepo = { url: string; featured?: boolean; backend?: string; title?: string; demo?: string };
@@ -93,15 +94,19 @@ function Admin({ seedProfile, seedRepos, hasApi }: { seedProfile: Profile; seedR
     setSeen((s) => (s.has(k) ? s : new Set(s).add(k)));
   };
 
-  const logout = async () => {
-    if (!leaveOk()) return;
-    await api("/api/auth/logout", { method: "POST" }).catch(() => {});
+  // back to the login form with a clean panel (after Sign out, or Sign out everywhere)
+  const signedOut = () => {
     dirtyKeys.current.clear();
     toast(null);
     setExpired(false);
     setSeen(new Set(["projects"]));
     setTab("projects");
     setAdmin(false);
+  };
+  const logout = async () => {
+    if (!leaveOk()) return;
+    await api("/api/auth/logout", { method: "POST" }).catch(() => {});
+    signedOut();
   };
 
   const signedIn = admin && !expired;
@@ -111,7 +116,7 @@ function Admin({ seedProfile, seedRepos, hasApi }: { seedProfile: Profile; seedR
       <div className="mx-auto max-w-5xl px-4 pt-28 pb-24 sm:px-8">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <h1 className="display text-4xl sm:text-5xl">{t("title")}</h1>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Link
               href="/"
               onClick={(e) => {
@@ -126,6 +131,7 @@ function Admin({ seedProfile, seedRepos, hasApi }: { seedProfile: Profile; seedR
                 {t("logout")}
               </Button>
             )}
+            {signedIn && <SignOutEverywhere onDone={signedOut} />}
           </div>
         </div>
 
