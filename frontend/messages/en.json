@@ -134,7 +134,7 @@
     "faqWhoQ": "Who is {name}?",
     "faqWhoA": "{name} is a Full Stack developer based in {location} who builds web applications with Java and Spring Boot on the backend and React and Next.js on the frontend; her name is also written {alt}.",
     "faqBuildQ": "What does {name} build?",
-    "faqBuildA": "She builds responsive websites and full-stack web apps (React and Next.js interfaces, Node.js and Express REST APIs); this portfolio lists {count} of her projects.",
+    "faqBuildA": "She builds full-stack web apps: backends mainly in Java and Spring Boot with PostgreSQL, also in Node.js and Express, and interfaces in React and Next.js; this portfolio lists {count} of her projects.",
     "faqStackQ": "Which technologies does {name} use?",
     "faqStackA": "Her stack includes {skills}.",
     "faqOpenQ": "Is {name} open to work?",

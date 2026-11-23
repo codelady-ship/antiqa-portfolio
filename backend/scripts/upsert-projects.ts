@@ -6,6 +6,8 @@
 //   --refresh-all  also re-reads EVERY other project in the database from GitHub (homepage →
 //              live link, description, languages, stars, dates); owner overrides stay. Use it after
 //              repo fixes change homepages or descriptions. Warns when a demo override hides a new homepage.
+//   A full run (no --only) also hides the RETIRED records (hidden: true, nothing is deleted), e.g. the old
+//              private scholarship-visa-scam-checker record that showed Codelady Skills twice (#67).
 //   --hide a,b / --show a,b  only sets the "hidden" flag of these projects (no GitHub calls), e.g.
 //              --hide exam-task-react,React-Routing-task4
 //   --showcase only sets the "fullStack" flag (no GitHub calls): true for SHOWCASE, false for every
@@ -25,7 +27,8 @@ import { ProjectPatch, sync } from "../src/app.js";
 import { connectDb, Project } from "../src/models.js";
 import { fetchSnapshot, parseRepoUrl } from "../src/services/github.js";
 
-type Entry = { repo: string; patch: Record<string, unknown>; allowPrivate?: boolean };
+/** existingOnly: update the record if it is in the database, never create it */
+type Entry = { repo: string; patch: Record<string, unknown>; allowPrivate?: boolean; existingOnly?: boolean };
 
 /**
  * The projects on the home page belt (owner, 2026-11-16: "təzə vaxtlar yazdığım taskları qoyma,
@@ -67,6 +70,8 @@ const ENTRIES: Entry[] = [
       adminHint: "“Demo admin kimi bax” → demo@planera.az / demo1234 (read-only)",
       hidden: false,
       order: 40,
+      // the stored link was the old domain randevum-seven.vercel.app, which only redirects here (#67)
+      demoOverride: "https://planera-az.vercel.app",
       summary: {
         az: "Onlayn randevu platforması: xidmət göstərəni tap, boş saatı seç və randevunu bir neçə kliklə götür. Frontend Next.js və TypeScript, backend Java Spring Boot və PostgreSQL üzərində qurulub.",
         en: "An online booking platform: find a service provider, pick a free slot and book an appointment in a few clicks. Built with a Next.js + TypeScript frontend and a Java Spring Boot + PostgreSQL backend.",
@@ -135,8 +140,9 @@ const ENTRIES: Entry[] = [
       // so the card stays code-only instead of linking to a 404
       demoOverride: "https://codelady-ship.github.io/masapay/",
       summary: {
-        az: "Komanda layihəsi. Restoranlar üçün QR əsaslı hesab bölmə və ödəniş platforması: müştəri masadakı QR kodu skan edib canlı hesabı görür, hesabı bölür, bəxşiş əlavə edir və Payriff ilə ödəyir. React + TypeScript, Java Spring Boot, PostgreSQL və WebSocket üzərində qurulub.",
-        en: "Team project. A QR-based bill-splitting and payment platform for restaurants: guests scan the table's QR code, see the live bill, split it, add a tip and pay via Payriff. Built with React + TypeScript, Java Spring Boot, PostgreSQL and WebSocket.",
+        // the pitch first: the belt caption shows the first ~180 characters (#67: it read only "Komanda layihəsi.")
+        az: "Restoranlar üçün QR əsaslı hesab bölmə və ödəniş platforması: müştəri masadakı QR kodu skan edib canlı hesabı görür, hesabı bölür, bəxşiş əlavə edir və Payriff ilə ödəyir. Komanda layihəsidir; React + TypeScript, Java Spring Boot, PostgreSQL və WebSocket üzərində qurulub.",
+        en: "A QR-based bill-splitting and payment platform for restaurants: guests scan the table's QR code, see the live bill, split it, add a tip and pay via Payriff. A team project built with React + TypeScript, Java Spring Boot, PostgreSQL and WebSocket.",
       },
     },
   },
@@ -162,7 +168,7 @@ const ENTRIES: Entry[] = [
   {
     // owner, 2026-11-17: "skillərlə bağlı saytı da qoy portfolioya". Its own public repo (MIT) and
     // live site since 2026-11-17; it replaces the old scholarship-visa-scam-checker record (hide that
-    // one: --hide scholarship-visa-scam-checker)
+    // one: it is in RETIRED, so a full run hides it)
     repo: "https://github.com/codelady-ship/codelady-skills",
     patch: {
       title: "Codelady Skills",
@@ -332,7 +338,60 @@ const ENTRIES: Entry[] = [
       },
     },
   },
+  // #67: the earlier practice projects had no summary, so /az/about showed their English GitHub
+  // description. Only the summary is set: their flags, order and links stay as they are. The same
+  // texts are the site's fallback (SUMMARIES in frontend/src/lib/showcase.ts): keep the two in sync.
+  ...summaryOnly({
+    "my-portfolio": {
+      az: "İlk portfolio saytım: interaktiv 3D modellər, bacarıqlarım və kurslarım, canlı demo və kod linkləri olan layihələr, əlaqə forması. React, Tailwind CSS və Three.js ilə qurulub; indiki portfoliom bu saytdır.",
+      en: "My first portfolio site: interactive 3D models, my skills and courses, projects with live demos and code links, and a contact form. Built with React, Tailwind CSS and Three.js; this site is the newer version.",
+    },
+    "basic-task-with-Html-Css-Js": {
+      az: "Actify: gündəlik vərdişləri izləmək üçün kiçik tətbiq. Vərdişini əlavə edirsən, hər gün qeyd edirsən və neçə gün ardıcıl davam etdiyini (streak) görürsən; hazır çağırışlar da var. Sadə HTML, CSS və JavaScript, məlumatlar brauzerdə saxlanır.",
+      en: "Actify: a small daily habit tracker. Add your habits, tick them off every day and watch your streaks grow, with ready-made challenges. Plain HTML, CSS and JavaScript; the data stays in the browser.",
+    },
+    "rock-paper-scissors": {
+      az: "Kompüterə qarşı “Daş-qayçı-kağız” oyunu: xal lövhəsi, son 10 raundun tarixçəsi, klaviatura düymələri (R, P, S) və oyunu sıfırlama. Sadə HTML, CSS və JavaScript ilə yazılıb; səhifəni yeniləsən də hesab itmir.",
+      en: "Rock Paper Scissors against the computer: a scoreboard, the last 10 rounds, keyboard shortcuts (R, P, S) and a reset button. Plain HTML, CSS and JavaScript; the score survives a page reload.",
+    },
+    "task7-front-end-for-task6-": {
+      az: "Proqramçılar siyahısı: ada və ya stack-ə görə axtarış, stack filtrləri, ada və yaşa görə sıralama, yeni proqramçı əlavə etmək üçün yoxlamalı forma. Next.js + TypeScript frontend və Express + MongoDB API (task6); API olmayanda demo rejimində işləyir.",
+      en: "A programmers directory: search by name or stack, stack filters, sorting by name or age and a validated form to add a programmer. A Next.js + TypeScript frontend for an Express + MongoDB API (task6); without the API it runs in demo mode.",
+    },
+    "next-js-task-first": {
+      az: "Next.js-də iki render üsulunu yan-yana müqayisə edən təlim layihəsi: eyni istifadəçi siyahısı bir səhifədə serverdə (SSR), digərində brauzerdə (CSR) yüklənir; next/image nümunələri də var. Next.js App Router, TypeScript və Tailwind CSS.",
+      en: "A Next.js practice project that compares two ways of rendering side by side: the same user list loads on the server (SSR) on one page and in the browser (CSR) on another, plus next/image examples. Next.js App Router, TypeScript and Tailwind CSS.",
+    },
+    "React-Routing-task4": {
+      az: "RouteShop: React Router ilə marşrutlaşdırma təcrübəsi. DummyJSON API-dən gələn məhsullar, hər məhsulun öz səhifəsi (/product/:id), istifadəçilər siyahısı və 404 səhifəsi. React, React Router və Vite.",
+      en: "RouteShop: a React Router practice app. Products from the DummyJSON API, a page per product (/product/:id), a users page and a 404 route. React, React Router and Vite.",
+    },
+    "exam-task-react": {
+      az: "React imtahan tapşırığı: uydurma “Start Up” xidməti üçün birsəhifəlik landing. Mobil menyu, xidmətlər, üstünlüklər, qiymət planları və yoxlamalı demo əlaqə forması var. React + Vite.",
+      en: "A React exam task: a one-page landing for “Start Up”, a fictional service, with a mobile menu, services, features, pricing plans and a validated demo contact form. React + Vite.",
+    },
+    "hello-fresh": {
+      az: "Təlim layihəsi: HelloFresh açılış səhifəsinin HTML, CSS və JavaScript ilə hazırlanmış responsiv klonu. Menyu kartları, planlar və plan sorğuları üçün arxasında Java Spring Boot REST API var; API qoşulmayanda səhifə öz statik məzmunu ilə açılır. HelloFresh ilə əlaqəsi yoxdur.",
+      en: "Practice project: a responsive clone of the HelloFresh landing page in HTML, CSS and JavaScript, backed by a Java Spring Boot REST API for menu cards, plans and plan requests; without the API the page keeps its static content. Not affiliated with HelloFresh.",
+    },
+    "fiqma6-responsivlik-task": {
+      az: "Təlim layihəsi: Figma dizaynı əsasında məktəb profili səhifəsi (mətnlər dizayndakı kimi indoneziya dilindədir). Foto qalereya, məlumat kartları, əlçatan cədvəllər və mobil menyu; 390 px-dən 1920 px-ədək ekranlarda yoxlanılıb. HTML, CSS və JavaScript.",
+      en: "Practice project: a responsive school profile page built from a Figma design (in Indonesian, as in the design), with a photo gallery, info cards, accessible tables and a mobile menu, checked from 390 to 1920 px. HTML, CSS and JavaScript.",
+    },
+  }),
 ];
+
+/** entries that set only the az/en summary of an existing repo */
+function summaryOnly(byRepo: Record<string, { az: string; en: string }>): Entry[] {
+  return Object.entries(byRepo).map(([name, summary]) => ({ repo: `https://github.com/codelady-ship/${name}`, patch: { summary }, existingOnly: true }));
+}
+
+/**
+ * Records a full run hides (hidden: true; they stay in the database). scholarship-visa-scam-checker:
+ * the old private record of Codelady Skills, replaced by the codelady-skills entry above; it showed the
+ * project twice on /about and /llms*.txt (#67). --show <name> brings one back.
+ */
+export const RETIRED = ["scholarship-visa-scam-checker"];
 
 const args = process.argv.slice(2);
 const dryRun = args.includes("--dry-run");
@@ -461,7 +520,7 @@ async function run() {
   const plan = ENTRIES.map((e) => {
     const ref = parseRepoUrl(e.repo);
     if (!ref) throw new Error(`bad repo url: ${e.repo}`);
-    return { ref, patch: ProjectPatch.parse(e.patch), allowPrivate: !!e.allowPrivate };
+    return { ref, patch: ProjectPatch.parse(e.patch), allowPrivate: !!e.allowPrivate, existingOnly: !!e.existingOnly };
   }).filter((e) => !only || only.has(e.ref.name.toLowerCase()));
   if (!plan.length) throw new Error("--only matched no entry");
 
@@ -477,10 +536,10 @@ async function run() {
         console.log(`${errMsg(e)}, skipping the read-only check`);
       }
     }
-    for (const { ref, patch, allowPrivate } of plan) {
+    for (const { ref, patch, allowPrivate, existingOnly } of plan) {
       try {
         const s = await fetchSnapshot(ref, { allowPrivate });
-        const state = db ? ((await Project.exists({ owner: ref.owner, name: ref.name }).collation({ locale: "en", strength: 2 })) ? "update" : "new") : "?";
+        const state = db ? ((await Project.exists({ owner: ref.owner, name: ref.name }).collation({ locale: "en", strength: 2 })) ? "update" : existingOnly ? "not in the database: skipped" : "new") : "?";
         console.log(`\n${s.owner}/${s.name}: ok (${state})`);
         console.log(`  github: ${s.description || "(no description)"} | homepage: ${s.homepage ?? "-"} | topics: ${s.topics.join(", ") || "-"}${s.private ? " | PRIVATE (no code link, no README)" : ""}`);
         console.log(`  languages: ${s.languages.map((l) => `${l.name} ${l.percent}%`).join(", ") || "-"} | readme: ${s.readmeHtml ? "yes" : "no"}`);
@@ -496,12 +555,17 @@ async function run() {
       const rest = others.filter((o: any) => !mine.has(`${o.owner}/${o.name}`.toLowerCase()));
       console.log(`\nother featured projects: ${rest.map((o: any) => `${o.name} (order ${o.order ?? 0})`).join(", ") || "none"}`);
     }
+    if (!only) console.log(`\nwould hide (RETIRED): ${RETIRED.join(", ")}`);
   } else {
     await connect();
-    for (const { ref, patch, allowPrivate } of plan) {
+    for (const { ref, patch, allowPrivate, existingOnly } of plan) {
       const label = `${ref.owner}/${ref.name}`;
       try {
         let p: any = await Project.findOne(ref).collation({ locale: "en", strength: 2 });
+        if (!p && existingOnly) {
+          console.log(`${label}: not in the database, skipped (this entry only updates)`);
+          continue;
+        }
         const created = !p;
         p ??= new Project({ ...ref, repoUrl: `https://github.com/${ref.owner}/${ref.name}` });
         p.set(await liveOrSkip(label, patch));
@@ -526,6 +590,13 @@ async function run() {
         const note = p.demoOverride && hp && p.demoOverride !== hp ? ` — note: demo override ${p.demoOverride} wins over the new homepage ${hp}` : "";
         if (p.syncError) failed++;
         console.log(`${p.owner}/${p.name}: ${p.syncError ? `error (${p.syncError})` : "refreshed"}${p.hidden ? " (hidden)" : ""}${note}`);
+      }
+    }
+    // a full run (not --only) also hides the retired records; a name no longer in the database is fine
+    if (!only) {
+      for (const name of RETIRED) {
+        const r = await Project.updateOne({ name }, { $set: { hidden: true } }).collation({ locale: "en", strength: 2 });
+        console.log(`${name}: ${r.matchedCount ? "hidden (retired)" : "not in the database"}`);
       }
     }
   }

@@ -134,7 +134,7 @@
     "faqWhoQ": "{name} kimdir?",
     "faqWhoA": "{name} backend-də Java və Spring Boot, frontend-də React və Next.js ilə veb tətbiqlər quran Full Stack developerdir, yaşadığı yer: {location}; adı {alt} kimi də yazılır.",
     "faqBuildQ": "{name} nə hazırlayır?",
-    "faqBuildA": "Responsiv saytlar və full-stack veb tətbiqlər hazırlayır (React və Next.js ilə interfeyslər, Node.js və Express ilə REST API-lər); bu portfolioda onun {count} layihəsi var.",
+    "faqBuildA": "Full-stack veb tətbiqlər hazırlayır: backend-i əsasən Java və Spring Boot (PostgreSQL), həmçinin Node.js və Express ilə yazır, interfeysləri isə React və Next.js ilə qurur; bu portfolioda onun {count} layihəsi var.",
     "faqStackQ": "{name} hansı texnologiyalardan istifadə edir?",
     "faqStackA": "Onun texnologiyaları: {skills}.",
     "faqOpenQ": "{name} iş təkliflərinə açıqdırmı?",
