@@ -69,6 +69,24 @@ function Admin({ seedProfile, seedRepos, hasApi }: { seedProfile: Profile; seedR
     return () => window.removeEventListener("beforeunload", warn);
   }, []);
 
+  // the site menu (logo, About, Work…) uses client-side links: no beforeunload there, so ask on the click.
+  // Capture phase on document runs before the Next Link handler; with nothing unsaved it does nothing.
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (dirtyKeys.current.size === 0 || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = (e.target as Element | null)?.closest?.("a[href]");
+      if (!(a instanceof HTMLAnchorElement) || a.dataset.leaveConfirm !== undefined || (a.target && a.target !== "_self") || a.hasAttribute("download")) return;
+      const url = new URL(a.href, window.location.href);
+      // still the admin page (a hash, or the AZ / EN switch): nothing is lost
+      if (url.origin === window.location.origin && /^\/(az|en)\/admin(\/|$)/.test(url.pathname)) return;
+      if (window.confirm(t("leaveConfirm"))) return;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, [t]);
+
   useEffect(() => {
     if (!hasApi) return;
     // "Loading…" only if the check is slow: no flash before the form
@@ -119,6 +137,7 @@ function Admin({ seedProfile, seedRepos, hasApi }: { seedProfile: Profile; seedR
           <div className="flex flex-wrap gap-2">
             <Link
               href="/"
+              data-leave-confirm // asks in its own onClick
               onClick={(e) => {
                 if (!leaveOk()) e.preventDefault();
               }}

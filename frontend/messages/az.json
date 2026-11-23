@@ -360,7 +360,7 @@
     "err_refresh_failed": "Saxlanıldı, amma sayt dərhal yenilənmədi — bir neçə dəqiqəyə özü yenilənəcək.",
     "err_unknown": "Xəta baş verdi (kod {status}).",
     "issue_tooLong": "çox uzundur (maks. {max} simvol)",
-    "issue_tooMany": "çox çoxdur (maks. {max})",
+    "issue_tooMany": "həddən artıqdır (maks. {max})",
     "issue_empty": "boş ola bilməz",
     "issue_https": "https:// ilə başlayan link olmalıdır",
     "issue_email": "düzgün email deyil",

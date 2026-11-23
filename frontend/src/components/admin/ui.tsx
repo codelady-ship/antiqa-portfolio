@@ -254,9 +254,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const seq = useRef(0);
   const show = useCallback((next: Toast | null) => setToast(next && { ...next, id: ++seq.current }), []);
 
-  // success fades on its own; an error stays a while longer (and has ✕); "info" stays until replaced
+  // success fades on its own; an error stays a while longer (and has ✕); "info" and a toast with a button stay until replaced
   useEffect(() => {
-    if (!toast || toast.kind === "info") return;
+    if (!toast || toast.kind === "info" || toast.action) return;
     const id = setTimeout(() => setToast(null), toast.kind === "ok" ? 4000 : 12000);
     return () => clearTimeout(id);
   }, [toast]);

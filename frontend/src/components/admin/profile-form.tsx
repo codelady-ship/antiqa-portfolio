@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useState } from "react";
 import type { Profile } from "@/lib/types";
-import { ApiError, api, Area, Button, Card, ConfirmButton, Field, Input, useDirty, useFail, useSaved, useToast } from "./ui";
+import { ApiError, api, Area, Button, Card, ConfirmButton, Field, Input, useDirty, useErrorText, useFail, useSaved, useToast } from "./ui";
 
 type Form = Omit<Profile, "cv">;
 /** Keep in step with ProfileInput in backend/src/app.ts (the server checks again) */
@@ -18,7 +18,9 @@ export function ProfileForm({ seed }: { seed: Profile }) {
   // what the form was loaded from: the unsaved-changes check, and the version a save must still match (409 otherwise)
   const [base, setBase] = useState<{ json: string; updatedAt: string | null }>({ json: "", updatedAt: null });
   const [saving, setSaving] = useState(false);
-  const [loadErr, setLoadErr] = useState(false);
+  // why the profile could not be loaded (shown in place of the form)
+  const [loadErr, setLoadErr] = useState("");
+  const errText = useErrorText();
   const dirty = !!f && JSON.stringify(f) !== base.json;
   useDirty("profile", dirty);
 
@@ -31,19 +33,19 @@ export function ProfileForm({ seed }: { seed: Profile }) {
           const form: Form = { name, initials, roles, tagline, about, location, openToWork, skills, education, experience: experience ?? [], contacts, socials: socials ?? [] };
           setF(form);
           setBase({ json: JSON.stringify(form), updatedAt: p?.updatedAt ?? null });
-          setLoadErr(false);
+          setLoadErr("");
         })
         .catch((e) => {
-          setLoadErr(true);
+          setLoadErr(errText(e));
           fail(e);
         }),
-    [seed, fail],
+    [seed, fail, errText],
   );
   useEffect(() => {
     void load();
   }, [load]);
 
-  if (!f) return <p className="text-muted">{loadErr ? t("err_server_error") : t("loading")}</p>;
+  if (!f) return <p className="text-muted">{loadErr || t("loading")}</p>;
 
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF({ ...f, [k]: v });
   const setL = (k: "tagline" | "about" | "location", lang: "az" | "en", v: string) => set(k, { ...f[k], [lang]: v });
