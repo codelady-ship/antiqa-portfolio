@@ -1,10 +1,11 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Reveal, SplitWords } from "@/components/motion/reveal";
 import { PersonaClip } from "@/components/persona/clip";
 import { PERSONA } from "@/components/persona/config";
+import { emailBreaks } from "@/lib/email-breaks";
 import type { Profile } from "@/lib/types";
 
 const DOTS = ["bg-rose", "bg-mint", "bg-violet", "bg-gold"];
@@ -77,9 +78,16 @@ export function Contact({ profile, bubble, aiNote }: { profile: Profile; bubble?
                   <a
                     href={`mailto:${c.email}`}
                     translate="no"
-                    className="notranslate display squiggle flex min-h-11 min-w-0 items-center text-[clamp(1.5rem,1rem+2vw,2.75rem)] leading-tight font-semibold break-all"
+                    className="notranslate display squiggle flex min-h-11 min-w-0 items-center text-[clamp(1.5rem,1rem+2vw,2.75rem)] leading-tight font-semibold [overflow-wrap:anywhere]"
                   >
-                    {c.email}
+                    {/* #68: the line may break only after "@" or before a "." (not "gmail.co / m");
+                        overflow-wrap is only the fallback for a part wider than the line */}
+                    {emailBreaks(c.email).map((part, i) => (
+                      <Fragment key={i}>
+                        {i > 0 && <wbr />}
+                        {part}
+                      </Fragment>
+                    ))}
                   </a>
                   <button type="button" onClick={copy} className="min-h-11 rounded-full border-2 border-ink bg-surface px-5 py-2 text-sm font-semibold hover:bg-butter-soft" aria-live="polite">
                     {copied ? `${t("copied")} ✓` : t("copy")}

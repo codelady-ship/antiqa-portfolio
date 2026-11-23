@@ -25,6 +25,10 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
   // the frame URL that finished loading: a loader shows over the preview until it matches
   const [loaded, setLoaded] = useState<string | null>(null);
   const readmeRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const closeBtn = useRef<HTMLButtonElement>(null);
+  // keyboard focus is inside the (cross-origin) preview: Esc never reaches this page from there (#68)
+  const [inFrame, setInFrame] = useState(false);
 
   const canFrame = !!p?.demoUrl && isSafeFrame(p.demoUrl);
   // owner, 2026-11-17: projects with an admin panel open it here too (a third tab)
@@ -44,8 +48,24 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
       setReadme(null);
       setInfo(false);
       setLoaded(null);
+      setInFrame(false);
     }
   }
+
+  // the page loses focus to the frame (window blur) and gets it back (window focus / focusin)
+  useEffect(() => {
+    if (!p) return;
+    const check = () => requestAnimationFrame(() => setInFrame(!!frameRef.current && document.activeElement === frameRef.current));
+    const back = () => setInFrame(false);
+    addEventListener("blur", check);
+    addEventListener("focus", back);
+    document.addEventListener("focusin", back);
+    return () => {
+      removeEventListener("blur", check);
+      removeEventListener("focus", back);
+      document.removeEventListener("focusin", back);
+    };
+  }, [p]);
 
   // README: Mermaid diagrams arrive as plain <pre> text ("flowchart LR …"). Render them as SVG with
   // mermaid, loaded only when a README has one; if that fails the block is folded away, not shown
@@ -242,6 +262,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                 {t("details")}
               </button>
               <button
+                ref={closeBtn}
                 type="button"
                 onClick={() => dlg.current?.close()}
                 aria-label={t("close")}
@@ -294,6 +315,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                   {/* the loader covers only the frame, so the demo-login line above stays readable */}
                   <div className="relative flex min-h-0 flex-1 flex-col">
                     <iframe
+                      ref={frameRef}
                       key={frameUrl}
                       src={frameUrl}
                       title={t("demoFrame", { title: p.title })}
@@ -311,6 +333,20 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                         </span>
                       </div>
                     )}
+                    {inFrame && (
+                      // a visible hint while focus is in the frame: Esc does not work from there (#68)
+                      <p className="pointer-events-none absolute inset-x-0 bottom-3 mx-auto w-fit max-w-[calc(100%-1.5rem)] rounded-full bg-ink px-4 py-2 text-center text-xs text-bg shadow-lg">
+                        {t("frameEscHint")}
+                      </p>
+                    )}
+                    {/* focus guard (#68): Tab out of the frame lands here, back in this page, and moves on to
+                        the ✕ close button, where Esc works again; Shift+Tab from below passes on into the frame */}
+                    <span
+                      tabIndex={0}
+                      onFocus={(e) =>
+                        (e.relatedTarget && e.relatedTarget !== frameRef.current ? frameRef.current : closeBtn.current)?.focus()
+                      }
+                    />
                   </div>
                 </div>
               ) : (

@@ -75,6 +75,7 @@
     "readme": "README",
     "openNew": "Open in new tab",
     "close": "Close",
+    "frameEscHint": "Esc does not work inside the demo: press Tab to reach ✕, where Esc closes it",
     "details": "Details",
     "desktop": "Desktop",
     "tablet": "Tablet",
