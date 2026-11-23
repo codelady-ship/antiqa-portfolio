@@ -52,61 +52,30 @@ const ADMINS: Record<string, Partial<L10n>> = {
 };
 
 /**
- * Summaries for records that have none in the database yet (#67: /az/about showed their English
- * GitHub description). A stored summary wins. Keep in sync with ENTRIES in
- * backend/scripts/upsert-projects.ts, which writes the same texts to the database.
+ * AZ summaries for records that have none in the database yet (#67: /az/about showed their English
+ * GitHub description). A stored summary wins; English keeps the GitHub description as before. Keep in
+ * sync with the summaryOnly entries in backend/scripts/upsert-projects.ts, which store the same texts.
  */
-const SUMMARIES: Record<string, L10n> = {
-  masapay: {
-    az: "Restoranlar üçün QR əsaslı hesab bölmə və ödəniş platforması: müştəri masadakı QR kodu skan edib canlı hesabı görür, hesabı bölür, bəxşiş əlavə edir və Payriff ilə ödəyir. Komanda layihəsidir; React + TypeScript, Java Spring Boot, PostgreSQL və WebSocket üzərində qurulub.",
-    en: "A QR-based bill-splitting and payment platform for restaurants: guests scan the table's QR code, see the live bill, split it, add a tip and pay via Payriff. A team project built with React + TypeScript, Java Spring Boot, PostgreSQL and WebSocket.",
-  },
-  "my-portfolio": {
-    az: "İlk portfolio saytım: interaktiv 3D modellər, bacarıqlarım və kurslarım, canlı demo və kod linkləri olan layihələr, əlaqə forması. React, Tailwind CSS və Three.js ilə qurulub; indiki portfoliom bu saytdır.",
-    en: "My first portfolio site: interactive 3D models, my skills and courses, projects with live demos and code links, and a contact form. Built with React, Tailwind CSS and Three.js; this site is the newer version.",
-  },
-  "basic-task-with-html-css-js": {
-    az: "Actify: gündəlik vərdişləri izləmək üçün kiçik tətbiq. Vərdişini əlavə edirsən, hər gün qeyd edirsən və neçə gün ardıcıl davam etdiyini (streak) görürsən; hazır çağırışlar da var. Sadə HTML, CSS və JavaScript, məlumatlar brauzerdə saxlanır.",
-    en: "Actify: a small daily habit tracker. Add your habits, tick them off every day and watch your streaks grow, with ready-made challenges. Plain HTML, CSS and JavaScript; the data stays in the browser.",
-  },
-  "rock-paper-scissors": {
-    az: "Kompüterə qarşı “Daş-qayçı-kağız” oyunu: xal lövhəsi, son 10 raundun tarixçəsi, klaviatura düymələri (R, P, S) və oyunu sıfırlama. Sadə HTML, CSS və JavaScript ilə yazılıb; səhifəni yeniləsən də hesab itmir.",
-    en: "Rock Paper Scissors against the computer: a scoreboard, the last 10 rounds, keyboard shortcuts (R, P, S) and a reset button. Plain HTML, CSS and JavaScript; the score survives a page reload.",
-  },
-  "task7-front-end-for-task6-": {
-    az: "Proqramçılar siyahısı: ada və ya stack-ə görə axtarış, stack filtrləri, ada və yaşa görə sıralama, yeni proqramçı əlavə etmək üçün yoxlamalı forma. Next.js + TypeScript frontend və Express + MongoDB API (task6); API olmayanda demo rejimində işləyir.",
-    en: "A programmers directory: search by name or stack, stack filters, sorting by name or age and a validated form to add a programmer. A Next.js + TypeScript frontend for an Express + MongoDB API (task6); without the API it runs in demo mode.",
-  },
-  "next-js-task-first": {
-    az: "Next.js-də iki render üsulunu yan-yana müqayisə edən təlim layihəsi: eyni istifadəçi siyahısı bir səhifədə serverdə (SSR), digərində brauzerdə (CSR) yüklənir; next/image nümunələri də var. Next.js App Router, TypeScript və Tailwind CSS.",
-    en: "A Next.js practice project that compares two ways of rendering side by side: the same user list loads on the server (SSR) on one page and in the browser (CSR) on another, plus next/image examples. Next.js App Router, TypeScript and Tailwind CSS.",
-  },
-  "react-routing-task4": {
-    az: "RouteShop: React Router ilə marşrutlaşdırma təcrübəsi. DummyJSON API-dən gələn məhsullar, hər məhsulun öz səhifəsi (/product/:id), istifadəçilər siyahısı və 404 səhifəsi. React, React Router və Vite.",
-    en: "RouteShop: a React Router practice app. Products from the DummyJSON API, a page per product (/product/:id), a users page and a 404 route. React, React Router and Vite.",
-  },
-  "exam-task-react": {
-    az: "React imtahan tapşırığı: uydurma “Start Up” xidməti üçün birsəhifəlik landing. Mobil menyu, xidmətlər, üstünlüklər, qiymət planları və yoxlamalı demo əlaqə forması var. React + Vite.",
-    en: "A React exam task: a one-page landing for “Start Up”, a fictional service, with a mobile menu, services, features, pricing plans and a validated demo contact form. React + Vite.",
-  },
-  "hello-fresh": {
-    az: "Təlim layihəsi: HelloFresh açılış səhifəsinin HTML, CSS və JavaScript ilə hazırlanmış responsiv klonu. Menyu kartları, planlar və plan sorğuları üçün arxasında Java Spring Boot REST API var; API qoşulmayanda səhifə öz statik məzmunu ilə açılır. HelloFresh ilə əlaqəsi yoxdur.",
-    en: "Practice project: a responsive clone of the HelloFresh landing page in HTML, CSS and JavaScript, backed by a Java Spring Boot REST API for menu cards, plans and plan requests; without the API the page keeps its static content. Not affiliated with HelloFresh.",
-  },
-  "fiqma6-responsivlik-task": {
-    az: "Təlim layihəsi: Figma dizaynı əsasında məktəb profili səhifəsi (mətnlər dizayndakı kimi indoneziya dilindədir). Foto qalereya, məlumat kartları, əlçatan cədvəllər və mobil menyu; 390 px-dən 1920 px-ədək ekranlarda yoxlanılıb. HTML, CSS və JavaScript.",
-    en: "Practice project: a responsive school profile page built from a Figma design (in Indonesian, as in the design), with a photo gallery, info cards, accessible tables and a mobile menu, checked from 390 to 1920 px. HTML, CSS and JavaScript.",
-  },
+const SUMMARIES_AZ: Record<string, string> = {
+  "my-portfolio": "İlk portfolio saytım: interaktiv 3D modellər, bacarıqlarım və kurslarım, canlı demo və kod linkləri olan layihələr, əlaqə forması. React, Tailwind CSS və Three.js ilə qurulub; indiki portfoliom bu saytdır.",
+  "basic-task-with-html-css-js": "Actify: gündəlik vərdişləri izləmək üçün kiçik tətbiq. Vərdişini əlavə edirsən, hər gün qeyd edirsən və neçə gün ardıcıl davam etdiyini (streak) görürsən; hazır çağırışlar da var. Sadə HTML, CSS və JavaScript, məlumatlar brauzerdə saxlanır.",
+  "rock-paper-scissors": "Kompüterə qarşı “Daş-qayçı-kağız” oyunu: xal lövhəsi, son 10 raundun tarixçəsi, klaviatura düymələri (R, P, S) və oyunu sıfırlama. Sadə HTML, CSS və JavaScript ilə yazılıb; səhifəni yeniləsən də hesab itmir.",
+  "task7-front-end-for-task6-": "Proqramçılar siyahısı: ada və ya stack-ə görə axtarış, stack filtrləri, ada və yaşa görə sıralama, yeni proqramçı əlavə etmək üçün yoxlamalı forma. Next.js + TypeScript frontend və Express + MongoDB API (task6); API olmayanda demo rejimində işləyir.",
+  "next-js-task-first": "Next.js-də iki render üsulunu yan-yana müqayisə edən təlim layihəsi: eyni istifadəçi siyahısı bir səhifədə serverdə (SSR), digərində brauzerdə (CSR) yüklənir; next/image nümunələri də var. Next.js App Router, TypeScript və Tailwind CSS.",
+  "react-routing-task4": "RouteShop: React Router ilə marşrutlaşdırma təcrübəsi. DummyJSON API-dən gələn məhsullar, hər məhsulun öz səhifəsi (/product/:id), istifadəçilər siyahısı və 404 səhifəsi. React, React Router və Vite.",
+  "exam-task-react": "React imtahan tapşırığı: uydurma “Start Up” xidməti üçün birsəhifəlik landing. Mobil menyu, xidmətlər, üstünlüklər, qiymət planları və yoxlamalı demo əlaqə forması var. React + Vite.",
+  "hello-fresh": "Təlim layihəsi: HelloFresh açılış səhifəsinin HTML, CSS və JavaScript ilə hazırlanmış responsiv klonu. Menyu kartları, planlar və plan sorğuları üçün arxasında Java Spring Boot REST API var; API qoşulmayanda səhifə öz statik məzmunu ilə açılır. HelloFresh ilə əlaqəsi yoxdur.",
+  "fiqma6-responsivlik-task": "Təlim layihəsi: Figma dizaynı əsasında məktəb profili səhifəsi (mətnlər dizayndakı kimi indoneziya dilindədir). Foto qalereya, məlumat kartları, əlçatan cədvəllər və mobil menyu; 390 px-dən 1920 px-ədək ekranlarda yoxlanılıb. HTML, CSS və JavaScript.",
 };
 
-/** The project as the given locale shows it: its name, demo and admin panel in that language, and a summary where the record has none. */
+/** The project as the given locale shows it: its name, demo and admin panel in that language, and an AZ summary where the record has none. */
 export function localizeProject(p: Project, locale: "az" | "en"): Project {
   const key = p.name.toLowerCase();
   const title = TITLES[key]?.[locale];
   const demo = p.demoUrl ? DEMOS[key]?.[locale] : undefined;
   const admin = p.adminUrl ? ADMINS[key]?.[locale] : undefined;
-  const fallback = SUMMARIES[key];
-  const summary = fallback && !p.summary?.[locale] ? { az: p.summary?.az || fallback.az, en: p.summary?.en || fallback.en } : undefined;
+  const az = locale === "az" && !p.summary?.az ? SUMMARIES_AZ[key] : undefined;
+  const summary = az ? { az, en: p.summary?.en ?? "" } : undefined;
   return title || demo || admin || summary
     ? { ...p, ...(title && { title }), ...(demo && { demoUrl: demo }), ...(admin && { adminUrl: admin }), ...(summary && { summary }) }
     : p;
