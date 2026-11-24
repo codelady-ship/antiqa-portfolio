@@ -56,23 +56,25 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
   // Only keyboard entry counts (review of #80): a mouse or touch click into the demo shows no hint.
   useEffect(() => {
     if (!p) return;
-    let byKey = false;
+    // time of the last Tab key: focus that enters the frame right after it came by keyboard
+    let tabAt = -Infinity;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Tab") byKey = true;
+      if (e.key === "Tab") tabAt = performance.now();
     };
-    const onPointer = () => {
-      byKey = false;
+    // a Tab some time ago (that stayed in this page) does not count: a later mouse click into the demo
+    // (whose pointer events never reach this page) shows no hint
+    const check = () => {
+      const byKey = performance.now() - tabAt < 500;
+      tabAt = -Infinity;
+      requestAnimationFrame(() => setInFrame(byKey && !!frameRef.current && document.activeElement === frameRef.current));
     };
-    const check = () => requestAnimationFrame(() => setInFrame(byKey && !!frameRef.current && document.activeElement === frameRef.current));
     const back = () => setInFrame(false);
     addEventListener("keydown", onKey, true);
-    addEventListener("pointerdown", onPointer, true);
     addEventListener("blur", check);
     addEventListener("focus", back);
     document.addEventListener("focusin", back);
     return () => {
       removeEventListener("keydown", onKey, true);
-      removeEventListener("pointerdown", onPointer, true);
       removeEventListener("blur", check);
       removeEventListener("focus", back);
       document.removeEventListener("focusin", back);
@@ -83,7 +85,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
   // (the info column's links), or to ✕ when there is none (phones: the column is hidden)
   function leaveFrame(guard: HTMLElement) {
     const next = [...(dlg.current?.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), [tabindex]:not([tabindex='-1'])") ?? [])].find(
-      (el) => el !== guard && guard.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING && el.checkVisibility(),
+      (el) => el !== guard && guard.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING && (el.checkVisibility?.() ?? el.getClientRects().length > 0),
     );
     (next ?? closeBtn.current)?.focus();
   }
