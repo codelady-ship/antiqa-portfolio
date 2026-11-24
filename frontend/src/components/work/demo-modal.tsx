@@ -52,20 +52,41 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
     }
   }
 
-  // the page loses focus to the frame (window blur) and gets it back (window focus / focusin)
+  // the page loses focus to the frame (window blur) and gets it back (window focus / focusin).
+  // Only keyboard entry counts (review of #80): a mouse or touch click into the demo shows no hint.
   useEffect(() => {
     if (!p) return;
-    const check = () => requestAnimationFrame(() => setInFrame(!!frameRef.current && document.activeElement === frameRef.current));
+    let byKey = false;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Tab") byKey = true;
+    };
+    const onPointer = () => {
+      byKey = false;
+    };
+    const check = () => requestAnimationFrame(() => setInFrame(byKey && !!frameRef.current && document.activeElement === frameRef.current));
     const back = () => setInFrame(false);
+    addEventListener("keydown", onKey, true);
+    addEventListener("pointerdown", onPointer, true);
     addEventListener("blur", check);
     addEventListener("focus", back);
     document.addEventListener("focusin", back);
     return () => {
+      removeEventListener("keydown", onKey, true);
+      removeEventListener("pointerdown", onPointer, true);
       removeEventListener("blur", check);
       removeEventListener("focus", back);
       document.removeEventListener("focusin", back);
     };
   }, [p]);
+
+  // focus guard after the frame (#68): Tab out of the frame moves on to the next control after it
+  // (the info column's links), or to ✕ when there is none (phones: the column is hidden)
+  function leaveFrame(guard: HTMLElement) {
+    const next = [...(dlg.current?.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), [tabindex]:not([tabindex='-1'])") ?? [])].find(
+      (el) => el !== guard && guard.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING && el.checkVisibility(),
+    );
+    (next ?? closeBtn.current)?.focus();
+  }
 
   // README: Mermaid diagrams arrive as plain <pre> text ("flowchart LR …"). Render them as SVG with
   // mermaid, loaded only when a README has one; if that fails the block is folded away, not shown
@@ -312,6 +333,11 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                       {t("adminHint")}: {p.adminHint}
                     </p>
                   )}
+                  {/* #68: while keyboard focus is inside the (cross-origin) frame, Esc never reaches this page;
+                      a line above the frame says how to get out (it covers none of the demo, empty otherwise) */}
+                  <p role="status" className={inFrame ? "border-b border-line bg-butter-soft px-4 py-2 text-xs text-ink" : undefined}>
+                    {inFrame ? t("frameEscHint") : null}
+                  </p>
                   {/* the loader covers only the frame, so the demo-login line above stays readable */}
                   <div className="relative flex min-h-0 flex-1 flex-col">
                     <iframe
@@ -333,18 +359,12 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                         </span>
                       </div>
                     )}
-                    {inFrame && (
-                      // a visible hint while focus is in the frame: Esc does not work from there (#68)
-                      <p className="pointer-events-none absolute inset-x-0 bottom-3 mx-auto w-fit max-w-[calc(100%-1.5rem)] rounded-full bg-ink px-4 py-2 text-center text-xs text-bg shadow-lg">
-                        {t("frameEscHint")}
-                      </p>
-                    )}
-                    {/* focus guard (#68): Tab out of the frame lands here, back in this page, and moves on to
-                        the ✕ close button, where Esc works again; Shift+Tab from below passes on into the frame */}
+                    {/* focus guard (#68): Tab out of the frame lands here, back in this page (Esc works again),
+                        and moves on to the next control; Shift+Tab from below passes on into the frame */}
                     <span
                       tabIndex={0}
                       onFocus={(e) =>
-                        (e.relatedTarget && e.relatedTarget !== frameRef.current ? frameRef.current : closeBtn.current)?.focus()
+                        e.relatedTarget && e.relatedTarget !== frameRef.current ? frameRef.current?.focus() : leaveFrame(e.currentTarget)
                       }
                     />
                   </div>

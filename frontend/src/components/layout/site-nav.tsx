@@ -40,6 +40,33 @@ export function SiteNav() {
     return () => removeEventListener("keydown", onKey);
   }, [menu]);
 
+  // #68: a page opened with a #section (a shared link, the language switch) often stayed at the top:
+  // the section arrives after the browser's own anchor jump. Jump to it once it exists, unless the
+  // visitor has already started scrolling or using the keyboard (a jump, never animated).
+  useEffect(() => {
+    const id = decodeURIComponent(location.hash.slice(1));
+    if (!id) return;
+    let done = false;
+    const stop = () => {
+      done = true;
+      obs.disconnect();
+      clearTimeout(timer);
+      for (const ev of ["wheel", "touchstart", "keydown", "pointerdown"]) removeEventListener(ev, stop, true);
+    };
+    const go = () => {
+      const el = document.getElementById(id);
+      if (done || !el) return;
+      stop();
+      requestAnimationFrame(() => el.scrollIntoView({ block: "start" }));
+    };
+    const obs = new MutationObserver(go);
+    const timer = setTimeout(stop, 10_000);
+    for (const ev of ["wheel", "touchstart", "keydown", "pointerdown"]) addEventListener(ev, stop, true);
+    obs.observe(document.body, { childList: true, subtree: true });
+    go();
+    return stop;
+  }, []);
+
   // progress bar + hide on scroll down / show on scroll up
   useEffect(() => {
     let last = scrollY;
