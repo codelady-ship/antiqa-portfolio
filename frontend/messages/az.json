@@ -75,6 +75,7 @@
     "readme": "README",
     "openNew": "Yeni tabda aç",
     "close": "Bağla",
+    "frameEscHint": "Esc demonun içində işləmir: Tab ilə demodan çıxın, sonra Esc bağlayır",
     "details": "Məlumat",
     "desktop": "Kompüter",
     "tablet": "Planşet",
