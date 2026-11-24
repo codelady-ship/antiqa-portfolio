@@ -13,6 +13,7 @@ import { readdirSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
 
+// sharp is not a direct dependency: it comes with next (optional dependency used by next/image)
 const sharp = createRequire(join(process.cwd(), "x.js"))("sharp");
 const DIR = join(process.cwd(), "public", "projects");
 const WIDTHS = [160, 320, 480];

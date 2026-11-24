@@ -1030,13 +1030,13 @@ export function SushiConveyorMenu({
             aria-describedby={`${uid}-caption`}
             aria-haspopup="dialog"
             aria-current={isActive || undefined}
-            className="group/plate absolute left-0 top-0 cursor-pointer rounded-[50%] outline-none before:absolute before:left-1/2 before:top-1/2 before:size-[max(100%,var(--hit,44px))] before:-translate-x-1/2 before:-translate-y-1/2 before:rounded-full before:content-['']"
+            className="group/plate absolute left-0 top-0 cursor-pointer rounded-[50%] outline-none focus-visible:outline-none! before:absolute before:left-1/2 before:top-1/2 before:size-[max(100%,var(--hit,44px))] before:-translate-x-1/2 before:-translate-y-1/2 before:rounded-full before:content-['']"
             style={{ width: box.w, height: box.h, visibility: lifted === i ? "hidden" : undefined }}
             onFocus={() => { if (pointer.current.id < 0) { stop(); setActive(i); } }}
             onClick={(event) => { const pending = pendingOpen.current; pendingOpen.current = -1; if (event.detail === 0 || pending === i) open(i); }}
           >
             {/* the plate itself, at its own size in the middle of the (maybe larger) tap box; the focus ring is drawn on it */}
-            <span className="absolute rounded-[50%] group-focus-visible/plate:outline group-focus-visible/plate:outline-2 group-focus-visible/plate:outline-offset-4 group-focus-visible/plate:outline-rose" style={{ left: (box.w - g.d) / 2, top: (box.h - g.d * TILT) / 2, width: g.d, height: g.d * TILT }}>
+            <span className="absolute group-focus-visible/plate:rounded-[6px] group-focus-visible/plate:outline-2 group-focus-visible/plate:outline-solid group-focus-visible/plate:outline-offset-[3px] group-focus-visible/plate:outline-rose" style={{ left: (box.w - g.d) / 2, top: (box.h - g.d * TILT) / 2, width: g.d, height: g.d * TILT }}>
             <span aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-50 dark:opacity-90">
               <span ref={(node) => { shadows.current[i] = node; }} className="absolute inset-x-[5%] bottom-[-9%] top-[16%] rounded-[50%] bg-black" style={{ filter: `blur(${Math.max(2, g.d * 0.045).toFixed(1)}px)` }} />
             </span>
