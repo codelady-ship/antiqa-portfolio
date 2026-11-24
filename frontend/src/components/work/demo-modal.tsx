@@ -25,6 +25,10 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
   // the frame URL that finished loading: a loader shows over the preview until it matches
   const [loaded, setLoaded] = useState<string | null>(null);
   const readmeRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const closeBtn = useRef<HTMLButtonElement>(null);
+  // keyboard focus is inside the (cross-origin) preview: Esc never reaches this page from there (#68)
+  const [inFrame, setInFrame] = useState(false);
 
   const canFrame = !!p?.demoUrl && isSafeFrame(p.demoUrl);
   // owner, 2026-11-17: projects with an admin panel open it here too (a third tab)
@@ -44,7 +48,46 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
       setReadme(null);
       setInfo(false);
       setLoaded(null);
+      setInFrame(false);
     }
+  }
+
+  // the page loses focus to the frame (window blur) and gets it back (window focus / focusin).
+  // Only keyboard entry counts (review of #80): a mouse or touch click into the demo shows no hint.
+  useEffect(() => {
+    if (!p) return;
+    // time of the last Tab key: focus that enters the frame right after it came by keyboard
+    let tabAt = -Infinity;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Tab") tabAt = performance.now();
+    };
+    // a Tab some time ago (that stayed in this page) does not count: a later mouse click into the demo
+    // (whose pointer events never reach this page) shows no hint
+    const check = () => {
+      const byKey = performance.now() - tabAt < 500;
+      tabAt = -Infinity;
+      requestAnimationFrame(() => setInFrame(byKey && !!frameRef.current && document.activeElement === frameRef.current));
+    };
+    const back = () => setInFrame(false);
+    addEventListener("keydown", onKey, true);
+    addEventListener("blur", check);
+    addEventListener("focus", back);
+    document.addEventListener("focusin", back);
+    return () => {
+      removeEventListener("keydown", onKey, true);
+      removeEventListener("blur", check);
+      removeEventListener("focus", back);
+      document.removeEventListener("focusin", back);
+    };
+  }, [p]);
+
+  // focus guard after the frame (#68): Tab out of the frame moves on to the next control after it
+  // (the info column's links), or to ✕ when there is none (phones: the column is hidden)
+  function leaveFrame(guard: HTMLElement) {
+    const next = [...(dlg.current?.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), [tabindex]:not([tabindex='-1'])") ?? [])].find(
+      (el) => el !== guard && guard.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING && (el.checkVisibility?.() ?? el.getClientRects().length > 0),
+    );
+    (next ?? closeBtn.current)?.focus();
   }
 
   // README: Mermaid diagrams arrive as plain <pre> text ("flowchart LR …"). Render them as SVG with
@@ -242,6 +285,7 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                 {t("details")}
               </button>
               <button
+                ref={closeBtn}
                 type="button"
                 onClick={() => dlg.current?.close()}
                 aria-label={t("close")}
@@ -291,9 +335,15 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                       {t("adminHint")}: {p.adminHint}
                     </p>
                   )}
+                  {/* #68: while keyboard focus is inside the (cross-origin) frame, Esc never reaches this page;
+                      a line above the frame says how to get out (it covers none of the demo, empty otherwise) */}
+                  <p role="status" className={inFrame ? "border-b border-line bg-butter-soft px-4 py-2 text-xs text-ink" : undefined}>
+                    {inFrame ? t("frameEscHint") : null}
+                  </p>
                   {/* the loader covers only the frame, so the demo-login line above stays readable */}
                   <div className="relative flex min-h-0 flex-1 flex-col">
                     <iframe
+                      ref={frameRef}
                       key={frameUrl}
                       src={frameUrl}
                       title={t("demoFrame", { title: p.title })}
@@ -311,6 +361,14 @@ export function DemoModal({ project: p, locale, onClose }: { project: Project | 
                         </span>
                       </div>
                     )}
+                    {/* focus guard (#68): Tab out of the frame lands here, back in this page (Esc works again),
+                        and moves on to the next control; Shift+Tab from below passes on into the frame */}
+                    <span
+                      tabIndex={0}
+                      onFocus={(e) =>
+                        e.relatedTarget && e.relatedTarget !== frameRef.current ? frameRef.current?.focus() : leaveFrame(e.currentTarget)
+                      }
+                    />
                   </div>
                 </div>
               ) : (

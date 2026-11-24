@@ -7,6 +7,11 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 
 const noop = () => () => {};
+// the URL hash ("#work"), so a language switch keeps the visitor at the same section (#68)
+const onHash = (cb: () => void) => {
+  addEventListener("hashchange", cb);
+  return () => removeEventListener("hashchange", cb);
+};
 
 export function SiteNav() {
   const t = useTranslations("Nav");
@@ -15,6 +20,7 @@ export function SiteNav() {
   const { resolvedTheme, setTheme } = useTheme();
   // false on the server and during hydration, true afterwards (theme is only known on the client)
   const mounted = useSyncExternalStore(noop, () => true, () => false);
+  const hash = useSyncExternalStore(onHash, () => location.hash.slice(1), () => "");
   const [hidden, setHidden] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [menu, setMenu] = useState(false);
@@ -33,6 +39,33 @@ export function SiteNav() {
     addEventListener("keydown", onKey);
     return () => removeEventListener("keydown", onKey);
   }, [menu]);
+
+  // #68: a page opened with a #section (a shared link, the language switch) often stayed at the top:
+  // the section arrives after the browser's own anchor jump. Jump to it once it exists, unless the
+  // visitor has already started scrolling or using the keyboard (a jump, never animated).
+  useEffect(() => {
+    const id = decodeURIComponent(location.hash.slice(1));
+    if (!id) return;
+    let done = false;
+    const stop = () => {
+      done = true;
+      obs.disconnect();
+      clearTimeout(timer);
+      for (const ev of ["wheel", "touchstart", "keydown", "pointerdown"]) removeEventListener(ev, stop, true);
+    };
+    const go = () => {
+      const el = document.getElementById(id);
+      if (done || !el) return;
+      stop();
+      requestAnimationFrame(() => el.scrollIntoView({ block: "start" }));
+    };
+    const obs = new MutationObserver(go);
+    const timer = setTimeout(stop, 10_000);
+    for (const ev of ["wheel", "touchstart", "keydown", "pointerdown"]) addEventListener(ev, stop, true);
+    obs.observe(document.body, { childList: true, subtree: true });
+    go();
+    return stop;
+  }, []);
 
   // progress bar + hide on scroll down / show on scroll up
   useEffect(() => {
@@ -112,7 +145,9 @@ export function SiteNav() {
   return (
     <>
       <div ref={bar} aria-hidden className="fixed inset-x-0 top-0 z-[60] h-[3px] origin-left scale-x-0 bg-accent" />
+      {/* #68: keyboard focus on a control of the hidden (scrolled-away) header brings it back into view */}
       <header
+        onFocus={() => setHidden(false)}
         className={`fixed inset-x-0 top-0 z-50 border-b transition-[transform,background-color,border-color] duration-500 ${scrolled || menu ? "border-line bg-bg" : "border-transparent bg-bg/0"} ${hidden ? "-translate-y-full" : ""}`}
       >
         <nav aria-label={t("main")} className="wrap">
@@ -142,9 +177,16 @@ export function SiteNav() {
                 {routing.locales.map((l) => (
                   <Link
                     key={l}
-                    href={pathname}
+                    href={hash ? { pathname, hash } : pathname}
                     locale={l}
                     hrefLang={l}
+                    // with a #section the switch is a full page load: the client router restores a page it
+                    // already showed with that page's old hash ("/az#work#contact"), the browser does not
+                    onClick={(e) => {
+                      if (!hash || l === locale || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                      e.preventDefault();
+                      location.assign(e.currentTarget.href);
+                    }}
                     aria-current={l === locale ? "true" : undefined}
                     className={`grid size-11 place-items-center rounded-full font-medium uppercase transition-colors ${l === locale ? "bg-accent text-on-accent" : "text-muted hover:text-ink"}`}
                   >
