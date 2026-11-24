@@ -40,6 +40,11 @@ export interface ConveyorDish {
   image?: string;
   /** Cut `image` to the round plate (object-cover), e.g. a website screenshot. */
   cover?: boolean;
+  /**
+   * With `cover`: smaller copies of `image` for the plate (an img `srcset` with w descriptors, 16:10
+   * pictures); the dialog keeps the full `image`.
+   */
+  srcSet?: string;
   /** Letter drawn on a pastel plate when there is no image. */
   initial?: string;
   /** Short facts such as the piece count or allergens, listed as chips in the dialog. */
@@ -123,6 +128,8 @@ const TILT = 0.8;
 const SLAT = 0.34;
 const LIFT_Y = -6;
 const LIFT_SCALE = 0.08;
+/** WCAG 2.5.8: the plate's own box stays ≥ 24 px on screen, even in the back lane (scale kb). */
+const MIN_TARGET = 24;
 const BACK_SHADE = 0.15;
 const CHIP_ROOM = 34;
 const WIDE = 1024;
@@ -303,6 +310,16 @@ function slatPath(g: Geo, offset: number, shift: number) {
   return d;
 }
 
+/**
+ * The plate button's box: the plate (d × d·TILT), padded to MIN_TARGET / kb when the plate is
+ * smaller, so it is ≥ 24 px on screen at any scale. The plate is drawn centred in it at its own
+ * size (an inner box), so the look does not change; only the tap target grows.
+ */
+function plateBox(g: Geo) {
+  const min = Math.ceil(MIN_TARGET / g.kb);
+  return { w: Math.max(g.d, min), h: Math.max(g.d * TILT, min) };
+}
+
 function pose(g: Geo, offset: number, i: number) {
   const p = along(g, offset - i * g.pitch);
   const q = project(g, p.x, p.z);
@@ -451,7 +468,8 @@ export function SushiConveyorMenu({
     if (!g || !button) return;
     const q = pose(g, s.offset, i);
     const e = s.lift[i] ?? 0;
-    button.style.transform = `translate3d(${(q.x - g.d / 2).toFixed(2)}px,${(q.y - (g.d * TILT) / 2).toFixed(2)}px,0) scale(${q.k.toFixed(4)})`;
+    const box = plateBox(g);
+    button.style.transform = `translate3d(${(q.x - box.w / 2).toFixed(2)}px,${(q.y - box.h / 2).toFixed(2)}px,0) scale(${q.k.toFixed(4)})`;
     // the tap area (::before) stays ≥ 44 px on screen however small the plate is drawn
     const hit = `${Math.ceil(44 / q.k)}px`;
     if (button.dataset.hit !== hit) { button.dataset.hit = hit; button.style.setProperty("--hit", hit); }
@@ -999,6 +1017,7 @@ export function SushiConveyorMenu({
         const broken = !!failed[item.id] || !item.image;
         const mask = `url("${item.image}") 0 0 / 100% 100% no-repeat`;
         const round = !broken && !!item.cover;
+        const box = plateBox(g);
         return (
           <button
             key={item.id}
@@ -1011,11 +1030,13 @@ export function SushiConveyorMenu({
             aria-describedby={`${uid}-caption`}
             aria-haspopup="dialog"
             aria-current={isActive || undefined}
-            className="absolute left-0 top-0 cursor-pointer rounded-[50%] outline-none before:absolute before:left-1/2 before:top-1/2 before:size-[max(100%,var(--hit,44px))] before:-translate-x-1/2 before:-translate-y-1/2 before:rounded-full before:content-[''] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rose"
-            style={{ width: g.d, height: g.d * TILT, visibility: lifted === i ? "hidden" : undefined }}
+            className="group/plate absolute left-0 top-0 cursor-pointer rounded-[50%] outline-none before:absolute before:left-1/2 before:top-1/2 before:size-[max(100%,var(--hit,44px))] before:-translate-x-1/2 before:-translate-y-1/2 before:rounded-full before:content-['']"
+            style={{ width: box.w, height: box.h, visibility: lifted === i ? "hidden" : undefined }}
             onFocus={() => { if (pointer.current.id < 0) { stop(); setActive(i); } }}
             onClick={(event) => { const pending = pendingOpen.current; pendingOpen.current = -1; if (event.detail === 0 || pending === i) open(i); }}
           >
+            {/* the plate itself, at its own size in the middle of the (maybe larger) tap box; the focus ring is drawn on it */}
+            <span className="absolute rounded-[50%] group-focus-visible/plate:outline group-focus-visible/plate:outline-2 group-focus-visible/plate:outline-offset-4 group-focus-visible/plate:outline-rose" style={{ left: (box.w - g.d) / 2, top: (box.h - g.d * TILT) / 2, width: g.d, height: g.d * TILT }}>
             <span aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-50 dark:opacity-90">
               <span ref={(node) => { shadows.current[i] = node; }} className="absolute inset-x-[5%] bottom-[-9%] top-[16%] rounded-[50%] bg-black" style={{ filter: `blur(${Math.max(2, g.d * 0.045).toFixed(1)}px)` }} />
             </span>
@@ -1035,6 +1056,10 @@ export function SushiConveyorMenu({
                 <span aria-hidden="true" className="pointer-events-none absolute inset-[9%] overflow-hidden rounded-[50%] bg-bg-2">
                   <img
                     src={item.image}
+                    srcSet={item.srcSet}
+                    // the drawn width of a 16:10 picture cut to the plate (cover: its height fills
+                    // 0.82 · d · TILT), lifted plates included; the browser adds the screen density
+                    sizes={item.srcSet ? `${Math.ceil(g.d * 0.82 * TILT * 1.6 * (1 + LIFT_SCALE))}px` : undefined}
                     alt=""
                     draggable={false}
                     loading="lazy"
@@ -1063,6 +1088,7 @@ export function SushiConveyorMenu({
                   {item.price && <span className="tabular-nums text-muted">{item.price}</span>}
                 </span>
               </span>
+            </span>
             </span>
           </button>
         );
