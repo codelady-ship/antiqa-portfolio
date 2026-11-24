@@ -1,16 +1,18 @@
 import { getProfile, getProjects, SITE_URL } from "@/lib/data";
-import { localizeProjects } from "@/lib/showcase";
+import { localizeProjects, projectLanguages, visibleProjects } from "@/lib/showcase";
 import { JOB_TITLE, NAME_SPELLINGS } from "@/lib/identity";
 
 /** Plain-text summary for AI answer engines (llms.txt convention). */
 export async function GET() {
   const [p, all] = await Promise.all([getProfile(), getProjects()]);
-  const projects = localizeProjects(all, "en");
+  const projects = visibleProjects(localizeProjects(all, "en"));
   const c = p.contacts;
+  // the roles besides the job title: "Full Stack Developer (Full Stack Developer, …)" read twice (#70)
+  const otherRoles = p.roles.en.filter((r) => r.trim().toLowerCase() !== JOB_TITLE.toLowerCase());
   const lines = [
     `# ${p.name}`,
     "",
-    `> ${JOB_TITLE} (${p.roles.en.join(", ")}) based in ${p.location.en}.${p.openToWork ? " Open to new opportunities." : ""}`,
+    `> ${JOB_TITLE}${otherRoles.length ? ` (${otherRoles.join(", ")})` : ""} based in ${p.location.en}.${p.openToWork ? " Open to new opportunities." : ""}`,
     "",
     `Also written as: ${NAME_SPELLINGS.filter((n) => n !== p.name).join(", ")}.`,
     "",
@@ -25,7 +27,7 @@ export async function GET() {
     "## Projects",
     ...projects.map(
       (x) =>
-        `- ${x.repoUrl ? `[${x.title}](${x.repoUrl})` : x.title}${x.demoUrl ? ` — live demo: ${x.demoUrl}` : ""}${x.description ? ` — ${x.description}` : ""}${x.languages.length ? ` (${x.languages.map((l) => l.name).join(", ")})` : ""}`,
+        `- ${x.repoUrl ? `[${x.title}](${x.repoUrl})` : x.title}${x.demoUrl ? ` — live demo: ${x.demoUrl}` : ""}${x.description ? ` — ${x.description}` : ""}${projectLanguages(x).length ? ` (${projectLanguages(x).join(", ")})` : ""}`,
     ),
     "",
     "## Contact",

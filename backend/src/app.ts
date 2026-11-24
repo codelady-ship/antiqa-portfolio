@@ -5,10 +5,11 @@ import sanitizeHtml from "sanitize-html";
 import { z } from "zod";
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
-import { type AuthStore, checkCredentials, COOKIE, deviceId, isAdmin, issueDevice, issueSession, mongoAuth, requireAdminWith } from "./auth.js";
+import { type AuthStore, checkCredentials, clearSession, deviceId, isAdmin, issueDevice, issueSession, mongoAuth, requireAdminWith } from "./auth.js";
 import { MailError, type Mailer, resendMailer } from "./mailer.js";
 import { BCRYPT_COST, changedMail, hashToken, newToken, passwordProblem, RESET_TTL_MS, resetLink, resetMail, resetSiteUrl, safeEqual } from "./reset.js";
-import { type Limit, type LimitStore, reserveAll } from "./limiter.js";
+import { clientIp, type Limit, type LimitStore, reserveAll } from "./limiter.js";
+import { dnsLookup, hostKind, isOwnHost, type Lookup, PORTFOLIO_ORIGINS } from "./hosts.js";
 import { isValidObjectId } from "mongoose";
 import { connectDb, Cv, LoginAttempt, Profile, Project } from "./models.js";
 import { demoUrl, fetchReadmeText, fetchSnapshot, GithubError, listRepos, parseRepoUrl, readmeExcerpt } from "./services/github.js";
@@ -22,6 +23,8 @@ const loc = z.object({ az: z.string().max(4000).default(""), en: z.string().max(
 // only https links: these end up in href, iframe src and JSON-LD
 const httpsUrl = z.string().url().max(500).refine((u) => /^https:\/\//i.test(u), "https only");
 const url = z.union([z.literal(""), httpsUrl]);
+// an admin-panel link is always framed by the demo modal (allow-scripts + allow-same-origin): never the portfolio itself
+const framedUrl = z.union([z.literal(""), httpsUrl.refine((u) => !isOwnHost(u), "the portfolio's own address cannot be framed")]);
 
 export const ProfileInput = z.object({
   name: z.string().min(1).max(120),
@@ -56,9 +59,10 @@ export const ProjectLinks = z.array(z.object({ label: z.string().trim().min(1).m
 export const ProjectPatch = z.object({
   title: z.string().max(120).optional(),
   summary: loc.optional(),
+  // the portfolio may list itself (its own card links to the site): allowed, but never framed (see present / frameBlocked)
   demoOverride: url.optional(),
   backendUrl: url.optional(),
-  adminUrl: url.optional(),
+  adminUrl: framedUrl.optional(),
   // a public demo login at most ("demo@… / demo"); one short line, no markup
   adminHint: z.string().trim().max(120).regex(/^[^<>]*$/, "no markup").optional(),
   featured: z.boolean().optional(),
@@ -107,10 +111,11 @@ export function present(p: any, admin = false) {
     adminUrl: p.adminUrl || null,
     adminHint: p.adminUrl ? p.adminHint || "" : "",
     // false: the admin panel cannot be framed, the modal shows an "open in a new tab" card
-    ...(p.adminUrl && { adminFrame: !p.adminNoFrame }),
+    ...(p.adminUrl && { adminFrame: !p.adminNoFrame && !isOwnHost(p.adminUrl) }),
     demoUrl: liveUrl(p),
     // false: the live site cannot be framed, the Demo tab shows an "open in a new tab" card
-    ...(liveUrl(p) && { demoFrame: !p.demoNoFrame }),
+    // the portfolio itself is never framed inside itself (it also refuses framing: X-Frame-Options DENY)
+    ...(liveUrl(p) && { demoFrame: !p.demoNoFrame && !isOwnHost(liveUrl(p)!) }),
     createdAt: gh.createdAt ?? null,
     pushedAt: gh.pushedAt ?? null,
     stars: gh.stars ?? 0,
@@ -137,8 +142,8 @@ export function present(p: any, admin = false) {
  * Does this page refuse to be shown in an iframe on the portfolio? (X-Frame-Options DENY/SAMEORIGIN,
  * or a CSP frame-ancestors list that allows neither "*" nor every portfolio origin). Unknown
  * (network error) = framable: the modal still has its open-in-new-tab link.
+ * The portfolio's own address and private-network hosts count as blocked and are never fetched.
  */
-const PORTFOLIO_ORIGINS = ["https://antiqa-portfolio.vercel.app", "https://antiqacode.vercel.app"];
 
 /** Does one frame-ancestors source ("https://x.dev", "https://*.vercel.app", "https:", "*") match the origin? */
 function sourceMatches(src: string, origin: string): boolean {
@@ -151,9 +156,26 @@ function sourceMatches(src: string, origin: string): boolean {
   return m[2] ? host.endsWith(`.${m[3]}`) : host === m[3];
 }
 
-export async function frameBlocked(url: string): Promise<boolean> {
+const MAX_REDIRECTS = 5;
+
+export async function frameBlocked(url: string, resolve: Lookup = dnsLookup): Promise<boolean> {
   try {
-    const r = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(8000) });
+    // redirects are followed by hand, so every hop is checked before it is fetched
+    let at = url;
+    let r: Awaited<ReturnType<typeof fetch>>;
+    for (let hop = 0; ; hop++) {
+      if (isOwnHost(at)) return true;
+      const kind = await hostKind(at, resolve);
+      if (kind === "private") return true;
+      if (kind === "unresolved") return false;
+      r = await fetch(at, { redirect: "manual", signal: AbortSignal.timeout(8000) });
+      const next = r.status >= 300 && r.status < 400 ? r.headers.get("location") : null;
+      if (!next) break;
+      void r.body?.cancel();
+      // too many hops: unknown, like a network error
+      if (hop >= MAX_REDIRECTS) return false;
+      at = new URL(next, at).href;
+    }
     void r.body?.cancel();
     const xfo = (r.headers.get("x-frame-options") ?? "").toLowerCase();
     if (/deny|sameorigin/.test(xfo)) return true;
@@ -232,11 +254,20 @@ const mongoLimits: LimitStore = {
 
 /**
  * Known device (signed cookie from an earlier login): its own key, no global cap.
- * Otherwise per IP + global. req.ip honours "trust proxy" (the hop the platform proxy added);
- * the leftmost X-Forwarded-For entry is client-controlled and is not used.
+ * Otherwise per client address + global. clientIp() (limiter.ts) explains which address that is:
+ * the hop the platform's proxy vouches for, never the client-controlled leftmost X-Forwarded-For entry.
  */
 function loginLimits(req: Request, dev: string | null): Limit[] {
-  return dev ? [[`dev:${dev}`, MAX_PER_CLIENT]] : [[`ip:${req.ip || "?"}`, MAX_PER_CLIENT], ["global", MAX_GLOBAL]];
+  return dev ? [[`dev:${dev}`, MAX_PER_CLIENT]] : [[`ip:${clientIp(req)}`, MAX_PER_CLIENT], ["global", MAX_GLOBAL]];
+}
+
+/**
+ * After a successful password reset (she proved she owns the mailbox): forget the failed logins of this
+ * browser, its address and the global counter, so a lockout (also one caused by someone else) ends at once.
+ */
+function clearLoginLockout(limits: LimitStore, req: Request, dev: string | null) {
+  const keys = new Set([...loginLimits(req, null), ...(dev ? loginLimits(req, dev) : [])].map(([k]) => k));
+  return Promise.all([...keys].map((k) => limits.reset(k)));
 }
 
 /* ---------- password reset by e-mail: limits (counters live in the login limiter's collection, 1 h) ---------- */
@@ -256,7 +287,7 @@ function resetLimits(req: Request, dev: string | null, kind: "req" | "try"): Lim
   const [perClient, global] = kind === "req" ? [RESET_REQ_PER_CLIENT, RESET_REQ_GLOBAL] : [RESET_TRY_PER_CLIENT, RESET_TRY_GLOBAL];
   return dev
     ? [[`reset-${kind}:dev:${dev}`, perClient, HOUR]]
-    : [[`reset-${kind}:ip:${req.ip || "?"}`, perClient, HOUR], [`reset-${kind}:global`, global, HOUR]];
+    : [[`reset-${kind}:ip:${clientIp(req)}`, perClient, HOUR], [`reset-${kind}:global`, global, HOUR]];
 }
 
 /** Lets work finish after the answer was sent on Vercel (the platform's waitUntil); false = not available, await it instead. */
@@ -319,9 +350,19 @@ export function createApp(deps: Partial<AppDeps> = {}) {
     }),
   );
   app.post("/api/auth/logout", (_req, res) => {
-    res.clearCookie(COOKIE, { path: "/" });
+    clearSession(res);
     res.json({ ok: true });
   });
+  // "sign out everywhere": every session cookie issued so far (other browsers, a stolen one) stops working
+  app.post(
+    "/api/auth/logout-all",
+    requireAdmin,
+    wrap(async (_req, res) => {
+      await auth.bumpSession();
+      clearSession(res);
+      res.json({ ok: true });
+    }),
+  );
   app.get(
     "/api/auth/me",
     wrap(async (req, res) => res.json({ admin: await admin(req) })),
@@ -404,8 +445,10 @@ export function createApp(deps: Partial<AppDeps> = {}) {
       // one atomic update: of two parallel submits (or a replay) only one can win
       if (!(await auth.consumeReset(hashToken(token), new Date(), passwordHash))) return res.status(400).json({ error: "invalid token" });
       await release();
+      // the reset proves she owns the mailbox: a login lockout ends now
+      await clearLoginLockout(limits, req, deviceId(req));
       // every session is signed out (session version + 1); this browser's cookie goes too
-      res.clearCookie(COOKIE, { path: "/" });
+      clearSession(res);
       if (!mailer.problem()) await mailer.send(changedMail()).catch((e) => resetLog("password changed, notice not sent", e));
       res.json({ ok: true });
     }),
@@ -413,6 +456,25 @@ export function createApp(deps: Partial<AppDeps> = {}) {
 
   // admin-only GitHub helpers: refuse before touching the database
   app.use("/api/github", requireAdmin);
+
+  /* ---------- full GitHub sync: checked before the database is touched ---------- */
+  const syncAll = wrap(async (_req, res) => {
+    await connectDb();
+    const list = await Project.find();
+    // 4 at a time: fast enough for the function timeout, gentle on the GitHub limit
+    for (let i = 0; i < list.length; i += 4) await Promise.allSettled(list.slice(i, i + 4).map(sync));
+    res.json({ synced: list.length, errors: list.filter((p: any) => p.syncError).map((p: any) => `${p.name}: ${p.syncError}`) });
+  });
+  /** Vercel Cron (GET with "Authorization: Bearer CRON_SECRET"), compared in constant time. */
+  const requireCron = (req: Request, res: Response, next: NextFunction) => {
+    const secret = process.env.CRON_SECRET;
+    if (secret && safeEqual(req.get("authorization") ?? "", `Bearer ${secret}`)) return next();
+    res.status(401).json({ error: "unauthorized" });
+  };
+  // the admin button: POST only (a GET could be fired cross-site by an <img> while she is signed in)
+  app.post("/api/projects/sync", requireAdmin, syncAll);
+  // Vercel Cron always uses GET: the secret only, an admin cookie does not count here
+  app.get("/api/projects/sync", requireCron, syncAll);
 
   app.use("/api", (_req, _res, next) => {
     connectDb().then(() => next(), next);
@@ -432,8 +494,21 @@ export function createApp(deps: Partial<AppDeps> = {}) {
     requireAdmin,
     wrap(async (req, res) => {
       const data = ProfileInput.parse(req.body);
-      const p = await Profile.findByIdAndUpdate("main", data, { upsert: true, new: true, runValidators: true }).lean();
-      res.json(p);
+      // the admin form sends the updatedAt it loaded (null: no saved profile yet); a newer save elsewhere = 409
+      const { expectedUpdatedAt } = z.object({ expectedUpdatedAt: z.iso.datetime().nullable().optional() }).parse(req.body);
+      if (expectedUpdatedAt === undefined) {
+        const p = await Profile.findByIdAndUpdate("main", data, { upsert: true, new: true, runValidators: true }).lean();
+        return res.json(p);
+      }
+      const filter = { _id: "main", updatedAt: expectedUpdatedAt === null ? { $exists: false } : new Date(expectedUpdatedAt) };
+      try {
+        // null + a saved profile: the upsert collides with _id "main" (E11000) = someone saved first
+        const p = await Profile.findOneAndUpdate(filter, data, { upsert: expectedUpdatedAt === null, new: true, runValidators: true }).lean();
+        if (p) return res.json(p);
+      } catch (e) {
+        if ((e as { code?: number }).code !== 11000) throw e;
+      }
+      res.status(409).json({ error: "the profile was changed elsewhere", code: "stale_profile" });
     }),
   );
 
@@ -441,9 +516,10 @@ export function createApp(deps: Partial<AppDeps> = {}) {
   app.get(
     "/api/cv/:lang",
     wrap(async (req, res) => {
-      const lang = req.params.lang === "en" ? "en" : "az";
-      const cv: any = (await Cv.findById(lang).lean()) ?? (await Cv.findOne().lean());
-      if (!cv) return res.status(404).json({ error: "no cv" });
+      const lang = req.params.lang;
+      // only the asked language: /api/cv/en never serves the AZ file
+      const cv: any = lang === "az" || lang === "en" ? await Cv.findById(lang).lean() : null;
+      if (!cv) return res.status(404).json({ error: "no cv", code: "no_cv" });
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `inline; filename="${String(cv.fileName || "cv.pdf").replace(/[^\w.-]/g, "_")}"`);
       res.setHeader("Cache-Control", "public, max-age=300");
@@ -457,7 +533,7 @@ export function createApp(deps: Partial<AppDeps> = {}) {
     wrap(async (req, res) => {
       const lang = z.enum(["az", "en"]).parse(req.params.lang);
       const body = req.body as Buffer;
-      if (!Buffer.isBuffer(body) || body.subarray(0, 5).toString() !== "%PDF-") return res.status(400).json({ error: "pdf only" });
+      if (!Buffer.isBuffer(body) || body.subarray(0, 5).toString() !== "%PDF-") return res.status(400).json({ error: "pdf only", code: "pdf_only" });
       let fileName = `cv-${lang}.pdf`;
       try {
         fileName = decodeURIComponent(req.get("x-file-name") || fileName).slice(0, 100);
@@ -466,6 +542,16 @@ export function createApp(deps: Partial<AppDeps> = {}) {
       }
       await Cv.findByIdAndUpdate(lang, { fileName, data: body, size: body.length }, { upsert: true });
       res.json({ ok: true, size: body.length });
+    }),
+  );
+  app.delete(
+    "/api/cv/:lang",
+    requireAdmin,
+    wrap(async (req, res) => {
+      const lang = z.enum(["az", "en"]).parse(req.params.lang);
+      const r = await Cv.deleteOne({ _id: lang });
+      if (!r.deletedCount) return res.status(404).json({ error: "no cv", code: "no_cv" });
+      res.status(204).end();
     }),
   );
 
@@ -499,27 +585,56 @@ export function createApp(deps: Partial<AppDeps> = {}) {
     wrap(async (req, res) => {
       const { repoUrl, allowPrivate, ...patch } = ProjectCreate.parse(req.body);
       const ref = parseRepoUrl(repoUrl);
-      if (!ref) return res.status(400).json({ error: "Not a GitHub repository URL" });
-      const exists = await Project.findOne(ref).collation({ locale: "en", strength: 2 });
-      if (exists) return res.status(409).json({ error: "Already added", project: present(exists, true) });
+      if (!ref) return res.status(400).json({ error: "Not a GitHub repository URL", code: "not_github_url" });
+      const existing = () => Project.findOne(ref).collation({ locale: "en", strength: 2 });
+      const already = async () => {
+        const e = await existing();
+        return res.status(409).json({ error: "Already added", code: "already_added", ...(e && { project: present(e, true) }) });
+      };
+      if (await existing()) return already();
       const p = new Project({ ...ref, repoUrl: `https://github.com/${ref.owner}/${ref.name}`, ...patch });
-      await sync(p);
+      try {
+        await sync(p);
+      } catch (e) {
+        // a parallel add of the same repo won the unique index: same answer as the check above
+        if ((e as { code?: number }).code === 11000) return already();
+        throw e;
+      }
       const refuse = p.syncError || (p.privateRepo && !allowPrivate ? PRIVATE_MSG : "");
       if (refuse) {
         await p.deleteOne();
-        return res.status(422).json({ error: refuse });
+        const code = p.syncError ? (/not found/i.test(p.syncError) ? "repo_not_found" : "github_error") : "private_repo";
+        return res.status(422).json({ error: refuse, code });
       }
       res.status(201).json(present(p, true));
+    }),
+  );
+  // the admin's up / down arrows: the whole list in its new order, saved in one request (not one PATCH per project)
+  app.put(
+    "/api/projects/order",
+    requireAdmin,
+    wrap(async (req, res) => {
+      const { ids } = z
+        .object({ ids: z.array(z.string().refine((id) => isValidObjectId(id), "not an id")).min(1).max(500) })
+        .refine((b) => new Set(b.ids).size === b.ids.length, "duplicate ids")
+        .parse(req.body);
+      const have = new Set((await Project.find({}, { _id: 1 }).lean()).map((p: any) => String(p._id)));
+      // a project was added or removed in another tab: reload instead of saving a partial order
+      if (have.size !== ids.length || !ids.every((id) => have.has(id))) return res.status(409).json({ error: "the project list changed", code: "stale_list" });
+      const step = Math.max(1, Math.floor(1000 / ids.length));
+      await Project.bulkWrite(ids.map((id, k) => ({ updateOne: { filter: { _id: id }, update: { $set: { order: (ids.length - k) * step } } } })));
+      const list = await Project.find({}, { "gh.readmeHtml": 0 }).sort({ featured: -1, order: -1, "gh.createdAt": -1 }).lean();
+      res.json(list.map((p) => present(p, true)));
     }),
   );
   app.patch(
     "/api/projects/:id",
     requireAdmin,
     wrap(async (req, res) => {
-      if (!isValidObjectId(req.params.id)) return res.status(404).json({ error: "not found" });
+      if (!isValidObjectId(req.params.id)) return res.status(404).json({ error: "not found", code: "not_found" });
       const patch = ProjectPatch.parse(req.body);
       const p = await Project.findByIdAndUpdate(req.params.id, patch, { new: true });
-      if (!p) return res.status(404).json({ error: "not found" });
+      if (!p) return res.status(404).json({ error: "not found", code: "not_found" });
       if (patch.adminUrl !== undefined || patch.demoOverride !== undefined || patch.comingSoon !== undefined || patch.demoOff !== undefined) {
         await checkFrames(p);
         await p.save();
@@ -558,7 +673,7 @@ export function createApp(deps: Partial<AppDeps> = {}) {
     requireAdmin,
     wrap(async (req, res) => {
       const ref = parseRepoUrl(z.string().max(300).parse(req.query.url ?? ""));
-      if (!ref) return res.status(400).json({ error: "Not a GitHub repository URL" });
+      if (!ref) return res.status(400).json({ error: "Not a GitHub repository URL", code: "not_github_url" });
       const s = await fetchSnapshot(ref, { allowPrivate: true });
       const [live, readme, exists] = await Promise.all([
         resolveLive(s),
@@ -585,25 +700,15 @@ export function createApp(deps: Partial<AppDeps> = {}) {
     }),
   );
 
-  const syncAll = wrap(async (req, res) => {
-      // admin, or Vercel Cron with CRON_SECRET
-      const cron = process.env.CRON_SECRET && req.get("authorization") === `Bearer ${process.env.CRON_SECRET}`;
-      if (!cron && !(await admin(req))) return res.status(401).json({ error: "unauthorized" });
-      const list = await Project.find();
-      // 4 at a time: fast enough for the function timeout, gentle on the GitHub limit
-      for (let i = 0; i < list.length; i += 4) await Promise.allSettled(list.slice(i, i + 4).map(sync));
-      res.json({ synced: list.length, errors: list.filter((p: any) => p.syncError).map((p: any) => `${p.name}: ${p.syncError}`) });
-  });
-  app.post("/api/projects/sync", syncAll);
-  app.get("/api/projects/sync", syncAll); // Vercel Cron uses GET
-
   /* ---------- errors ---------- */
-  app.use((_req: Request, res: Response) => res.status(404).json({ error: "not found" }));
+  // `code`: a stable key the admin panel translates (the English `error` stays for logs and scripts)
+  app.use((_req: Request, res: Response) => res.status(404).json({ error: "not found", code: "not_found" }));
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
-    if (err instanceof z.ZodError) return res.status(400).json({ error: "invalid input", issues: err.issues });
-    if (err instanceof GithubError) return res.status(err.status === 404 ? 404 : 502).json({ error: err.message });
+    if (err instanceof z.ZodError) return res.status(400).json({ error: "invalid input", code: "invalid_input", issues: err.issues });
+    if (err instanceof GithubError)
+      return res.status(err.status === 404 ? 404 : 502).json({ error: err.message, code: err.status === 404 ? "repo_not_found" : "github_error" });
     console.error(err);
-    res.status(500).json({ error: "server error" });
+    res.status(500).json({ error: "server error", code: "server_error" });
   });
   return app;
 }

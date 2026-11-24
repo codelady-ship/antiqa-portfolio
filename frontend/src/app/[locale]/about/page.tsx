@@ -5,7 +5,7 @@ import { getTranslations } from "next-intl/server";
 import { AboutJsonLd } from "@/components/seo/json-ld";
 import { Link } from "@/i18n/navigation";
 import { getProfile, getProjects } from "@/lib/data";
-import { localizeProjects } from "@/lib/showcase";
+import { localizeProjects, projectLanguages, visibleProjects } from "@/lib/showcase";
 import { formatDate } from "@/lib/date";
 import { buildFaq } from "@/lib/faq";
 import { NoTr, withNames } from "@/components/ui/no-translate";
@@ -57,7 +57,8 @@ const link = "inline-block min-w-11 py-3 font-medium underline decoration-rose/4
 export default async function AboutPage() {
   const locale = await currentLocale();
   const [profile, all, t] = await Promise.all([getProfile(), getProjects(), getTranslations({ locale, namespace: "AboutPage" })]);
-  const projects = localizeProjects(all, locale);
+  // hidden records and the second record of one project (#67) are left out of the list and the counts
+  const projects = visibleProjects(localizeProjects(all, locale));
   const c = profile.contacts;
   const cv = profile.cv[locale] ?? profile.cv.az ?? profile.cv.en ?? null;
   const contacts = [
@@ -73,7 +74,7 @@ export default async function AboutPage() {
   ].filter((x): x is { k: string; label: string; href: string } => !!x);
   const faq = buildFaq(t, profile, locale, projects.length);
   // names inside sentences stay as written under machine translation (#21)
-  const names = [profile.name, ALT_NAME, ...NAME_SPELLINGS, ...profile.skills, ...projects.flatMap((p) => [p.title, ...p.languages.map((l) => l.name)])];
+  const names = [profile.name, ALT_NAME, ...NAME_SPELLINGS, ...profile.skills, ...projects.flatMap((p) => [p.title, ...projectLanguages(p)])];
   const tr = (s: string) => withNames(s, names);
 
   return (
@@ -164,6 +165,7 @@ export default async function AboutPage() {
           {projects.map((p) => {
             const text = p.summary?.[locale] || p.description;
             const created = p.createdAt ? formatDate(p.createdAt, locale) : "";
+            const langs = projectLanguages(p);
             return (
               <li key={p.id}>
                 <h3 translate="no" className="notranslate text-xl font-medium">
@@ -171,11 +173,11 @@ export default async function AboutPage() {
                 </h3>
                 {text && <p className="mt-1 leading-relaxed text-pretty">{tr(text)}</p>}
                 <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-                  {p.languages.length > 0 && (
+                  {langs.length > 0 && (
                     <>
                       <dt className="text-muted">{t("languages")}</dt>
                       <dd translate="no" lang="en" className="notranslate">
-                        {p.languages.map((l) => l.name).join(", ")}
+                        {langs.join(", ")}
                       </dd>
                     </>
                   )}

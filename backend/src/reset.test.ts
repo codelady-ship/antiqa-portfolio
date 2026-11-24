@@ -262,6 +262,19 @@ describe("password reset: the new password", () => {
     expect(s.sent[1].text).not.toContain("token=");
   });
 
+  it("a successful reset ends a login lockout (this client's and the global one)", async () => {
+    const s = setup();
+    for (let i = 0; i < 5; i++) expect((await s.login("wrong-password-x")).status).toBe(401);
+    expect((await s.login(OLD_PASSWORD)).status).toBe(429);
+    s.limits.n.set("global", 100);
+    // a wrong or unused link does not unlock anything
+    expect((await s.confirm("x".repeat(43))).status).toBe(400);
+    expect((await s.login(OLD_PASSWORD)).status).toBe(429);
+    expect((await s.confirm(await s.token())).status).toBe(200);
+    expect([...s.limits.n.keys()].filter((k) => k === "global" || k.startsWith("ip:"))).toEqual([]);
+    expect((await s.login(NEW_PASSWORD)).status).toBe(200);
+  });
+
   it("a double submit resets once", async () => {
     const s = setup();
     const t = await s.token();

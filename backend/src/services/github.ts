@@ -26,6 +26,9 @@ export type GithubSnapshot = {
 };
 
 const API = "https://api.github.com";
+/** every GitHub request gives up after 10 s, so a hanging API cannot use up the function's time */
+const TIMEOUT_MS = 10_000;
+const opts = (accept?: string): RequestInit => ({ headers: headers(accept), signal: AbortSignal.timeout(TIMEOUT_MS) });
 
 export function parseRepoUrl(input: string): RepoRef | null {
   const m = String(input)
@@ -48,7 +51,10 @@ export class GithubError extends Error {
 }
 
 async function get<T>(path: string): Promise<T> {
-  const r = await fetch(API + path, { headers: headers() });
+  // timeout / network error: a GitHub error like any other (502 for the admin, syncError on sync)
+  const r = await fetch(API + path, opts()).catch(() => {
+    throw new GithubError(502, "GitHub did not answer");
+  });
   if (!r.ok) throw new GithubError(r.status, r.status === 404 ? "Repository not found" : `GitHub ${r.status}`);
   return (await r.json()) as T;
 }
@@ -109,7 +115,7 @@ export async function fetchSnapshot(ref: RepoRef, { allowPrivate = false } = {})
     get<Record<string, number>>(`/repos/${ref.owner}/${ref.name}/languages`),
     repo.private
       ? ""
-      : fetch(`${API}/repos/${ref.owner}/${ref.name}/readme`, { headers: headers("application/vnd.github.html+json") })
+      : fetch(`${API}/repos/${ref.owner}/${ref.name}/readme`, opts("application/vnd.github.html+json"))
           .then((r) => (r.ok ? r.text() : ""))
           .catch(() => ""),
   ]);
@@ -153,7 +159,7 @@ export function readmeExcerpt(md: string, max = 320) {
 
 /** Raw README markdown ("" when missing). Admin preview only (private repos included, never stored). */
 export async function fetchReadmeText(ref: RepoRef) {
-  const r = await fetch(`${API}/repos/${ref.owner}/${ref.name}/readme`, { headers: headers("application/vnd.github.raw") }).catch(() => null);
+  const r = await fetch(`${API}/repos/${ref.owner}/${ref.name}/readme`, opts("application/vnd.github.raw")).catch(() => null);
   return r?.ok ? r.text() : "";
 }
 

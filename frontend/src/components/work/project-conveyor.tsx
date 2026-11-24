@@ -5,12 +5,15 @@ import { useCallback, useRef, useState, type ReactNode } from "react";
 import { PersonaClip } from "@/components/persona/clip";
 import { PERSONA } from "@/components/persona/config";
 import { SushiConveyorMenu, type ConveyorDish } from "@/components/ui/sushi-conveyor-menu";
+import { blurb } from "@/lib/blurb";
 import { hasThumb } from "@/lib/seed";
+import { MIN_LANGUAGE_PERCENT } from "@/lib/showcase";
 import { shot } from "@/lib/shot";
 import type { Project } from "@/lib/types";
 
 // which projects go on the belt lives in lib/showcase.ts (About counts the same list)
 export { onBelt } from "@/lib/showcase";
+export { blurb } from "@/lib/blurb";
 
 /**
  * Fixed screenshots instead of the live-site shot (mShots), by repo name: Codelady Skills was shot
@@ -55,18 +58,6 @@ const STACK: Record<string, string[]> = {
 
 /** topics that say nothing about the stack */
 const NOISE = new Set(["portfolio", "github-pages", "practice-project", "landing-page", "responsive-design", "responsive", "vercel", "ecommerce", "azerbaijani", "bilingual"]);
-const MIN_PERCENT = 5;
-
-/** 1–2 sentences (≤ 180 chars) for the caption and the dialog. */
-export function blurb(p: Project, locale: "az" | "en") {
-  const text = (p.summary?.[locale] || p.description || "").trim();
-  if (!text) return "";
-  // a sentence ends at . ! ? followed by a space and a capital letter (not inside "Next.js" or "3.5")
-  const sentences = text.split(/(?<=[.!?])\s+(?=[A-ZƏÖÜÇŞİĞ“"(])/u);
-  let out = sentences[0].trim();
-  if (sentences[1] && out.length + sentences[1].length <= 180) out += ` ${sentences[1].trim()}`;
-  return out.length > 180 ? `${out.slice(0, 177).trimEnd()}…` : out;
-}
 
 /** plate ring colour: 1 rose = live demo, 2 violet = code only, 4 gold = coming soon */
 const tierOf = (p: Project) => (p.comingSoon ? 4 : p.demoUrl ? 1 : 2);
@@ -75,7 +66,7 @@ const TIER_DOT: Record<number, string> = { 1: "bg-rose", 2: "bg-violet", 4: "bg-
 const stackOf = (p: Project) => {
   const own = STACK[p.name.toLowerCase()];
   if (own) return own;
-  const langs = p.languages.filter((l) => l.percent >= MIN_PERCENT).map((l) => l.name);
+  const langs = p.languages.filter((l) => l.percent >= MIN_LANGUAGE_PERCENT).map((l) => l.name);
   const topics = p.topics.filter((x) => !NOISE.has(x) && !langs.some((l) => l.toLowerCase() === x));
   return [...langs, ...topics].slice(0, 9);
 };

@@ -76,6 +76,14 @@ describe.skipIf(!local)("admin store in MongoDB", () => {
     expect((await mongoAuth.get()).sessionVersion).toBe(1);
   });
 
+  it("sign out everywhere raises the stored session version by one and keeps the password", async () => {
+    const before: any = await AdminAuth.findById("admin").lean();
+    await mongoAuth.bumpSession();
+    const after: any = await AdminAuth.findById("admin").lean();
+    expect(after.sessionVersion).toBe(before.sessionVersion + 1);
+    expect(after.passwordHash).toBe(before.passwordHash);
+  });
+
   it("request counters live one hour and block the 4th request of a client", async () => {
     await LoginAttempt.deleteMany({});
     const ask = () => request(app).post("/api/auth/reset/request").send({ email: "x@y.example" });
