@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
-import { api, Area, Button, Card, Field, Input, refreshSite } from "./ui";
+import { api, Area, Button, Card, Field, Input, useDirty, useFail, useSaved, useToast } from "./ui";
 
 type Repo = { name: string; url: string; description: string; language: string | null; stars: number; pushedAt: string; private: boolean; fork: boolean; added: boolean };
 type Preview = {
@@ -30,21 +30,25 @@ const day = (d: string) => d.slice(0, 10);
  */
 export function GithubImport({ onAdded }: { onAdded: () => void }) {
   const t = useTranslations("Admin");
+  const toast = useToast();
+  const fail = useFail();
+  const saved = useSaved();
   const [url, setUrl] = useState("");
   const [repos, setRepos] = useState<Repo[] | null>(null);
   const [showRepos, setShowRepos] = useState(false);
   const [q, setQ] = useState("");
   const [pv, setPv] = useState<Preview | null>(null);
   const [busy, setBusy] = useState<"" | "read" | "save">("");
-  const [msg, setMsg] = useState("");
   const [form, setForm] = useState({ title: "", az: "", en: "", demo: "", featured: false, comingSoon: false, allowPrivate: false, fullStack: false });
+  // a read repo that was not added yet counts as unsaved work
+  useDirty("github-import", !!pv);
 
   useEffect(() => {
     if (!showRepos || repos) return;
     api<{ repos: Repo[] }>("/api/github/repos")
       .then((r) => setRepos(r.repos))
-      .catch((e) => setMsg(`${t("error")}: ${(e as Error).message}`));
-  }, [showRepos, repos, t]);
+      .catch((e) => fail(e));
+  }, [showRepos, repos, fail]);
 
   const shown = useMemo(
     () => (repos ?? []).filter((r) => !r.fork && (!q || r.name.toLowerCase().includes(q.toLowerCase()) || r.description.toLowerCase().includes(q.toLowerCase()))),
@@ -54,7 +58,7 @@ export function GithubImport({ onAdded }: { onAdded: () => void }) {
   const read = async (repoUrl: string) => {
     setUrl(repoUrl);
     setBusy("read");
-    setMsg("");
+    toast(null);
     setPv(null);
     try {
       const p = await api<Preview>(`/api/github/preview?url=${encodeURIComponent(repoUrl.trim())}`);
@@ -71,7 +75,7 @@ export function GithubImport({ onAdded }: { onAdded: () => void }) {
       });
       setShowRepos(false);
     } catch (e) {
-      setMsg(`${t("error")}: ${(e as Error).message}`);
+      fail(e);
     } finally {
       setBusy("");
     }
@@ -80,7 +84,7 @@ export function GithubImport({ onAdded }: { onAdded: () => void }) {
   const save = async () => {
     if (!pv) return;
     setBusy("save");
-    setMsg("");
+    toast(null);
     try {
       await api("/api/projects", {
         method: "POST",
@@ -97,14 +101,13 @@ export function GithubImport({ onAdded }: { onAdded: () => void }) {
           allowPrivate: form.allowPrivate,
         }),
       });
-      await refreshSite();
       setPv(null);
       setUrl("");
       setRepos(null);
-      setMsg(t("saved"));
       onAdded();
+      await saved(t("projectAdded"));
     } catch (e) {
-      setMsg(`${t("error")}: ${(e as Error).message}`);
+      fail(e);
     } finally {
       setBusy("");
     }
@@ -233,11 +236,6 @@ export function GithubImport({ onAdded }: { onAdded: () => void }) {
         </div>
       )}
 
-      {msg && (
-        <p role="status" className="mt-3 text-sm text-muted">
-          {msg}
-        </p>
-      )}
     </Card>
   );
 }

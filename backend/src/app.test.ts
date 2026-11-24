@@ -97,29 +97,30 @@ describe("admin panel url", () => {
   });
   it("detects panels that refuse to be framed", async () => {
     const { frameBlocked } = await import("./app.js");
+    const pub = async () => ["93.184.215.14"];
     const real = globalThis.fetch;
     const reply = (h: Record<string, string>) => (globalThis.fetch = (async () => new Response("", { headers: h })) as typeof fetch);
     try {
       reply({ "x-frame-options": "DENY" });
-      expect(await frameBlocked("https://x.dev")).toBe(true);
+      expect(await frameBlocked("https://x.dev", pub)).toBe(true);
       reply({ "content-security-policy": "default-src 'self'; frame-ancestors 'none'" });
-      expect(await frameBlocked("https://x.dev")).toBe(true);
+      expect(await frameBlocked("https://x.dev", pub)).toBe(true);
       reply({ "content-security-policy": "frame-ancestors *" });
-      expect(await frameBlocked("https://x.dev")).toBe(false);
+      expect(await frameBlocked("https://x.dev", pub)).toBe(false);
       // an allow-list that names the portfolio (Pulsa, 2026-11-18) is framable
       reply({ "content-security-policy": "default-src 'self'; frame-ancestors 'self' https://antiqa-portfolio.vercel.app https://antiqacode.vercel.app" });
-      expect(await frameBlocked("https://x.dev")).toBe(false);
+      expect(await frameBlocked("https://x.dev", pub)).toBe(false);
       reply({ "content-security-policy": "frame-ancestors 'self' https://*.vercel.app" });
-      expect(await frameBlocked("https://x.dev")).toBe(false);
+      expect(await frameBlocked("https://x.dev", pub)).toBe(false);
       // an allow-list without the portfolio, or with only one of its domains, is not
       reply({ "content-security-policy": "frame-ancestors 'self' https://other.example" });
-      expect(await frameBlocked("https://x.dev")).toBe(true);
+      expect(await frameBlocked("https://x.dev", pub)).toBe(true);
       reply({ "content-security-policy": "frame-ancestors https://antiqa-portfolio.vercel.app" });
-      expect(await frameBlocked("https://x.dev")).toBe(true);
+      expect(await frameBlocked("https://x.dev", pub)).toBe(true);
       reply({ "content-security-policy": "frame-ancestors http://antiqa-portfolio.vercel.app http://antiqacode.vercel.app" });
-      expect(await frameBlocked("https://x.dev")).toBe(true);
+      expect(await frameBlocked("https://x.dev", pub)).toBe(true);
       reply({});
-      expect(await frameBlocked("https://x.dev")).toBe(false);
+      expect(await frameBlocked("https://x.dev", pub)).toBe(false);
     } finally {
       globalThis.fetch = real;
     }

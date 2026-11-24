@@ -27,9 +27,9 @@ Rule: only technologies the owner already uses (MERN, Next.js, TypeScript, Tailw
 
 ## API (v1)
 - `GET /api/profile` · `PUT /api/profile` (admin) — name, roles, about (az/en), contacts, skills, open-to-work
-- `GET /api/projects` · `POST /api/projects` · `PATCH /api/projects/:id` · `DELETE /api/projects/:id` · `POST /api/projects/sync`
+- `GET /api/projects` · `POST /api/projects` · `PATCH /api/projects/:id` · `DELETE /api/projects/:id` · `POST /api/projects/sync` (admin) · `GET /api/projects/sync` (Vercel Cron, `Authorization: Bearer CRON_SECRET` only)
 - `GET /api/cv/:lang` · `PUT /api/cv/:lang` (admin, PDF ≤ 2 MB, stored in Mongo)
-- `POST /api/auth/login` · `POST /api/auth/logout` · `GET /api/auth/me`
+- `POST /api/auth/login` · `POST /api/auth/logout` · `POST /api/auth/logout-all` (sign out everywhere) · `GET /api/auth/me`
 - `GET /api/health`
 
 ## SEO / GEO

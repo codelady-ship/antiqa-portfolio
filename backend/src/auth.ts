@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { AdminAuth, connectDb } from "./models.js";
+import { safeEqual } from "./reset.js";
 
 export const COOKIE = "admin_session";
 const WEEK = 7 * 24 * 3600;
@@ -11,6 +12,10 @@ function secret() {
   if (!s || s.length < 32) throw new Error("JWT_SECRET must be at least 32 characters");
   return s;
 }
+
+/** Our tokens are always HS256: a token signed with any other algorithm (or "none") is refused. */
+const ALG = "HS256" as const;
+const verify = (token: string) => jwt.verify(token, secret(), { algorithms: [ALG] });
 
 /** What the database knows about the admin login (see AdminAuth in models.ts). */
 export interface AuthState {
@@ -29,6 +34,8 @@ export interface AuthStore {
    * and sign every session out. false = the token was wrong, expired or already used (also by a parallel request).
    */
   consumeReset(hash: string, now: Date, passwordHash: string): Promise<boolean>;
+  /** "Sign out everywhere": session version + 1, so every session cookie issued so far stops working. */
+  bumpSession(): Promise<void>;
 }
 
 const ADMIN_ID = "admin";
@@ -55,6 +62,10 @@ export const mongoAuth: AuthStore = {
     );
     return r.modifiedCount === 1;
   },
+  async bumpSession() {
+    await connectDb();
+    await AdminAuth.updateOne({ _id: ADMIN_ID }, { $inc: { sessionVersion: 1 } }, { upsert: true });
+  },
 };
 
 /** In-memory store with the same semantics, for tests. */
@@ -76,6 +87,10 @@ export function memoryAuth(): AuthStore & { state: AuthState } {
       store.state = { passwordHash, sessionVersion: store.state.sessionVersion + 1 };
       return true;
     },
+    async bumpSession() {
+      await Promise.resolve();
+      store.state = { ...store.state, sessionVersion: store.state.sessionVersion + 1 };
+    },
   };
   return store;
 }
@@ -91,18 +106,21 @@ export async function checkCredentials(email: string, password: string, store: A
   if (!adminEmail || !hash) return null;
   // always run bcrypt so timing does not reveal whether the email matched
   const ok = await bcrypt.compare(password, hash);
-  return ok && email.toLowerCase() === adminEmail ? { sessionVersion } : null;
+  // constant time: the comparison does not reveal how much of the address was right
+  return ok && safeEqual(email.toLowerCase(), adminEmail) ? { sessionVersion } : null;
 }
 
+/** The session cookie's attributes: setting and clearing must use the same ones, or the browser keeps it. */
+const sessionCookie = () => ({ httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict" as const, path: "/" });
+
 export function issueSession(res: Response, sessionVersion: number) {
-  const token = jwt.sign({ role: "admin", sv: sessionVersion }, secret(), { expiresIn: WEEK });
-  res.cookie(COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    maxAge: WEEK * 1000,
-    path: "/",
-  });
+  const token = jwt.sign({ role: "admin", sv: sessionVersion }, secret(), { expiresIn: WEEK, algorithm: ALG });
+  res.cookie(COOKIE, token, { ...sessionCookie(), maxAge: WEEK * 1000 });
+}
+
+/** Removes this browser's session cookie (logout, sign out everywhere, password reset). */
+export function clearSession(res: Response) {
+  res.clearCookie(COOKIE, sessionCookie());
 }
 
 /**
@@ -117,7 +135,7 @@ export function deviceId(req: Request): string | null {
   const token = req.cookies?.[DEVICE_COOKIE];
   if (!token) return null;
   try {
-    const { dev } = jwt.verify(token, secret()) as { dev?: unknown };
+    const { dev } = verify(token) as { dev?: unknown };
     return typeof dev === "string" && /^[a-f0-9]{32}$/.test(dev) ? dev : null;
   } catch {
     return null;
@@ -125,7 +143,7 @@ export function deviceId(req: Request): string | null {
 }
 
 export function issueDevice(res: Response, dev: string) {
-  res.cookie(DEVICE_COOKIE, jwt.sign({ dev }, secret(), { expiresIn: DEVICE_AGE }), {
+  res.cookie(DEVICE_COOKIE, jwt.sign({ dev }, secret(), { expiresIn: DEVICE_AGE, algorithm: ALG }), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
@@ -144,7 +162,7 @@ export async function isAdmin(req: Request, store: AuthStore) {
   if (!token) return false;
   let claims: { role?: string; sv?: unknown };
   try {
-    claims = jwt.verify(token, secret()) as typeof claims;
+    claims = verify(token) as typeof claims;
   } catch {
     return false;
   }
