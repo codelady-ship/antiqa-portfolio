@@ -80,7 +80,7 @@ export const SEED_REPOS: { url: string; featured?: boolean; backend?: string; ti
     links: [],
   },
   { url: "https://github.com/codelady-ship/share-rental", featured: true, title: "Share", demo: "https://share-rental.vercel.app/az" },
-  { url: "https://github.com/codelady-ship/planera", featured: true, title: "Planera — Randevum", demo: "https://randevum-seven.vercel.app" },
+  { url: "https://github.com/codelady-ship/planera", featured: true, title: "Planera — Randevum", demo: "https://planera-az.vercel.app" },
   { url: "https://github.com/codelady-ship/Ecommerse-app", featured: true, title: "HUELINE", demo: "https://codelady-ship.github.io/Ecommerse-app/", thumb: false },
   { url: "https://github.com/codelady-ship/My-Quiz-App", featured: true, title: "Code Check", demo: "https://codelady-ship.github.io/My-Quiz-App/" },
   { url: "https://github.com/codelady-ship/hello-fresh-with-react", featured: true, title: "HelloFresh clone (practice)", demo: "https://codelady-ship.github.io/hello-fresh-with-react/" },

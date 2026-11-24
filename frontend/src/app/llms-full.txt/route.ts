@@ -1,6 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { getProfile, getProjects, SITE_URL } from "@/lib/data";
-import { localizeProjects } from "@/lib/showcase";
+import { localizeProjects, projectLanguages, visibleProjects } from "@/lib/showcase";
 import { buildFaq } from "@/lib/faq";
 import { ALT_NAME, EXPERIENCE_YEARS, JOB_TITLE, NAME_SPELLINGS } from "@/lib/identity";
 
@@ -10,7 +10,7 @@ import { ALT_NAME, EXPERIENCE_YEARS, JOB_TITLE, NAME_SPELLINGS } from "@/lib/ide
  */
 export async function GET() {
   const [p, all, t] = await Promise.all([getProfile(), getProjects(), getTranslations({ locale: "en", namespace: "AboutPage" })]);
-  const projects = localizeProjects(all, "en");
+  const projects = visibleProjects(localizeProjects(all, "en"));
   const c = p.contacts;
   const cv = p.cv.en ?? p.cv.az;
   const abs = (u: string) => (u.startsWith("/") ? `${SITE_URL}${u}` : u);
@@ -51,7 +51,7 @@ export async function GET() {
         "",
         `### ${x.title}`,
         text || null,
-        x.languages.length > 0 && `- Stack: ${x.languages.map((l) => l.name).join(", ")}`,
+        projectLanguages(x).length > 0 && `- Stack: ${projectLanguages(x).join(", ")}`,
         x.topics.length > 0 && `- Topics: ${x.topics.join(", ")}`,
         x.demoUrl && `- Live demo: ${x.demoUrl}`,
         x.repoUrl ? `- Source code: ${x.repoUrl}` : x.comingSoon && "- Status: in development (private, not deployed yet)",
