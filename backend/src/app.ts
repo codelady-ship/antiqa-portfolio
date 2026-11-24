@@ -494,8 +494,21 @@ export function createApp(deps: Partial<AppDeps> = {}) {
     requireAdmin,
     wrap(async (req, res) => {
       const data = ProfileInput.parse(req.body);
-      const p = await Profile.findByIdAndUpdate("main", data, { upsert: true, new: true, runValidators: true }).lean();
-      res.json(p);
+      // the admin form sends the updatedAt it loaded (null: no saved profile yet); a newer save elsewhere = 409
+      const { expectedUpdatedAt } = z.object({ expectedUpdatedAt: z.iso.datetime().nullable().optional() }).parse(req.body);
+      if (expectedUpdatedAt === undefined) {
+        const p = await Profile.findByIdAndUpdate("main", data, { upsert: true, new: true, runValidators: true }).lean();
+        return res.json(p);
+      }
+      const filter = { _id: "main", updatedAt: expectedUpdatedAt === null ? { $exists: false } : new Date(expectedUpdatedAt) };
+      try {
+        // null + a saved profile: the upsert collides with _id "main" (E11000) = someone saved first
+        const p = await Profile.findOneAndUpdate(filter, data, { upsert: expectedUpdatedAt === null, new: true, runValidators: true }).lean();
+        if (p) return res.json(p);
+      } catch (e) {
+        if ((e as { code?: number }).code !== 11000) throw e;
+      }
+      res.status(409).json({ error: "the profile was changed elsewhere", code: "stale_profile" });
     }),
   );
 
@@ -503,9 +516,10 @@ export function createApp(deps: Partial<AppDeps> = {}) {
   app.get(
     "/api/cv/:lang",
     wrap(async (req, res) => {
-      const lang = req.params.lang === "en" ? "en" : "az";
-      const cv: any = (await Cv.findById(lang).lean()) ?? (await Cv.findOne().lean());
-      if (!cv) return res.status(404).json({ error: "no cv" });
+      const lang = req.params.lang;
+      // only the asked language: /api/cv/en never serves the AZ file
+      const cv: any = lang === "az" || lang === "en" ? await Cv.findById(lang).lean() : null;
+      if (!cv) return res.status(404).json({ error: "no cv", code: "no_cv" });
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `inline; filename="${String(cv.fileName || "cv.pdf").replace(/[^\w.-]/g, "_")}"`);
       res.setHeader("Cache-Control", "public, max-age=300");
@@ -519,7 +533,7 @@ export function createApp(deps: Partial<AppDeps> = {}) {
     wrap(async (req, res) => {
       const lang = z.enum(["az", "en"]).parse(req.params.lang);
       const body = req.body as Buffer;
-      if (!Buffer.isBuffer(body) || body.subarray(0, 5).toString() !== "%PDF-") return res.status(400).json({ error: "pdf only" });
+      if (!Buffer.isBuffer(body) || body.subarray(0, 5).toString() !== "%PDF-") return res.status(400).json({ error: "pdf only", code: "pdf_only" });
       let fileName = `cv-${lang}.pdf`;
       try {
         fileName = decodeURIComponent(req.get("x-file-name") || fileName).slice(0, 100);
@@ -528,6 +542,16 @@ export function createApp(deps: Partial<AppDeps> = {}) {
       }
       await Cv.findByIdAndUpdate(lang, { fileName, data: body, size: body.length }, { upsert: true });
       res.json({ ok: true, size: body.length });
+    }),
+  );
+  app.delete(
+    "/api/cv/:lang",
+    requireAdmin,
+    wrap(async (req, res) => {
+      const lang = z.enum(["az", "en"]).parse(req.params.lang);
+      const r = await Cv.deleteOne({ _id: lang });
+      if (!r.deletedCount) return res.status(404).json({ error: "no cv", code: "no_cv" });
+      res.status(204).end();
     }),
   );
 
@@ -561,11 +585,11 @@ export function createApp(deps: Partial<AppDeps> = {}) {
     wrap(async (req, res) => {
       const { repoUrl, allowPrivate, ...patch } = ProjectCreate.parse(req.body);
       const ref = parseRepoUrl(repoUrl);
-      if (!ref) return res.status(400).json({ error: "Not a GitHub repository URL" });
+      if (!ref) return res.status(400).json({ error: "Not a GitHub repository URL", code: "not_github_url" });
       const existing = () => Project.findOne(ref).collation({ locale: "en", strength: 2 });
       const already = async () => {
         const e = await existing();
-        return res.status(409).json({ error: "Already added", ...(e && { project: present(e, true) }) });
+        return res.status(409).json({ error: "Already added", code: "already_added", ...(e && { project: present(e, true) }) });
       };
       if (await existing()) return already();
       const p = new Project({ ...ref, repoUrl: `https://github.com/${ref.owner}/${ref.name}`, ...patch });
@@ -579,19 +603,38 @@ export function createApp(deps: Partial<AppDeps> = {}) {
       const refuse = p.syncError || (p.privateRepo && !allowPrivate ? PRIVATE_MSG : "");
       if (refuse) {
         await p.deleteOne();
-        return res.status(422).json({ error: refuse });
+        const code = p.syncError ? (/not found/i.test(p.syncError) ? "repo_not_found" : "github_error") : "private_repo";
+        return res.status(422).json({ error: refuse, code });
       }
       res.status(201).json(present(p, true));
+    }),
+  );
+  // the admin's up / down arrows: the whole list in its new order, saved in one request (not one PATCH per project)
+  app.put(
+    "/api/projects/order",
+    requireAdmin,
+    wrap(async (req, res) => {
+      const { ids } = z
+        .object({ ids: z.array(z.string().refine((id) => isValidObjectId(id), "not an id")).min(1).max(500) })
+        .refine((b) => new Set(b.ids).size === b.ids.length, "duplicate ids")
+        .parse(req.body);
+      const have = new Set((await Project.find({}, { _id: 1 }).lean()).map((p: any) => String(p._id)));
+      // a project was added or removed in another tab: reload instead of saving a partial order
+      if (have.size !== ids.length || !ids.every((id) => have.has(id))) return res.status(409).json({ error: "the project list changed", code: "stale_list" });
+      const step = Math.max(1, Math.floor(1000 / ids.length));
+      await Project.bulkWrite(ids.map((id, k) => ({ updateOne: { filter: { _id: id }, update: { $set: { order: (ids.length - k) * step } } } })));
+      const list = await Project.find({}, { "gh.readmeHtml": 0 }).sort({ featured: -1, order: -1, "gh.createdAt": -1 }).lean();
+      res.json(list.map((p) => present(p, true)));
     }),
   );
   app.patch(
     "/api/projects/:id",
     requireAdmin,
     wrap(async (req, res) => {
-      if (!isValidObjectId(req.params.id)) return res.status(404).json({ error: "not found" });
+      if (!isValidObjectId(req.params.id)) return res.status(404).json({ error: "not found", code: "not_found" });
       const patch = ProjectPatch.parse(req.body);
       const p = await Project.findByIdAndUpdate(req.params.id, patch, { new: true });
-      if (!p) return res.status(404).json({ error: "not found" });
+      if (!p) return res.status(404).json({ error: "not found", code: "not_found" });
       if (patch.adminUrl !== undefined || patch.demoOverride !== undefined || patch.comingSoon !== undefined || patch.demoOff !== undefined) {
         await checkFrames(p);
         await p.save();
@@ -630,7 +673,7 @@ export function createApp(deps: Partial<AppDeps> = {}) {
     requireAdmin,
     wrap(async (req, res) => {
       const ref = parseRepoUrl(z.string().max(300).parse(req.query.url ?? ""));
-      if (!ref) return res.status(400).json({ error: "Not a GitHub repository URL" });
+      if (!ref) return res.status(400).json({ error: "Not a GitHub repository URL", code: "not_github_url" });
       const s = await fetchSnapshot(ref, { allowPrivate: true });
       const [live, readme, exists] = await Promise.all([
         resolveLive(s),
@@ -658,12 +701,14 @@ export function createApp(deps: Partial<AppDeps> = {}) {
   );
 
   /* ---------- errors ---------- */
-  app.use((_req: Request, res: Response) => res.status(404).json({ error: "not found" }));
+  // `code`: a stable key the admin panel translates (the English `error` stays for logs and scripts)
+  app.use((_req: Request, res: Response) => res.status(404).json({ error: "not found", code: "not_found" }));
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
-    if (err instanceof z.ZodError) return res.status(400).json({ error: "invalid input", issues: err.issues });
-    if (err instanceof GithubError) return res.status(err.status === 404 ? 404 : 502).json({ error: err.message });
+    if (err instanceof z.ZodError) return res.status(400).json({ error: "invalid input", code: "invalid_input", issues: err.issues });
+    if (err instanceof GithubError)
+      return res.status(err.status === 404 ? 404 : 502).json({ error: err.message, code: err.status === 404 ? "repo_not_found" : "github_error" });
     console.error(err);
-    res.status(500).json({ error: "server error" });
+    res.status(500).json({ error: "server error", code: "server_error" });
   });
   return app;
 }
