@@ -37,6 +37,12 @@ const THUMBS: Record<string, string> = {
   "kirayla-rental": "/projects/kirayla.webp",
 };
 /**
+ * the plates draw these 960 px screenshots at 30–150 px, so they load the small copies made by
+ * scripts/project-thumbs.mjs (<name>-160 / -320 / -480.webp); the project dialog keeps the full picture
+ */
+const PLATE_WIDTHS = [160, 320, 480];
+const plateSrcSet = (src?: string) => src && PLATE_WIDTHS.map((w) => `${src.replace(/\.webp$/, `-${w}.webp`)} ${w}w`).join(", ");
+/**
  * the stack chips, where the repo's languages / topics do not tell it: the repo behind the record is
  * not the project's own code (Codelady Skills), its topics are from before a rebuild (Food Wagon:
  * "html, css, javascript") or it has no topics (Ember & Olive)
@@ -101,6 +107,7 @@ export function ProjectConveyor({
     description: blurb(p, locale) || undefined,
     tier: tierOf(p),
     image: THUMBS[p.name.toLowerCase()] ?? (p.demoUrl && hasThumb(p.repoUrl) ? shot(p.demoUrl, 480) : undefined),
+    srcSet: plateSrcSet(THUMBS[p.name.toLowerCase()]),
     cover: true,
     initial: p.title.charAt(0),
     details: stackOf(p),
