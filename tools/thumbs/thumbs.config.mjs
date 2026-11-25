@@ -60,12 +60,6 @@ export const PROJECTS = {
     clip: { x: 96, y: 72, width: 1152, height: 720 },
     expectText: "share",
   },
-  // the same project under its old repo name, until that record is hidden (same picture file)
-  "kirayla-rental": {
-    animationsAt: 2500,
-    clip: { x: 96, y: 72, width: 1152, height: 720 },
-    expectText: "share",
-  },
   // without the "demo mode" note: hidden, not clicked, because the site now often loads it
   // already faded out (opacity 0, inert), where a click is blocked and the run fails
   "food-wagon-delivery-figma": {

@@ -33,8 +33,6 @@ const THUMBS: Record<string, string> = {
   jeparla: "/projects/jeparla.webp",
   // the first view of its live home page: the listing cards, the wordmark and the search (Playwright, 2026-11-21)
   "share-rental": "/projects/kirayla.webp",
-  // the same project under its old repo name (renamed Kirayla → Share, 2026-11-22), until that record is hidden
-  "kirayla-rental": "/projects/kirayla.webp",
 };
 /**
  * the plates draw these 960 px screenshots at 30–150 px, so they load the small copies made by
@@ -53,7 +51,6 @@ const STACK: Record<string, string[]> = {
   "ember-olive-menu": ["React", "TypeScript", "Three.js", "GSAP", "Vite", "Node.js", "Express", "MongoDB"],
   // no topics, and its languages alone read "TypeScript, Java, JavaScript"
   "share-rental": ["Next.js", "TypeScript", "Tailwind CSS", "Java 21", "Spring Boot", "PostgreSQL", "Flyway", "JWT", "Playwright"],
-  "kirayla-rental": ["Next.js", "TypeScript", "Tailwind CSS", "Java 21", "Spring Boot", "PostgreSQL", "Flyway", "JWT", "Playwright"],
 };
 
 /** topics that say nothing about the stack */
