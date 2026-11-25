@@ -11,16 +11,11 @@ export default async function NotFound() {
   const locale = hasLocale(routing.locales, requested) ? requested : routing.defaultLocale;
   const t = await getTranslations({ locale, namespace: "NotFound" });
   return (
-    <>
-      {/* #68: the 404's own tab title ("Səhifə tapılmadı — Antiqa Cəlilova"), not the home page's.
-          The prerendered 404 is a Next.js recovery shell that drops `metadata`/`generateMetadata`,
-          so the page renders a <title> itself (React hoists it into <head>). */}
-      <title>{`${t("title")} — Antiqa Cəlilova`}</title>
-      <NotFoundView kicker={t("kicker")} title={t("title")} text={t("text")}>
-        <Link href="/" locale={locale} className={notFoundCta}>
-          {t("home")} →
-        </Link>
-      </NotFoundView>
-    </>
+    // #68: the 404's tab title comes from generateMetadata in [...rest]/page.tsx
+    <NotFoundView kicker={t("kicker")} title={t("title")} text={t("text")}>
+      <Link href="/" locale={locale} className={notFoundCta}>
+        {t("home")} →
+      </Link>
+    </NotFoundView>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { Suspense, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 
@@ -13,10 +13,26 @@ const onHash = (cb: () => void) => {
   return () => removeEventListener("hashchange", cb);
 };
 
+/**
+ * #68: usePathname() cannot resolve while the [...rest] 404 is prerendered (its path is only known per request),
+ * so each element that reads it gets its own small <Suspense>. On known routes the path is known at build time and
+ * the element is prerendered in place (React keeps boundaries this small inline, so it shows without JS as before);
+ * on the 404 the fallback (path unknown: not the home page, interactive view) shows until the request-time render.
+ */
+function WithPathname({ children }: { children: (pathname: string | undefined) => ReactNode }) {
+  return (
+    <Suspense fallback={children(undefined)}>
+      <ReadPathname>{children}</ReadPathname>
+    </Suspense>
+  );
+}
+function ReadPathname({ children }: { children: (pathname: string) => ReactNode }) {
+  return children(usePathname());
+}
+
 export function SiteNav() {
   const t = useTranslations("Nav");
   const locale = useLocale();
-  const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
   // false on the server and during hydration, true afterwards (theme is only known on the client)
   const mounted = useSyncExternalStore(noop, () => true, () => false);
@@ -107,37 +123,46 @@ export function SiteNav() {
     ["contact", t("contact")],
   ] as const;
   // on the home page a plain hash link scrolls; elsewhere (404, /admin) go home first
-  const onHome = pathname === "/";
-  const section = (hash: string, className: string, children: ReactNode, onClick?: () => void) =>
-    onHome ? (
-      <a href={`#${hash}`} className={className} onClick={onClick}>
-        {children}
-      </a>
-    ) : (
-      <Link href={{ pathname: "/", hash }} className={className} onClick={onClick}>
-        {children}
-      </Link>
-    );
+  const section = (hash: string, className: string, children: ReactNode, onClick?: () => void) => (
+    <WithPathname>
+      {(pathname) =>
+        pathname === "/" ? (
+          <a href={`#${hash}`} className={className} onClick={onClick}>
+            {children}
+          </a>
+        ) : (
+          <Link href={{ pathname: "/", hash }} className={className} onClick={onClick}>
+            {children}
+          </Link>
+        )
+      }
+    </WithPathname>
+  );
 
   // owner, 2026-11-18: the "plain text / interactive" switch moves from the footer to the header
-  const plain = pathname === "/about";
   const viewToggle = (className: string) => (
     <div role="group" aria-label={t("view")} className={`rounded-full border border-line bg-surface text-xs font-medium ${className}`}>
       {(
         [
-          ["/", t("viewInteractive"), !plain],
-          ["/about", t("viewPlain"), plain],
+          ["/", t("viewInteractive")],
+          ["/about", t("viewPlain")],
         ] as const
-      ).map(([href, label, active]) => (
-        <Link
-          key={href}
-          href={href}
-          aria-current={active ? "page" : undefined}
-          onClick={() => setMenu(false)}
-          className={`inline-flex min-h-11 flex-1 items-center justify-center whitespace-nowrap rounded-full px-3 transition-colors ${active ? "bg-accent text-on-accent" : "text-muted hover:text-ink"}`}
-        >
-          {label}
-        </Link>
+      ).map(([href, label]) => (
+        <WithPathname key={href}>
+          {(pathname) => {
+            const active = (pathname === "/about") === (href === "/about");
+            return (
+              <Link
+                href={href}
+                aria-current={active ? "page" : undefined}
+                onClick={() => setMenu(false)}
+                className={`inline-flex min-h-11 flex-1 items-center justify-center whitespace-nowrap rounded-full px-3 transition-colors ${active ? "bg-accent text-on-accent" : "text-muted hover:text-ink"}`}
+              >
+                {label}
+              </Link>
+            );
+          }}
+        </WithPathname>
       ))}
     </div>
   );
@@ -175,23 +200,27 @@ export function SiteNav() {
               {viewToggle("hidden lg:flex")}
               <div role="group" aria-label={t("language")} translate="no" className="notranslate flex rounded-full border border-line bg-surface text-xs">
                 {routing.locales.map((l) => (
-                  <Link
-                    key={l}
-                    href={hash ? { pathname, hash } : pathname}
-                    locale={l}
-                    hrefLang={l}
-                    // with a #section the switch is a full page load: the client router restores a page it
-                    // already showed with that page's old hash ("/az#work#contact"), the browser does not
-                    onClick={(e) => {
-                      if (!hash || l === locale || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-                      e.preventDefault();
-                      location.assign(e.currentTarget.href);
-                    }}
-                    aria-current={l === locale ? "true" : undefined}
-                    className={`grid size-11 place-items-center rounded-full font-medium uppercase transition-colors ${l === locale ? "bg-accent text-on-accent" : "text-muted hover:text-ink"}`}
-                  >
-                    {l}
-                  </Link>
+                  <WithPathname key={l}>
+                    {/* path not known yet (404 shell before the request): the other language's home page */}
+                    {(pathname = "/") => (
+                      <Link
+                        href={hash ? { pathname, hash } : pathname}
+                        locale={l}
+                        hrefLang={l}
+                        // with a #section the switch is a full page load: the client router restores a page it
+                        // already showed with that page's old hash ("/az#work#contact"), the browser does not
+                        onClick={(e) => {
+                          if (!hash || l === locale || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                          e.preventDefault();
+                          location.assign(e.currentTarget.href);
+                        }}
+                        aria-current={l === locale ? "true" : undefined}
+                        className={`grid size-11 place-items-center rounded-full font-medium uppercase transition-colors ${l === locale ? "bg-accent text-on-accent" : "text-muted hover:text-ink"}`}
+                      >
+                        {l}
+                      </Link>
+                    )}
+                  </WithPathname>
                 ))}
               </div>
               <button
