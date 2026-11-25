@@ -7,6 +7,7 @@ import { IntlProvider } from "@/components/providers/intl-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { SiteNav } from "@/components/layout/site-nav";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { DropStaleNoindex } from "@/components/seo/drop-stale-noindex";
 import { routing } from "@/i18n/routing";
 import { getProfile, SITE_URL } from "@/lib/data";
 import { NAME_SPELLINGS } from "@/lib/identity";
@@ -87,7 +88,8 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
           <ThemeProvider>
             <SiteNav />
             <main id="main" tabIndex={-1} className="outline-none">
-              {children}
+              {/* #85: adds no HTML; drops the streamed 404 noindex after a client-side navigation away from the 404 */}
+              <DropStaleNoindex>{children}</DropStaleNoindex>
             </main>
             <SiteFooter name={profile.name} location={profile.location[locale]} />
           </ThemeProvider>

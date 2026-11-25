@@ -3,7 +3,8 @@ import type { ReactNode } from "react";
 /** Shared 404 look: used inside the locale layout and by the bare global 404 page. */
 export function NotFoundView({ kicker, title, text, children }: { kicker: string; title: string; text: ReactNode; children: ReactNode }) {
   return (
-    <section className="relative grid min-h-dvh place-items-center overflow-hidden px-4 py-32 sm:px-8">
+    // data-not-found: DropStaleNoindex (#85) keeps the 404's noindex while this view is on screen
+    <section data-not-found className="relative grid min-h-dvh place-items-center overflow-hidden px-4 py-32 sm:px-8">
       <div aria-hidden className="pointer-events-none absolute -top-32 -right-32 size-[30rem] rounded-full bg-peach-soft" />
       <div aria-hidden className="pointer-events-none absolute -bottom-20 -left-16 size-64 rotate-12 rounded-[3rem] bg-lilac-soft" />
       <div className="relative mx-auto w-full max-w-4xl">
