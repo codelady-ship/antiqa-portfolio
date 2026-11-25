@@ -14,9 +14,7 @@ const SHOWCASE_FALLBACK = new Set(
    // owner, 2026-11-18: full stack now
    "ember-olive-menu", "food-wagon-delivery-figma",
    // owner, 2026-11-21: her new project
-   "share-rental",
-   // Share under its old repo name, until that record is hidden after the rename (owner, 2026-11-22)
-   "kirayla-rental"].map((n) => n.toLowerCase()),
+   "share-rental"].map((n) => n.toLowerCase()),
 );
 
 /** on the home page belt; also the count in About, so the two numbers always agree */
@@ -30,8 +28,6 @@ export const onBelt = (p: Project) => !p.hidden && (p.fullStack ?? SHOWCASE_FALL
 const TITLES: Record<string, L10n> = {
   "my-quiz-app": { az: "Kod Sınağı", en: "Code Check" },
   "hello-fresh-with-react": { az: "HelloFresh klonu (təlim)", en: "HelloFresh clone (practice)" },
-  // renamed Kirayla → Share (owner, 2026-11-22): the record stored under the old repo name reads "Share" too
-  "kirayla-rental": { az: "Share", en: "Share" },
 };
 
 /** a demo in the visitor's language, where the project has one (Planera: its README links both) */
@@ -39,8 +35,6 @@ const DEMOS: Record<string, Partial<L10n>> = {
   // both locales: the stored link may still be the old domain randevum-seven.vercel.app, which redirects to the AZ home (#67, #70)
   planera: { az: "https://planera-az.vercel.app", en: "https://planera-az.vercel.app/en" },
   "share-rental": { en: "https://share-rental.vercel.app/en" },
-  // the old record keeps the address its stored /az demo has
-  "kirayla-rental": { en: "https://kirayla-rental.vercel.app/en" },
   "codelady-skills": { en: "https://codelady-ship.github.io/codelady-skills/en/" },
   jeparla: { en: "https://jeparla.duckdns.org/en" },
 };
