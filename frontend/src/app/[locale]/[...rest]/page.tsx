@@ -7,7 +7,7 @@ import { getTranslations } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import NotFound from "../not-found";
 
-// the layout's metadata would otherwise add the home page's <title> after the 404's own one
+// the 404's own tab title ("Səhifə tapılmadı — Antiqa Cəlilova" via the layout's template), not the home page's
 export async function generateMetadata(): Promise<Metadata> {
   const requested = await rootLocale();
   const locale = hasLocale(routing.locales, requested) ? requested : routing.defaultLocale;

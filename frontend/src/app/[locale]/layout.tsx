@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { locale as rootLocale } from "next/root-params";
 import { hasLocale } from "next-intl";
@@ -86,12 +85,7 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
         </a>
         <IntlProvider locale={locale} messages={clientMessages}>
           <ThemeProvider>
-            {/* #68: on an unknown path (/az/xyz) SiteNav's usePathname() cannot resolve while the 404 shell is
-                prerendered, so it streams in at request time (known routes prerender it as before);
-                without this boundary the [...rest] 404 cannot be prerendered */}
-            <Suspense>
-              <SiteNav />
-            </Suspense>
+            <SiteNav />
             <main id="main" tabIndex={-1} className="outline-none">
               {children}
             </main>
