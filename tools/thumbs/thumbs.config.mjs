@@ -66,10 +66,11 @@ export const PROJECTS = {
     clip: { x: 96, y: 72, width: 1152, height: 720 },
     expectText: "share",
   },
-  // the "demo mode" note closed
+  // without the "demo mode" note: hidden, not clicked, because the site now often loads it
+  // already faded out (opacity 0, inert), where a click is blocked and the run fails
   "food-wagon-delivery-figma": {
     viewport: { width: 1440, height: 900 },
-    steps: [{ click: 'button[aria-label="Hide demo mode note"]', optional: true }],
+    hide: ['[role="note"]:has(button[aria-label="Hide demo mode note"])'],
     expectText: "foodwagon",
   },
   // the open menu book
